@@ -1,3 +1,7 @@
+# Nomad specific and extra patterns needs to be ignored
+.*env/
+.pyenv*/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
