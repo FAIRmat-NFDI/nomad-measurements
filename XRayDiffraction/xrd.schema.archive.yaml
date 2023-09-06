@@ -1,0 +1,6 @@
+definitions:
+  name: XRD Schema
+  sections:
+    XRayDiffraction:
+      base_sections:
+        - nomad.datamodel.metainfo.basesections.Measurement
