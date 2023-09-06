@@ -267,6 +267,8 @@ class XRayDiffraction(Measurement, ArchiveSection):
             component='FileEditQuantity',
         )
     )
+    results = Measurement.results.m_copy()
+    results.section_def = XRDResult
 
     def normalize(self, archive, logger: BoundLogger) -> None:
         '''
@@ -283,47 +285,51 @@ class XRayDiffraction(Measurement, ArchiveSection):
         if not self.data_file:
             return
 
+        result = XRDResult()
+        settings = XRDSettings()
         with archive.m_context.raw_file(self.data_file) as file:
             xrd_dict = parse_and_convert_file(file.name)
-            self.intensity = xrd_dict['detector'] if 'detector' in xrd_dict and xrd_dict['detector'] is not None else None
-            # self.intensity = xrd_dict['counts'] if 'counts' in xrd_dict and xrd_dict['counts'] is not None else None
-            # if self.intensity is None:
-            #     self.intensity = xrd_dict['detector'] if 'detector' in xrd_dict and xrd_dict['detector'] is not None else None
-            self.two_theta = xrd_dict['2Theta'] * ureg('degree') if '2Theta' in xrd_dict and xrd_dict['2Theta'] is not None else None
-            self.omega = xrd_dict['Omega'] * ureg('degree') if 'Omega' in xrd_dict and xrd_dict['Omega'] is not None else None
-            self.chi = xrd_dict['Chi'] * ureg('degree') if 'Chi' in xrd_dict and xrd_dict['Chi'] is not None else None
-            if self.source is None:
-                self.source = XRayConventionalSource()
-            self.source.xray_tube_material = xrd_dict['metadata']['source']['anode_material'] if 'anode_material' in xrd_dict['metadata']['source'] and xrd_dict['metadata']['source']['anode_material'] else None
-            # self.source_peak_wavelength = xrd_dict['metadata']['wavelength']['kalpha_one']
-            # self.kalpha_one = xrd_dict['kAlpha1']
-            # self.kalpha_two = xrd_dict['kAlpha2']
-            # self.ratio_kalphatwo_kalphaone = xrd_dict['kAlphaRatio']
-            # self.kbeta = xrd_dict['kBeta']
-            # self.scan_axis = xrd_dict['scanAxis']
-            self.integration_time = xrd_dict['countTime'] * ureg('second') if xrd_dict['countTime'] is not None else None
+            result.intensity = xrd_dict['detector'] if 'detector' in xrd_dict and xrd_dict['detector'] is not None else None
+            # result.intensity = xrd_dict['counts'] if 'counts' in xrd_dict and xrd_dict['counts'] is not None else None
+            # if result.intensity is None:
+            #     result.intensity = xrd_dict['detector'] if 'detector' in xrd_dict and xrd_dict['detector'] is not None else None
+            result.two_theta = xrd_dict['2Theta'] * ureg('degree') if '2Theta' in xrd_dict and xrd_dict['2Theta'] is not None else None
+            result.omega = xrd_dict['Omega'] * ureg('degree') if 'Omega' in xrd_dict and xrd_dict['Omega'] is not None else None
+            result.chi = xrd_dict['Chi'] * ureg('degree') if 'Chi' in xrd_dict and xrd_dict['Chi'] is not None else None
+            if settings.source is None:
+                settings.source = XRayConventionalSource()
+            settings.source.xray_tube_material = xrd_dict['metadata']['source']['anode_material'] if 'anode_material' in xrd_dict['metadata']['source'] and xrd_dict['metadata']['source']['anode_material'] else None
+            # result.source_peak_wavelength = xrd_dict['metadata']['wavelength']['kalpha_one']
+            # result.kalpha_one = xrd_dict['kAlpha1']
+            # result.kalpha_two = xrd_dict['kAlpha2']
+            # result.ratio_kalphatwo_kalphaone = xrd_dict['kAlphaRatio']
+            # result.kbeta = xrd_dict['kBeta']
+            # result.scan_axis = xrd_dict['scanAxis']
+            result.integration_time = xrd_dict['countTime'] * ureg('second') if xrd_dict['countTime'] is not None else None
             
-        if self.source.xray_tube_material is not None:
-            xray_tube_material = self.source.xray_tube_material
-            self.source.kalpha_one, self.source.kalpha_two = estimate_kalpha_wavelengths(source_material=xray_tube_material)
+        if settings.source.xray_tube_material is not None:
+            xray_tube_material = settings.source.xray_tube_material
+            settings.source.kalpha_one, settings.source.kalpha_two = estimate_kalpha_wavelengths(source_material=xray_tube_material)
         try:
-            if self.source.kalpha_one is not None:
-                self.source_peak_wavelength = self.source.kalpha_one
+            if settings.source.kalpha_one is not None:
+                result.source_peak_wavelength = settings.source.kalpha_one
             else:
                 logger.warning("Unable to set source_peak_wavelegth because source.kalpha_one is None")
         except Exception:
             logger.warning("Unable to set source_peak_wavelegth")
 
         try:
-            if self.source_peak_wavelength is not None and self.q_vector is not None:
-                self.two_theta = calculate_two_theta_or_scattering_vector(
-                    q=self.q_vector, wavelength=self.source_peak_wavelength)
+            if result.source_peak_wavelength is not None and result.q_vector is not None:
+                result.two_theta = calculate_two_theta_or_scattering_vector(
+                    q=result.q_vector, wavelength=result.source_peak_wavelength)
 
-            elif self.source_peak_wavelength is not None and self.two_theta is not None:
-                self.q_vector = calculate_two_theta_or_scattering_vector(
-                    two_theta=self.two_theta, wavelength=self.source_peak_wavelength)
+            elif result.source_peak_wavelength is not None and result.two_theta is not None:
+                result.q_vector = calculate_two_theta_or_scattering_vector(
+                    two_theta=result.two_theta, wavelength=result.source_peak_wavelength)
         except Exception:
             logger.warning("Unable to convert from two_theta to q_vector vice-versa")
+        self.xrd_settings = settings
+        self.results = [result]
 
 
 m_package.__init_metainfo__()
