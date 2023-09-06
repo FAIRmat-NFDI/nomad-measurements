@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import numpy as np
 
 from nomad.datamodel.metainfo.basesections import Measurement, Instrument
 from nomad.datamodel.metainfo.basesections import MeasurementResult
@@ -26,10 +27,20 @@ from nomad.metainfo import (
     Quantity,
     Section,
     SubSection,
+    MEnum,
 )
 from nomad.datamodel.data import (
     ArchiveSection,
 )
+from nomad.datamodel.metainfo.annotations import (
+    ELNAnnotation,
+    ELNComponentEnum,
+)
+from nomad.units import (
+    ureg,
+)
+
+from nomad_measurements.xrd.xrd_parser import parse_and_convert_file
 
 m_package = Package(name='nomad-measurements')
 
@@ -53,6 +64,7 @@ def calculate_two_theta_or_scattering_vector(q=None, two_theta=None, wavelength=
         return (4 * np.pi / wavelength) * np.sin(np.deg2rad(two_theta) / 2)
     else:
         raise ValueError("Either q or two_theta must be provided.")
+
 
 def estimate_kalpha_wavelengths(source_material):
     """
@@ -81,6 +93,7 @@ def estimate_kalpha_wavelengths(source_material):
         raise ValueError("Unknown X-ray source material.")
 
     return kalpha1_wavelength, kalpha2_wavelength
+
 
 class XRayConventionalSource(ArchiveSection):
     '''
@@ -222,13 +235,9 @@ class XRayDiffraction(Measurement, ArchiveSection):
     Generic X-ray diffraction measurement.
     '''
     m_def = Section(
-        a_eln=dict(lane_width='800px',
-                   properties=dict(
-                    #    visible=dict(
-                    #     #    include=['data_file', 'chemical_formula'],
-                    #        exclude=['location']),
-                       editable=dict(
-                           exclude=["location"]))),                  
+        a_eln=dict(
+            lane_width='800px',
+        ),                  
         a_plot=[
             {
                 'label': 'Intensity (log scale)',
@@ -241,14 +250,16 @@ class XRayDiffraction(Measurement, ArchiveSection):
                 'x': 'two_theta',
                 'y': 'intensity',
                 'layout': {'yaxis': {'type': 'lin'}},
-            }])
-    
+            }
+        ],
+    )
     method = Quantity(
         type=str,
         default="X-Ray Diffraction (XRD)",
     )
-    xrd_settings = SubSection(section_def=XRDSettings)
-
+    xrd_settings = SubSection(
+        section_def=XRDSettings,
+    )
     data_file = Quantity(
         type=str,
         description='Data file containing the difractogram',
@@ -257,7 +268,15 @@ class XRayDiffraction(Measurement, ArchiveSection):
         )
     )
 
-    def normalize(self, archive, logger):
+    def normalize(self, archive, logger: BoundLogger) -> None:
+        '''
+        The normalizer for the `XRayDiffraction` class.
+
+        Args:
+            archive (EntryArchive): The archive containing the section that is being
+            normalized.
+            logger (BoundLogger): A structlog logger.
+        '''
         super(XRayDiffraction, self).normalize(archive, logger)
 
         # Use the xrd parser to populate the schema reading the data file
@@ -305,19 +324,6 @@ class XRayDiffraction(Measurement, ArchiveSection):
                     two_theta=self.two_theta, wavelength=self.source_peak_wavelength)
         except Exception:
             logger.warning("Unable to convert from two_theta to q_vector vice-versa")
-            
-    
-
-    def normalize(self, archive, logger: BoundLogger) -> None:
-        '''
-        The normalizer for the `XRayDiffraction` class.
-
-        Args:
-            archive (EntryArchive): The archive containing the section that is being
-            normalized.
-            logger (BoundLogger): A structlog logger.
-        '''
-        super(XRayDiffraction, self).normalize(archive, logger)
 
 
 m_package.__init_metainfo__()
