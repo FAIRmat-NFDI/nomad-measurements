@@ -1,6 +1,25 @@
 definitions:
   name: XRD Schema
   sections:
+    XRDResult:
+      base_sections:
+        - nomad.datamodel.metainfo.basesections.MeasurementResult
+      quantities:
+        two_theta: 
+          type: float
+          shape: ['*']
+          description: |
+            The set 2 theta angle.
+        intensity:
+          type: float
+          shape: ['*']
+          description: |
+            The measured intensity.
     XRayDiffraction:
       base_sections:
         - nomad.datamodel.metainfo.basesections.Measurement
+      quantities:
+        method:
+          type: str
+          default: X-Ray Diffraction (XRD)
+      
