@@ -1,0 +1,22 @@
+[build-system]
+requires = [ "setuptools>=61.0.0",]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nomad_measurements"
+version = "0.0.1"
+description = "A plugin for NOMAD"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [ "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only", "Programming Language :: Python :: 3.9",]
+dependencies = [
+    "nomad-lab>=1.2.1.dev,<1.2.2",
+    "pytest",
+    "structlog==22.3.0",
+]
+
+[project.license]
+file = "LICENSE"
+
+[tool.setuptools.packages.find]
+where = [ "src",]
