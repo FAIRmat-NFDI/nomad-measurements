@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-from nomad.datamodel.metainfo.basesections import Measurement
+from nomad.datamodel.metainfo.basesections import Measurement, Instrument
 from nomad.datamodel.metainfo.basesections import MeasurementResult
 from structlog.stdlib import (
     BoundLogger,
@@ -25,12 +25,66 @@ from nomad.metainfo import (
     Package,
     Quantity,
     Section,
+    SubSection,
 )
 from nomad.datamodel.data import (
     ArchiveSection,
 )
 
 m_package = Package(name='nomad-measurements')
+
+
+class XRayConventionalSource(ArchiveSection):
+    '''
+    X-ray source used in conventional diffractometers
+    '''
+
+
+    xray_tube_material = Quantity(
+        type=MEnum(sorted(['Cu', 'Cr', 'Mo', 'Fe', 'Ag', 'In', 'Ga'])),
+        description='Type of the X-ray tube',
+        default='Cu',
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.EnumEditQuantity,
+        ))
+
+    xray_tube_current = Quantity(
+        type=np.dtype(np.float64),
+        unit='A',
+        description='Current of the X-ray tube',
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.NumberEditQuantity,
+            label='Current of the X-ray tube'))
+
+    xray_tube_voltage = Quantity(
+        type=np.dtype(np.float64),
+        unit='V',
+        description='Voltage of the X-ray tube',
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.NumberEditQuantity,
+            label='Voltage of the X-ray tube'))
+
+    kalpha_one = Quantity(
+        type=np.dtype(np.float64),
+        unit='angstrom',
+        description='Wavelength of the Kα1 line')
+
+    kalpha_two = Quantity(
+        type=np.dtype(np.float64),
+        unit='angstrom',
+        description='Wavelength of the Kα2 line')
+
+    ratio_kalphatwo_kalphaone = Quantity(
+        type=np.dtype(np.float64),
+        description='Kα2/Kα1 intensity ratio')
+
+    kbeta = Quantity(
+        type=np.dtype(np.float64),
+        unit='angstrom',
+        description='Wavelength of the Kβ line')
+
+class XRDSettings(ArchiveSection):
+    source = SubSection(section_def=XRayConventionalSource)
 
 
 class XRDResult(MeasurementResult, ArchiveSection):
@@ -74,7 +128,8 @@ class XRayDiffraction(Measurement, ArchiveSection):
         type=str,
         default="X-Ray Diffraction (XRD)",
     )
-
+    xrd_settings = SubSection(section_def=XRDSettings)
+    
     def normalize(self, archive, logger: BoundLogger) -> None:
         '''
         The normalizer for the `XRayDiffraction` class.
