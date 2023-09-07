@@ -150,6 +150,7 @@ class XRayTubeSource(ArchiveSection):
     )
     ratio_kalphatwo_kalphaone = Quantity(
         type=np.dtype(np.float64),
+        unit='dimensionless',
         description='Kα2/Kα1 intensity ratio',
     )
     kbeta = Quantity(
@@ -289,7 +290,7 @@ class XRayDiffraction(Measurement):
         settings = XRDSettings()
         with archive.m_context.raw_file(self.data_file) as file:
             xrd_dict = parse_and_convert_file(file.name)
-            result.intensity = xrd_dict['detector'] if 'detector' in xrd_dict and xrd_dict['detector'] is not None else None
+            result.intensity = xrd_dict.get('detector', None)
             # result.intensity = xrd_dict['counts'] if 'counts' in xrd_dict and xrd_dict['counts'] is not None else None
             # if result.intensity is None:
             #     result.intensity = xrd_dict['detector'] if 'detector' in xrd_dict and xrd_dict['detector'] is not None else None
@@ -298,13 +299,16 @@ class XRayDiffraction(Measurement):
             result.chi = xrd_dict['Chi'] * ureg('degree') if 'Chi' in xrd_dict and xrd_dict['Chi'] is not None else None
             if settings.source is None:
                 settings.source = XRayTubeSource()
-            settings.source.xray_tube_material = xrd_dict['metadata']['source']['anode_material'] if 'anode_material' in xrd_dict['metadata']['source'] and xrd_dict['metadata']['source']['anode_material'] else None
-            # result.source_peak_wavelength = xrd_dict['metadata']['wavelength']['kalpha_one']
-            # result.kalpha_one = xrd_dict['kAlpha1']
-            # result.kalpha_two = xrd_dict['kAlpha2']
-            # result.ratio_kalphatwo_kalphaone = xrd_dict['kAlphaRatio']
-            # result.kbeta = xrd_dict['kBeta']
-            # result.scan_axis = xrd_dict['scanAxis']
+            metadata_dict = xrd_dict.get('metadata', {})
+            source_dict = metadata_dict.get('source', {})
+            settings.source.xray_tube_material = source_dict.get('anode_material', None)
+            settings.source.kalpha_one = source_dict.get('kAlpha1', None)
+            settings.source.kalpha_two = source_dict.get('kAlpha2', None)
+            settings.source.ratio_kalphatwo_kalphaone = source_dict.get('ratioKAlpha2KAlpha1', None)
+            settings.source.kbeta = source_dict.get('kBeta', None)
+            settings.source.xray_tube_voltage = source_dict.get('voltage', None)
+            settings.source.xray_tube_current = source_dict.get('current', None)
+            result.scan_axis = metadata_dict.get('scan_axis', None)
             result.integration_time = xrd_dict['countTime'] * ureg('second') if xrd_dict['countTime'] is not None else None
             
         if settings.source.xray_tube_material is not None:

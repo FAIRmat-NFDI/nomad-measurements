@@ -2,6 +2,8 @@ import re # for regular expressions
 import os  # for file path operations
 import xml.etree.ElementTree as ET # for XML parsing
 from xrayutilities.io.panalytical_xml import XRDMLFile # for reading XRDML files
+from nomad.units import ureg
+
 
 class FileReader:
     '''A class to read files from a given file path.'''
@@ -45,18 +47,29 @@ class PanalyticalXRDMLParser:
         root = ET.fromstring(content)
 
         ns_version = root.tag.split("}")[0].strip("{")
-        ns = {'xrd': ns_version}    
+        ns = {'xrd': ns_version}
 
         xrd_measurement = root.find("xrd:xrdMeasurement", ns)
+        
+        def find_float(path):
+            result = xrd_measurement.find(path, ns)
+            if result is not None:
+                unit = result.get('unit', '')
+                if unit == 'Angstrom':
+                    unit = 'angstrom'
+                return float(result.text) * ureg(unit)
+            else:
+                return None
 
         metadata = {
-            "measurement_type": xrd_measurement.get("measurementType"),
-            "sample_mode": xrd_measurement.get("sampleMode"),
+            "measurement_type": xrd_measurement.get("measurementType", None),
+            "sample_mode": xrd_measurement.get("sampleMode", None),
             "source": {
-                "voltage": float(xrd_measurement.find("xrd:incidentBeamPath/xrd:xRayTube/xrd:tension", ns).text) if xrd_measurement.find("xrd:incidentBeamPath/xrd:xRayTube/xrd:tension", ns) is not None else None,
-                "current": float(xrd_measurement.find("xrd:incidentBeamPath/xrd:xRayTube/xrd:current", ns).text) if xrd_measurement.find("xrd:incidentBeamPath/xrd:xRayTube/xrd:current", ns) is not None else None,
-                "kAlpha1": float(xrd_measurement.find("xrd:usedWavelength/xrd:kAlpha1", ns).text) if xrd_measurement.find("xrd:usedWavelength/xrd:kAlpha1", ns) is not None else None,
-                "kAlpha2": float(xrd_measurement.find("xrd:usedWavelength/xrd:kAlpha2", ns).text) if xrd_measurement.find("xrd:usedWavelength/xrd:kAlpha2", ns) is not None else None,
+                "voltage": find_float("xrd:incidentBeamPath/xrd:xRayTube/xrd:tension"),
+                "kAlpha1": find_float("xrd:usedWavelength/xrd:kAlpha1"),
+                "kAlpha2": find_float("xrd:usedWavelength/xrd:kAlpha2"),
+                "kBeta": find_float("xrd:usedWavelength/xrd:kBeta"),
+                "ratioKAlpha2KAlpha1": find_float("xrd:usedWavelength/xrd:ratioKAlpha2KAlpha1"),
                 "anode_material": xrd_measurement.find("xrd:incidentBeamPath/xrd:xRayTube/xrd:anodeMaterial", ns).text if xrd_measurement.find("xrd:incidentBeamPath/xrd:xRayTube/xrd:anodeMaterial", ns) is not None else None,
             },
 
