@@ -31,6 +31,7 @@ from nomad.metainfo import (
 )
 from nomad.datamodel.data import (
     ArchiveSection,
+    EntryData,
 )
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
@@ -38,6 +39,12 @@ from nomad.datamodel.metainfo.annotations import (
 )
 from nomad.units import (
     ureg,
+)
+from nomad.metainfo.metainfo import (
+    Category,
+)
+from nomad.datamodel.data import (
+    EntryDataCategory,
 )
 
 from nomad_measurements.xrd.xrd_parser import parse_and_convert_file
@@ -230,7 +237,7 @@ class XRDResult(MeasurementResult, ArchiveSection):
         super(XRDResult, self).normalize(archive, logger)
 
 
-class XRayDiffraction(Measurement, ArchiveSection):
+class XRayDiffraction(Measurement):
     '''
     Generic X-ray diffraction measurement.
     '''
@@ -241,14 +248,14 @@ class XRayDiffraction(Measurement, ArchiveSection):
         a_plot=[
             {
                 'label': 'Intensity (log scale)',
-                'x': 'two_theta',
-                'y': ['intensity'],
+                'x': 'results/:/two_theta',
+                'y': 'results/:/intensity',
                 'layout': {'yaxis': {'type': 'log'}},
             },
             {
                 'label': 'Intensity (lin scale)',
-                'x': 'two_theta',
-                'y': 'intensity',
+                'x': 'results/:/two_theta',
+                'y': 'results/:/intensity',
                 'layout': {'yaxis': {'type': 'lin'}},
             }
         ],
@@ -331,5 +338,32 @@ class XRayDiffraction(Measurement, ArchiveSection):
         self.xrd_settings = settings
         self.results = [result]
 
+
+class NOMADMeasurementsCategory(EntryDataCategory):
+    m_def = Category(label='NOMAD Measurements', categories=[EntryDataCategory])
+
+
+class ELNXRayDiffraction(XRayDiffraction, EntryData):
+    m_def = Section(
+        categories=[NOMADMeasurementsCategory],
+        label='X-Ray Diffraction (XRD)',
+        a_eln=dict(
+            lane_width='800px',
+        ),                  
+        a_plot=[
+            {
+                'label': 'Intensity (log scale)',
+                'x': 'results/:/two_theta',
+                'y': 'results/:/intensity',
+                'layout': {'yaxis': {'type': 'log'}},
+            },
+            {
+                'label': 'Intensity (lin scale)',
+                'x': 'results/:/two_theta',
+                'y': 'results/:/intensity',
+                'layout': {'yaxis': {'type': 'lin'}},
+            }
+        ],
+    )
 
 m_package.__init_metainfo__()
