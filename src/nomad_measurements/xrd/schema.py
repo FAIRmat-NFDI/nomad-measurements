@@ -310,6 +310,10 @@ class XRayDiffraction(Measurement):
             settings.source.xray_tube_current = source_dict.get('current', None)
             result.scan_axis = metadata_dict.get('scan_axis', None)
             result.integration_time = xrd_dict['countTime'] * ureg('second') if xrd_dict['countTime'] is not None else None
+            samples=CompositeSystemReference()
+            samples.lab_id=xrd_dict['metadata']["sample_id"]
+            samples.normalize(archive, logger)
+            self.samples=[samples]
             
         if settings.source.xray_tube_material is not None:
             xray_tube_material = settings.source.xray_tube_material

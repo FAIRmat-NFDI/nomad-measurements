@@ -50,6 +50,7 @@ class PanalyticalXRDMLParser:
         ns = {'xrd': ns_version}
 
         xrd_measurement = root.find("xrd:xrdMeasurement", ns)
+        xrd_sample = root.find("xrd:sample", ns)
         
         def find_float(path):
             result = xrd_measurement.find(path, ns)
@@ -62,6 +63,7 @@ class PanalyticalXRDMLParser:
                 return None
 
         metadata = {
+            "sample_id": xrd_sample.find(".//{*}id", ns).text if xrd_sample.find(".//{*}id", ns) is not None else None,
             "measurement_type": xrd_measurement.get("measurementType", None),
             "sample_mode": xrd_measurement.get("sampleMode", None),
             "source": {
