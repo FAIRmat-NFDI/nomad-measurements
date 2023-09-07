@@ -21,6 +21,7 @@ from nomad.datamodel.metainfo.basesections import (
     Measurement,
     MeasurementResult,
     CompositeSystemReference,
+    ReadableIdentifiers,
 )
 from structlog.stdlib import (
     BoundLogger,
@@ -351,7 +352,10 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         label='X-Ray Diffraction (XRD)',
         a_eln=dict(
             lane_width='800px',
-        ),                  
+        ),
+        a_template=dict(
+            measurement_identifiers=dict(),
+        ),
         a_plot=[
             {
                 'label': 'Intensity (log scale)',
@@ -366,6 +370,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                 'layout': {'yaxis': {'type': 'lin'}},
             }
         ],
+    )
+    measurement_identifiers = SubSection(
+        section_def=ReadableIdentifiers,
     )
 
 
