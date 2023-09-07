@@ -20,6 +20,7 @@ import numpy as np
 from nomad.datamodel.metainfo.basesections import (
     Measurement,
     MeasurementResult,
+    CompositeSystemReference,
 )
 from structlog.stdlib import (
     BoundLogger,
