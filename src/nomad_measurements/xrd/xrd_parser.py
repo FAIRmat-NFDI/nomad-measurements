@@ -78,7 +78,6 @@ class PanalyticalXRDMLParser:
             "scan_mode": xrd_measurement.find("xrd:scan", ns).get("mode") if xrd_measurement.find("xrd:scan", ns) is not None else None,
             "scan_axis": xrd_measurement.find("xrd:scan", ns).get("scanAxis") if xrd_measurement.find("xrd:scan", ns) is not None else None,
         }
-        print(metadata)
         return metadata
 
 
@@ -91,9 +90,6 @@ class PanalyticalXRDMLParser:
         # Read the XRDML file using xrayutilities
         xrd_data = XRDMLFile(self.file_path)
         result = xrd_data.scan.ddict
-        print(result.keys())
-        print(f"counts: {result['counts']}")
-        print(f"detector: {result['detector']}")
 
 
         # Add the scanmotname, material, hkl to the dictionary

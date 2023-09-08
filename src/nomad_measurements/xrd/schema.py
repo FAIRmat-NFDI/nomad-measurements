@@ -325,9 +325,6 @@ class XRayDiffraction(Measurement):
         with archive.m_context.raw_file(self.data_file) as file:
             xrd_dict = parse_and_convert_file(file.name)
             result.intensity = xrd_dict.get('detector', None)
-            # result.intensity = xrd_dict['counts'] if 'counts' in xrd_dict and xrd_dict['counts'] is not None else None
-            # if result.intensity is None:
-            #     result.intensity = xrd_dict['detector'] if 'detector' in xrd_dict and xrd_dict['detector'] is not None else None
             result.two_theta = xrd_dict['2Theta'] * ureg('degree') if '2Theta' in xrd_dict and xrd_dict['2Theta'] is not None else None
             result.omega = xrd_dict['Omega'] * ureg('degree') if 'Omega' in xrd_dict and xrd_dict['Omega'] is not None else None
             result.chi = xrd_dict['Chi'] * ureg('degree') if 'Chi' in xrd_dict and xrd_dict['Chi'] is not None else None
