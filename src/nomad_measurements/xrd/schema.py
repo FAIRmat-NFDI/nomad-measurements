@@ -50,6 +50,15 @@ from nomad.metainfo.metainfo import (
 from nomad.datamodel.data import (
     EntryDataCategory,
 )
+from nomad.datamodel.results import (
+    Results,
+    Properties,
+    StructuralProperties,
+    DiffractionPattern,
+    Method,
+    MeasurementMethod,
+    XRDMethod,
+)
 
 from nomad_measurements.xrd.xrd_parser import parse_and_convert_file
 
@@ -270,6 +279,29 @@ class XRayDiffraction(Measurement):
             component='FileEditQuantity',
         ),
     )
+    diffraction_method_name = Quantity(
+        type=MEnum(
+            [
+                "Powder X-ray Diffraction (PXRD)",
+                "Single Crystal X-ray Diffraction (SCXRD)",
+                "High-Resolution X-ray Diffraction (HRXRD)",
+                "Small-Angle X-ray Scattering (SAXS)",
+                "X-ray Reflectivity (XRR)",
+                "Grazing Incidence X-ray Diffraction (GIXRD)",
+            ]
+        ),
+        description='''
+        The diffraction method used to obtain the diffraction pattern.
+        | X-ray Diffraction Method                                   | Description                                                                                                                                                                                                 |
+        |------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+        | **Powder X-ray Diffraction (PXRD)**                        | The term "powder" refers more to the random orientation of small crystallites than to the physical form of the sample. Can be used with non-powder samples if they present random crystallite orientations. |
+        | **Single Crystal X-ray Diffraction (SCXRD)**               | Used for determining the atomic structure of a single crystal.                                                                                                                                              |
+        | **High-Resolution X-ray Diffraction (HRXRD)**              | A technique typically used for detailed characterization of epitaxial thin films using precise diffraction measurements.                                                                                    |
+        | **Small-Angle X-ray Scattering (SAXS)**                    | Used for studying nanostructures in the size range of 1-100 nm. Provides information on particle size, shape, and distribution.                                                                             |
+        | **X-ray Reflectivity (XRR)**                               | Used to study thin film layers, interfaces, and multilayers. Provides info on film thickness, density, and roughness.                                                                                       |
+        | **Grazing Incidence X-ray Diffraction (GIXRD)**            | Primarily used for the analysis of thin films with the incident beam at a fixed shallow angle.                                                                                                              |
+        ''',
+    )
     results = Measurement.results.m_copy()
     results.section_def = XRDResult
 
@@ -341,6 +373,29 @@ class XRayDiffraction(Measurement):
         self.xrd_settings = settings
         self.results = [result]
 
+        if not archive.results:
+            archive.results = Results()
+        if not archive.results.properties:
+            archive.results.properties = Properties()
+        if not archive.results.properties.structural:
+            archive.results.properties.structural = StructuralProperties(
+                diffraction_patterns=[DiffractionPattern(
+                    incident_beam_wavelength=result.source_peak_wavelength,
+                    two_theta_angles=result.two_theta,
+                    intensity=result.intensity,
+                    q_vector=result.q_vector,
+                ) for result in self.results]
+            )
+        if not archive.results.method:
+            archive.results.method = Method(
+                method_name='XRD',
+                measurement=MeasurementMethod(
+                    xrd=XRDMethod(
+                        diffraction_method_name=self.diffraction_method_name
+                    )
+                )
+            )
+
 
 class NOMADMeasurementsCategory(EntryDataCategory):
     m_def = Category(label='NOMAD Measurements', categories=[EntryDataCategory])
@@ -373,6 +428,32 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
     )
     measurement_identifiers = SubSection(
         section_def=ReadableIdentifiers,
+    )
+    diffraction_method_name = Quantity(  # TODO: Change to m_copy() when https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/issues/1680 is solved
+        type=MEnum(
+            [
+                "Powder X-ray Diffraction (PXRD)",
+                "Single Crystal X-ray Diffraction (SCXRD)",
+                "High-Resolution X-ray Diffraction (HRXRD)",
+                "Small-Angle X-ray Scattering (SAXS)",
+                "X-ray Reflectivity (XRR)",
+                "Grazing Incidence X-ray Diffraction (GIXRD)",
+            ]
+        ),
+        description='''
+        The diffraction method used to obtain the diffraction pattern.
+        | X-ray Diffraction Method                                   | Description                                                                                                                                                                                                 |
+        |------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+        | **Powder X-ray Diffraction (PXRD)**                        | The term "powder" refers more to the random orientation of small crystallites than to the physical form of the sample. Can be used with non-powder samples if they present random crystallite orientations. |
+        | **Single Crystal X-ray Diffraction (SCXRD)**               | Used for determining the atomic structure of a single crystal.                                                                                                                                              |
+        | **High-Resolution X-ray Diffraction (HRXRD)**              | A technique typically used for detailed characterization of epitaxial thin films using precise diffraction measurements.                                                                                    |
+        | **Small-Angle X-ray Scattering (SAXS)**                    | Used for studying nanostructures in the size range of 1-100 nm. Provides information on particle size, shape, and distribution.                                                                             |
+        | **X-ray Reflectivity (XRR)**                               | Used to study thin film layers, interfaces, and multilayers. Provides info on film thickness, density, and roughness.                                                                                       |
+        | **Grazing Incidence X-ray Diffraction (GIXRD)**            | Primarily used for the analysis of thin films with the incident beam at a fixed shallow angle.                                                                                                              |
+        ''',
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.EnumEditQuantity,
+        )
     )
 
 
