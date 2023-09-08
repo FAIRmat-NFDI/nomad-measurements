@@ -16,9 +16,9 @@ pip install -e . --index-url https://gitlab.mpcdf.mpg.de/api/v4/projects/2187/pa
 **Note!**
 Until we have an official pypi NOMAD release with the plugins functionality. Make
 sure to include NOMAD's internal package registry (via `--index-url`).
-```
 
-This plugin is  work in progress and an initial test. At the moment is only supporting `.xrdml` files.
+
+This plugin is work in progress and an initial test. At the moment is only supporting `.xrdml` files.
 
 There are conflicting dependencies with the current NOMAD `develop` branch.
 To test it in dev mode, you need to do the following in your NOMAD installation:
