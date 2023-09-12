@@ -1,0 +1,6 @@
+description: This is a plugin schema generated from a yaml schema.
+name: parsers/transmission
+plugin_type: parser
+mainfile_name_re: ^.*\.asc$
+parser_class_name: nomad_measurements.transmission.TransmissionParser
+code_name: Transmission Parser
