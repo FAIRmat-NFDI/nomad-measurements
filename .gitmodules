@@ -1,0 +1,3 @@
+[submodule "src/nomad_measurements/xrd/pynxtools"]
+	path = src/nomad_measurements/xrd/pynxtools
+	url = https://github.com/FAIRmat-NFDI/pynxtools.git
