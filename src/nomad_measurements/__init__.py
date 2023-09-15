@@ -16,6 +16,12 @@
 # limitations under the License.
 #
 
+from nomad.metainfo.metainfo import (
+    Category,
+)
+from nomad.datamodel.data import (
+    EntryDataCategory,
+)
 from nomad.datamodel.metainfo.basesections import (
     SectionReference,
     Activity,
@@ -33,6 +39,10 @@ from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
     ELNComponentEnum,
 )
+
+
+class NOMADMeasurementsCategory(EntryDataCategory):
+    m_def = Category(label='NOMAD Measurements', categories=[EntryDataCategory])
 
 
 class ActivityReference(SectionReference):
