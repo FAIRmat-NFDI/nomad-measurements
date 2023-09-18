@@ -17,6 +17,7 @@
 #
 import numpy as np
 
+from pynxtools.dataconverter.readers.xrd.reader import get_template_from_xrd_reader
 from nomad.datamodel.metainfo.basesections import (
     Measurement,
     MeasurementResult,
@@ -61,62 +62,11 @@ from nomad.datamodel.results import (
 )
 
 from nomad_measurements.xrd.xrd_parser import parse_and_convert_file
-
+from pynxtools.dataconverter.readers.xrd.reader import  X
+from nomad_measurements.xrd.xrd_helper import (calculate_two_theta_or_scattering_vector,
+                                               estimate_kalpha_wavelengths)
+                                               
 m_package = Package(name='nomad-measurements')
-
-
-def calculate_two_theta_or_scattering_vector(q=None, two_theta=None, wavelength=None):
-    """
-    Calculate the two-theta array from the scattering vector (q) or vice-versa,
-    given the wavelength of the X-ray source.
-
-    Args:
-        q (array-like, optional): Array of scattering vectors, in angstroms^-1.
-        two_theta (array-like, optional): Array of two-theta angles, in degrees.
-        wavelength (float): Wavelength of the X-ray source, in angstroms.
-
-    Returns:
-        numpy.ndarray: Array of two-theta angles, in degrees.
-    """
-    if q is not None:
-        return 2 * np.arcsin(q * wavelength / (4 * np.pi))
-    elif two_theta is not None:
-        return (4 * np.pi / wavelength) * np.sin(np.deg2rad(two_theta) / 2)
-    else:
-        raise ValueError("Either q or two_theta must be provided.")
-
-
-def estimate_kalpha_wavelengths(source_material):
-    """
-    Estimate the K-alpha1 and K-alpha2 wavelengths of an X-ray source given the material 
-    of the source.
-
-    Args:
-        source_material (str): Material of the X-ray source, such as 'Cu', 'Fe', 'Mo',
-        'Ag', 'In', 'Ga', etc.
-
-    Returns:
-        Tuple[float, float]: Estimated K-alpha1 and K-alpha2 wavelengths of the X-ray
-        source, in angstroms.
-    """
-    # Dictionary of K-alpha1 and K-alpha2 wavelengths for various X-ray source materials,
-    # in angstroms
-    kalpha_wavelengths = {
-        'Cr': (2.2910, 2.2936),
-        'Fe': (1.9359, 1.9397),
-        'Cu': (1.5406, 1.5444),
-        'Mo': (0.7093, 0.7136),
-        'Ag': (0.5594, 0.5638),
-        'In': (0.6535, 0.6577),
-        'Ga': (1.2378, 1.2443)
-    }
-
-    try:
-        kalpha1_wavelength, kalpha2_wavelength = kalpha_wavelengths[source_material]
-    except KeyError:
-        raise ValueError("Unknown X-ray source material.")
-
-    return kalpha1_wavelength, kalpha2_wavelength
 
 
 class XRayTubeSource(ArchiveSection):
@@ -322,33 +272,51 @@ class XRayDiffraction(Measurement):
 
         result = XRDResult()
         settings = XRDSettings()
+        # TODO use re module to detect the concept by a pattern, as in NeXus the inheritated group
+        # instance could be different name.
         with archive.m_context.raw_file(self.data_file) as file:
-            xrd_dict = parse_and_convert_file(file.name)
-            result.intensity = xrd_dict.get('detector', None)
-            result.two_theta = xrd_dict['2Theta'] * ureg('degree') if '2Theta' in xrd_dict and xrd_dict['2Theta'] is not None else None
-            result.omega = xrd_dict['Omega'] * ureg('degree') if 'Omega' in xrd_dict and xrd_dict['Omega'] is not None else None
-            result.chi = xrd_dict['Chi'] * ureg('degree') if 'Chi' in xrd_dict and xrd_dict['Chi'] is not None else None
+            xrd_template = get_template_from_xrd_reader(nxdl_name='NXxrd_pan', file_paths=file.name)
+            # Comes from detector
+            intensity = "/ENTRY[entry]/DATA[q_plot]/intensity"
+            result.intensity = xrd_template[intensity] if intensity in xrd_template else None
+            two_theta = "/ENTRY[entry]/2theta_plot/two_theta"
+            result.two_theta = xrd_template[two_theta] * ureg('degree') if two_theta in xrd_template else None
+            omega = "/ENTRY[entry]/2theta_plot/omega"
+            result.omega = xrd_template[omega] * ureg('degree') if omega in xrd_template else None
+            chi = "/ENTRY[entry]/2theta_plot/chi"
+            result.chi = xrd_template[chi] * ureg('degree') if chi in xrd_template else None
             if settings.source is None:
                 settings.source = XRayTubeSource()
-            metadata_dict = xrd_dict.get('metadata', {})
-            source_dict = metadata_dict.get('source', {})
-            settings.source.xray_tube_material = source_dict.get('anode_material', None)
-            settings.source.kalpha_one = source_dict.get('kAlpha1', None)
-            settings.source.kalpha_two = source_dict.get('kAlpha2', None)
-            settings.source.ratio_kalphatwo_kalphaone = source_dict.get('ratioKAlpha2KAlpha1', None)
-            settings.source.kbeta = source_dict.get('kBeta', None)
-            settings.source.xray_tube_voltage = source_dict.get('voltage', None)
-            settings.source.xray_tube_current = source_dict.get('current', None)
-            result.scan_axis = metadata_dict.get('scan_axis', None)
-            result.integration_time = xrd_dict['countTime'] * ureg('second') if xrd_dict['countTime'] is not None else None
+            # metadata_dict = xrd_template.get('metadata', {})
+            # source_dict = metadata_dict.get('source', {})
+            xray_tb_mat = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material"
+            settings.source.xray_tube_material = xrd_template[xray_tb_mat] if xray_tb_mat in xrd_template else None
+            alpha_one = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one"
+            settings.source.kalpha_one = xrd_template[alpha_one] if alpha_one in xrd_template else None
+            alpha_two = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two"
+            settings.source.kalpha_two = xrd_template[alpha_two] if alpha_two in xrd_template else None
+            one_to_ratio = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone"
+            settings.source.ratio_kalphatwo_kalphaone = xrd_template[one_to_ratio] if one_to_ratio in xrd_template else None
+            kbeta = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta"
+            settings.source.kbeta = xrd_template[kbeta] if kbeta in xrd_template else None
+            voltage = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage"
+            settings.source.xray_tube_voltage = xrd_template[voltage] if voltage in xrd_template else None
+            current = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current"
+            settings.source.xray_tube_current = xrd_template[current] if current in xrd_template else None
+            scan_axis = "/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis"
+            result.scan_axis = xrd_template[scan_axis] if scan_axis in xrd_template else None
+            count_time = "/ENTRY[entry]/COLLECTION[collection]/count_time"
+            result.integration_time = xrd_template[count_time] if count_time in xrd_template else None
             samples=CompositeSystemReference()
-            samples.lab_id=xrd_dict['metadata']["sample_id"]
+            sample_id = "/ENTRY[entry]/SAMPLE[sample]/sample_id"
+            samples.lab_id = xrd_template[sample_id] if sample_id in xrd_template else None
             samples.normalize(archive, logger)
             self.samples=[samples]
             
         if settings.source.xray_tube_material is not None:
             xray_tube_material = settings.source.xray_tube_material
             settings.source.kalpha_one, settings.source.kalpha_two = estimate_kalpha_wavelengths(source_material=xray_tube_material)
+        
         try:
             if settings.source.kalpha_one is not None:
                 result.source_peak_wavelength = settings.source.kalpha_one
@@ -367,6 +335,7 @@ class XRayDiffraction(Measurement):
                     two_theta=result.two_theta, wavelength=result.source_peak_wavelength)
         except Exception:
             logger.warning("Unable to convert from two_theta to q_vector vice-versa")
+            
         self.xrd_settings = settings
         self.results = [result]
 
