@@ -1,5 +1,5 @@
 [build-system]
-requires = [ "setuptools>=61.0.0", "setuptools-scm"]
+requires = [ "setuptools>=61.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -30,4 +30,3 @@ include = ['pynxtools']
 namespaces = false
 exclude = ["tests*"]
 
-[tool.setuptools_scm]

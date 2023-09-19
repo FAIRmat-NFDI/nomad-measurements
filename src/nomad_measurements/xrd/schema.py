@@ -61,8 +61,6 @@ from nomad.datamodel.results import (
     XRDMethod,
 )
 
-from nomad_measurements.xrd.xrd_parser import parse_and_convert_file
-from pynxtools.dataconverter.readers.xrd.reader import  X
 from nomad_measurements.xrd.xrd_helper import (calculate_two_theta_or_scattering_vector,
                                                estimate_kalpha_wavelengths)
                                                
