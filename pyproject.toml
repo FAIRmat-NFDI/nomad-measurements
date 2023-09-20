@@ -24,9 +24,5 @@ dev = ["pytest",
 file = "LICENSE"
 
 [tool.setuptools.packages.find]
-where = ["src",
-         "submodules/pynxtools"]
-include = ['pynxtools']
-namespaces = false
-exclude = ["tests*"]
+where = ["src"]
 
