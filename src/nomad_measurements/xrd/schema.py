@@ -220,6 +220,7 @@ class XRayDiffraction(Measurement):
     xrd_settings = SubSection(
         section_def=XRDSettings,
     )
+    
     data_file = Quantity(
         type=str,
         description='Data file containing the difractogram',
@@ -270,47 +271,44 @@ class XRayDiffraction(Measurement):
 
         result = XRDResult()
         settings = XRDSettings()
-        # TODO use re module to detect the concept by a pattern, as in NeXus the inheritated group
         # instance could be different name.
         with archive.m_context.raw_file(self.data_file) as file:
             xrd_template = get_template_from_xrd_reader(nxdl_name='NXxrd_pan', file_paths=file.name)
             # Comes from detector
             intensity = "/ENTRY[entry]/DATA[q_plot]/intensity"
-            result.intensity = xrd_template[intensity] if intensity in xrd_template else None
+            result.intensity = xrd_template.get(intensity, None)
             two_theta = "/ENTRY[entry]/2theta_plot/two_theta"
-            result.two_theta = xrd_template[two_theta] * ureg('degree') if two_theta in xrd_template else None
+            result.two_theta = xrd_template.get(two_theta, None) * ureg('degree') if xrd_template.get(two_theta, None) is not None else None
             omega = "/ENTRY[entry]/2theta_plot/omega"
-            result.omega = xrd_template[omega] * ureg('degree') if omega in xrd_template else None
+            result.omega = xrd_template.get(omega, None) * ureg('degree') if xrd_template.get(omega, None) is not None else None
             chi = "/ENTRY[entry]/2theta_plot/chi"
-            result.chi = xrd_template[chi] * ureg('degree') if chi in xrd_template else None
+            result.chi = xrd_template.get(chi, None) * ureg('degree') if xrd_template.get(chi, None) is not None else None
             if settings.source is None:
                 settings.source = XRayTubeSource()
-            # metadata_dict = xrd_template.get('metadata', {})
-            # source_dict = metadata_dict.get('source', {})
             xray_tb_mat = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material"
-            settings.source.xray_tube_material = xrd_template[xray_tb_mat] if xray_tb_mat in xrd_template else None
+            settings.source.xray_tube_material = xrd_template.get(xray_tb_mat, None)
             alpha_one = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one"
-            settings.source.kalpha_one = xrd_template[alpha_one] if alpha_one in xrd_template else None
+            settings.source.kalpha_one = xrd_template.get(alpha_one, None)
             alpha_two = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two"
-            settings.source.kalpha_two = xrd_template[alpha_two] if alpha_two in xrd_template else None
+            settings.source.kalpha_two = xrd_template.get(alpha_two, None) 
             one_to_ratio = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone"
-            settings.source.ratio_kalphatwo_kalphaone = xrd_template[one_to_ratio] if one_to_ratio in xrd_template else None
+            settings.source.ratio_kalphatwo_kalphaone = xrd_template.get(one_to_ratio, None)  
             kbeta = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta"
-            settings.source.kbeta = xrd_template[kbeta] if kbeta in xrd_template else None
+            settings.source.kbeta = xrd_template.get(kbeta, None) 
             voltage = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage"
-            settings.source.xray_tube_voltage = xrd_template[voltage] if voltage in xrd_template else None
+            settings.source.xray_tube_voltage = xrd_template.get(voltage, None)  
             current = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current"
-            settings.source.xray_tube_current = xrd_template[current] if current in xrd_template else None
+            settings.source.xray_tube_current = xrd_template.get(current, None)  
             scan_axis = "/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis"
-            result.scan_axis = xrd_template[scan_axis] if scan_axis in xrd_template else None
+            result.scan_axis = xrd_template.get(scan_axis, None)  
             count_time = "/ENTRY[entry]/COLLECTION[collection]/count_time"
-            result.integration_time = xrd_template[count_time] if count_time in xrd_template else None
+            result.integration_time = xrd_template.get(count_time, None)  
             samples=CompositeSystemReference()
             sample_id = "/ENTRY[entry]/SAMPLE[sample]/sample_id"
-            samples.lab_id = xrd_template[sample_id] if sample_id in xrd_template else None
+            samples.lab_id = xrd_template.get(sample_id, None)
             samples.normalize(archive, logger)
             self.samples=[samples]
-            
+ 
         if settings.source.xray_tube_material is not None:
             xray_tube_material = settings.source.xray_tube_material
             settings.source.kalpha_one, settings.source.kalpha_two = estimate_kalpha_wavelengths(source_material=xray_tube_material)
@@ -343,7 +341,7 @@ class XRayDiffraction(Measurement):
             archive.results.properties = Properties()
         if not archive.results.properties.structural:
             archive.results.properties.structural = StructuralProperties(
-                diffraction_patterns=[DiffractionPattern(
+                diffraction_pattern=[DiffractionPattern(
                     incident_beam_wavelength=result.source_peak_wavelength,
                     two_theta_angles=result.two_theta,
                     intensity=result.intensity,

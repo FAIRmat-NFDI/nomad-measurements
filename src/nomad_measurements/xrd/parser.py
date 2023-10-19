@@ -50,9 +50,11 @@ class XRDParser(MatchingParser):
         )
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
+        from pathlib import Path
         data_file = mainfile.split('/')[-1]
         entry = ELNXRayDiffraction.m_from_dict(ELNXRayDiffraction.m_def.a_template)
         entry.data_file = data_file
         file_name = f'{data_file[:-6]}.archive.json'
-        archive.data = XRDDataFile(measurement=create_archive(entry,archive,file_name))
+        measurement=create_archive(entry, archive, file_name)
+        archive.data = XRDDataFile(measurement=measurement)
         archive.metadata.entry_name = data_file[:-6] + ' data file'
