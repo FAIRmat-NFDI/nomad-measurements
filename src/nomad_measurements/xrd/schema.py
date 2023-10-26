@@ -18,6 +18,8 @@
 import numpy as np
 
 from pynxtools.dataconverter.readers.xrd.reader import get_template_from_xrd_reader
+from pynxtools.dataconverter.convert import transfer_data_into_template, get_nxdl_root_and_path
+from pynxtools.dataconverter.writer import Writer
 from nomad.datamodel.metainfo.basesections import (
     Measurement,
     MeasurementResult,
@@ -268,12 +270,27 @@ class XRayDiffraction(Measurement):
         # Use the xrd parser to populate the schema reading the data file
         if not self.data_file:
             return
-
+        import os
         result = XRDResult()
         settings = XRDSettings()
         # instance could be different name.
         with archive.m_context.raw_file(self.data_file) as file:
-            xrd_template = get_template_from_xrd_reader(nxdl_name='NXxrd_pan', file_paths=file.name)
+            nxdl_name = 'NXxrd_pan'
+            xrd_template = transfer_data_into_template(nxdl_name=nxdl_name, input_file=file.name, reader='xrd')
+            # Writing nxs file
+            archive.data.output = os.path.join(archive.m_context.raw_path(), 'test.nxs')
+            _, nxdl_path = get_nxdl_root_and_path(nxdl_name)
+            
+            
+            Writer(data=xrd_template, nxdl_path=nxdl_path, output_path=archive.data.output).write()
+            try:
+                archive.m_context.process_updated_raw_file(archive.data.output, allow_modify=True)
+            except Exception as e:
+                logger.error('could not trigger processing', mainfile=archive.data.output, exc_info=e)
+                raise e
+            else:
+                logger.info('triggered processing', mainfile=archive.data.output)
+            # archive.m_context.process_upload_raw_file(archive.data.output, allow_modify=True)
             # Comes from detector
             intensity = "/ENTRY[entry]/DATA[q_plot]/intensity"
             result.intensity = xrd_template.get(intensity, None)
