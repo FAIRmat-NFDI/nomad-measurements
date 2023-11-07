@@ -65,7 +65,7 @@ from nomad.datamodel.results import (
 
 from nomad_measurements.xrd.xrd_helper import (calculate_two_theta_or_scattering_vector,
                                                estimate_kalpha_wavelengths)
-                                               
+
 m_package = Package(name='nomad-measurements')
 
 
@@ -138,13 +138,13 @@ class XRDResult(MeasurementResult):
             return len(self.two_theta)
         else:
             return 0
-    
+
     n_values = Quantity(
         type=int,
         derived=derive_n_values,
     )
     two_theta = Quantity(
-        type=np.dtype(np.float64), shape=['n_values'], 
+        type=np.dtype(np.float64), shape=['n_values'],
         unit='deg',
         description='The 2-theta range of the difractogram',
         a_plot={
@@ -222,7 +222,7 @@ class XRayDiffraction(Measurement):
     xrd_settings = SubSection(
         section_def=XRDSettings,
     )
-    
+
     data_file = Quantity(
         type=str,
         description='Data file containing the difractogram',
@@ -230,6 +230,12 @@ class XRayDiffraction(Measurement):
             component='FileEditQuantity',
         ),
     )
+    nexus_output = Quantity(
+        type=str,
+        description='Output Nexus filename to save all the data. Default: output.nxs',
+        a_eln=dict(component='StringEditQuantity'),
+        a_browser=dict(adaptor='RawFileAdaptor'),
+        default='output.nxs')
     diffraction_method_name = Quantity(
         type=MEnum(
             [
@@ -273,23 +279,12 @@ class XRayDiffraction(Measurement):
         import os
         result = XRDResult()
         settings = XRDSettings()
+        nxdl_name = 'NXxrd_pan'
+        raw_dir = archive.m_context.raw_path()
         # instance could be different name.
+        xrd_template = transfer_data_into_template(nxdl_name=nxdl_name, input_file=os.path.join(raw_dir, self.data_file), reader='xrd')#
+        print(" ######  xrd : ", xrd_template)
         with archive.m_context.raw_file(self.data_file) as file:
-            nxdl_name = 'NXxrd_pan'
-            xrd_template = transfer_data_into_template(nxdl_name=nxdl_name, input_file=file.name, reader='xrd')
-            # Writing nxs file
-            archive.data.output = os.path.join(archive.m_context.raw_path(), 'test.nxs')
-            _, nxdl_path = get_nxdl_root_and_path(nxdl_name)
-            
-            
-            Writer(data=xrd_template, nxdl_path=nxdl_path, output_path=archive.data.output).write()
-            try:
-                archive.m_context.process_updated_raw_file(archive.data.output, allow_modify=True)
-            except Exception as e:
-                logger.error('could not trigger processing', mainfile=archive.data.output, exc_info=e)
-                raise e
-            else:
-                logger.info('triggered processing', mainfile=archive.data.output)
             # archive.m_context.process_upload_raw_file(archive.data.output, allow_modify=True)
             # Comes from detector
             intensity = "/ENTRY[entry]/DATA[q_plot]/intensity"
@@ -307,29 +302,66 @@ class XRayDiffraction(Measurement):
             alpha_one = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one"
             settings.source.kalpha_one = xrd_template.get(alpha_one, None)
             alpha_two = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two"
-            settings.source.kalpha_two = xrd_template.get(alpha_two, None) 
+            settings.source.kalpha_two = xrd_template.get(alpha_two, None)
             one_to_ratio = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone"
-            settings.source.ratio_kalphatwo_kalphaone = xrd_template.get(one_to_ratio, None)  
+            settings.source.ratio_kalphatwo_kalphaone = xrd_template.get(one_to_ratio, None)
             kbeta = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta"
-            settings.source.kbeta = xrd_template.get(kbeta, None) 
+            settings.source.kbeta = xrd_template.get(kbeta, None)
             voltage = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage"
-            settings.source.xray_tube_voltage = xrd_template.get(voltage, None)  
+            settings.source.xray_tube_voltage = xrd_template.get(voltage, None)
             current = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current"
-            settings.source.xray_tube_current = xrd_template.get(current, None)  
+            settings.source.xray_tube_current = xrd_template.get(current, None)
             scan_axis = "/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis"
-            result.scan_axis = xrd_template.get(scan_axis, None)  
+            result.scan_axis = xrd_template.get(scan_axis, None)
             count_time = "/ENTRY[entry]/COLLECTION[collection]/count_time"
-            result.integration_time = xrd_template.get(count_time, None)  
+            result.integration_time = xrd_template.get(count_time, None)
             samples=CompositeSystemReference()
             sample_id = "/ENTRY[entry]/SAMPLE[sample]/sample_id"
             samples.lab_id = xrd_template.get(sample_id, None)
             samples.normalize(archive, logger)
             self.samples=[samples]
- 
+
+        # Writing nxs file
+        archive.data.output = os.path.join(raw_dir, self.nexus_output)
+        _, nxdl_path = get_nxdl_root_and_path(nxdl_name)
+        Writer(data=xrd_template, nxdl_path=nxdl_path, output_path=archive.data.output, write_in_memory=True).write()
+
+        try:
+            from nomad.parsing.nexus.nexus import NexusParser
+            nexus_parser = NexusParser()
+            # nexus_parser.parse_as_archive_sub_section(mainfile=archive.data.output, archive=archive, logger=logger)
+            nexus_parser.parse(mainfile=archive.data.output, archive=archive, logger=logger)
+            # archive.m_context.process_updated_raw_file(archive.data.output, allow_modify=True)
+            print(' #### \n ++++ dir : +++++ \n', dir(archive))
+            print(' ############### ++++++++++++++++++++++++++++++++++++++++++++++++++++ #################: ')
+            print(' #### \n ++++ dic : +++++ \n', archive.__dict__)
+            print(' #### \n ++++ archive.m_def : +++++ \n', )
+            print(' #### \n ++++ archive.m_def \n', )
+            print(archive.m_def.__dict__)
+            print(' ############### ++++++++++++++++++++++++++++++++++++++++++++++++++++ #################: ')
+            print(' #### \n ++++ archive.nexus.NXxrd_pan : +++++ \n', archive.nexus.NXxrd_pan.ENTRY)
+            print(' ############### ++++++++++++++++++++++++++++++++++++++++++++++++++++ #################: ')
+            print(' #### ++++ type(archive.nexus) : type(archive.nexus.NXxrd_pan) : archive.nexus.__dict__')
+            print(type(archive.nexus), ' : ',  type(archive.nexus.NXxrd_pan), ' : \n ', archive.nexus.__dict__)
+            print(' ############### ++++++++++++++++++++++++++++++++++++++++++++++++++++ #################: ')
+        except Exception as e:
+            logger.error('could not trigger processing', mainfile=archive.data.output, exc_info=e)
+            raise e
+        else:
+            logger.info('triggered processing', mainfile=archive.data.output)
+
+        try:
+            archive.m_context.process_updated_raw_file(self.nexus_output, allow_modify=True)
+        except Exception as e:
+            logger.error('could not trigger processing', mainfile=archive.data.output, exc_info=e)
+            raise e
+        else:
+            logger.info('triggered processing', mainfile=archive.data.output)
+
         if settings.source.xray_tube_material is not None:
             xray_tube_material = settings.source.xray_tube_material
             settings.source.kalpha_one, settings.source.kalpha_two = estimate_kalpha_wavelengths(source_material=xray_tube_material)
-        
+
         try:
             if settings.source.kalpha_one is not None:
                 result.source_peak_wavelength = settings.source.kalpha_one
@@ -348,7 +380,7 @@ class XRayDiffraction(Measurement):
                     two_theta=result.two_theta, wavelength=result.source_peak_wavelength)
         except Exception:
             logger.warning("Unable to convert from two_theta to q_vector vice-versa")
-            
+
         self.xrd_settings = settings
         self.results = [result]
 
