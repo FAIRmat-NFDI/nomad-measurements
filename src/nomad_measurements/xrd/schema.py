@@ -16,10 +16,12 @@
 # limitations under the License.
 #
 import numpy as np
+import gc
 
 from pynxtools.dataconverter.readers.xrd.reader import get_template_from_xrd_reader
 from pynxtools.dataconverter.convert import transfer_data_into_template, get_nxdl_root_and_path
 from pynxtools.dataconverter.writer import Writer
+from h5py._hl.files import  File
 from nomad.datamodel.metainfo.basesections import (
     Measurement,
     MeasurementResult,
@@ -230,12 +232,6 @@ class XRayDiffraction(Measurement):
             component='FileEditQuantity',
         ),
     )
-    nexus_output = Quantity(
-        type=str,
-        description='Output Nexus filename to save all the data. Default: output.nxs',
-        a_eln=dict(component='StringEditQuantity'),
-        a_browser=dict(adaptor='RawFileAdaptor'),
-        default='output.nxs')
     diffraction_method_name = Quantity(
         type=MEnum(
             [
@@ -282,8 +278,7 @@ class XRayDiffraction(Measurement):
         nxdl_name = 'NXxrd_pan'
         raw_dir = archive.m_context.raw_path()
         # instance could be different name.
-        xrd_template = transfer_data_into_template(nxdl_name=nxdl_name, input_file=os.path.join(raw_dir, self.data_file), reader='xrd')#
-        print(" ######  xrd : ", xrd_template)
+        xrd_template = transfer_data_into_template(nxdl_name=nxdl_name, input_file=os.path.join(raw_dir, self.data_file), reader='xrd')
         with archive.m_context.raw_file(self.data_file) as file:
             # archive.m_context.process_upload_raw_file(archive.data.output, allow_modify=True)
             # Comes from detector
@@ -322,15 +317,17 @@ class XRayDiffraction(Measurement):
             self.samples=[samples]
 
         # Writing nxs file
-        archive.data.output = os.path.join(raw_dir, self.nexus_output)
+        # archive.data.output = os.path.join(archive.m_context.raw_path(), 'test.nxs')
+        hdf5_file_obj: File = None
         _, nxdl_path = get_nxdl_root_and_path(nxdl_name)
-        Writer(data=xrd_template, nxdl_path=nxdl_path, output_path=archive.data.output, write_in_memory=True).write()
+        # Writer(data=xrd_template, nxdl_path=nxdl_path, output_path=archive.data.output).write()
+        hdf5_file_obj = Writer(data=xrd_template, nxdl_path=nxdl_path, output_path='memory', write_in_memory=True).write()
 
         try:
             from nomad.parsing.nexus.nexus import NexusParser
             nexus_parser = NexusParser()
             # nexus_parser.parse_as_archive_sub_section(mainfile=archive.data.output, archive=archive, logger=logger)
-            nexus_parser.parse(mainfile=archive.data.output, archive=archive, logger=logger)
+            nexus_parser.parse(mainfile=hdf5_file_obj, archive=archive, logger=logger, write_in_memory=True)
             # archive.m_context.process_updated_raw_file(archive.data.output, allow_modify=True)
             print(' #### \n ++++ dir : +++++ \n', dir(archive))
             print(' ############### ++++++++++++++++++++++++++++++++++++++++++++++++++++ #################: ')
@@ -345,18 +342,21 @@ class XRayDiffraction(Measurement):
             print(type(archive.nexus), ' : ',  type(archive.nexus.NXxrd_pan), ' : \n ', archive.nexus.__dict__)
             print(' ############### ++++++++++++++++++++++++++++++++++++++++++++++++++++ #################: ')
         except Exception as e:
-            logger.error('could not trigger processing', mainfile=archive.data.output, exc_info=e)
+            # logger.error('could not trigger processing', mainfile=archive.data.output, exc_info=e)
+            logger.error('could not trigger processing', exc_info=e)
             raise e
-        else:
-            logger.info('triggered processing', mainfile=archive.data.output)
+        print(' ########## hdf5.id: ', hdf5_file_obj.keys())
+        print(' ######### hdf file ref : ', gc.get_reference(hdf5_file_obj))
+        # else:
+        #     logger.info('triggered processing', mainfile=archive.data.output)
 
-        try:
-            archive.m_context.process_updated_raw_file(self.nexus_output, allow_modify=True)
-        except Exception as e:
-            logger.error('could not trigger processing', mainfile=archive.data.output, exc_info=e)
-            raise e
-        else:
-            logger.info('triggered processing', mainfile=archive.data.output)
+        # try:
+        #     archive.m_context.process_updated_raw_file('test.nxs', allow_modify=True)
+        # except Exception as e:
+        #     logger.error('could not trigger processing', mainfile=archive.data.output, exc_info=e)
+        #     raise e
+        # else:
+        #     logger.info('triggered processing', mainfile=archive.data.output)
 
         if settings.source.xray_tube_material is not None:
             xray_tube_material = settings.source.xray_tube_material
