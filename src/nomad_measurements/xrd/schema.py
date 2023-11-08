@@ -376,7 +376,7 @@ class XRayDiffraction(Measurement):
             archive.results.properties = Properties()
         if not archive.results.properties.structural:
             archive.results.properties.structural = StructuralProperties(
-                diffraction_patterns=[DiffractionPattern(
+                diffraction_pattern=[DiffractionPattern(
                     incident_beam_wavelength=result.source_peak_wavelength,
                     two_theta_angles=result.two_theta,
                     intensity=result.intensity,
