@@ -16,12 +16,11 @@
 # limitations under the License.
 #
 import numpy as np
-import gc
 
 from pynxtools.dataconverter.readers.xrd.reader import get_template_from_xrd_reader
 from pynxtools.dataconverter.convert import transfer_data_into_template, get_nxdl_root_and_path
 from pynxtools.dataconverter.writer import Writer
-from h5py._hl.files import  File
+from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
 from nomad.datamodel.metainfo.basesections import (
     Measurement,
     MeasurementResult,
@@ -232,6 +231,15 @@ class XRayDiffraction(Measurement):
             component='FileEditQuantity',
         ),
     )
+    # Note: Include a_browser option in nexus_output if we add read ability from nxs type file.
+    # a_browser=dict(adaptor='RawFileAdaptor'),
+    nexus_output = Quantity(
+        type=str,
+        description=('NeXus file for data and metadata according to NeXus application definitions'
+                     'NXxrd_pan. (Optional)'),
+        a_eln=dict(component='StringEditQuantity'),
+        # default=""
+    )
     diffraction_method_name = Quantity(
         type=MEnum(
             [
@@ -316,47 +324,8 @@ class XRayDiffraction(Measurement):
             samples.normalize(archive, logger)
             self.samples=[samples]
 
-        # Writing nxs file
-        # archive.data.output = os.path.join(archive.m_context.raw_path(), 'test.nxs')
-        hdf5_file_obj: File = None
-        _, nxdl_path = get_nxdl_root_and_path(nxdl_name)
-        # Writer(data=xrd_template, nxdl_path=nxdl_path, output_path=archive.data.output).write()
-        hdf5_file_obj = Writer(data=xrd_template, nxdl_path=nxdl_path, output_path='memory', write_in_memory=True).write()
-
-        try:
-            from nomad.parsing.nexus.nexus import NexusParser
-            nexus_parser = NexusParser()
-            # nexus_parser.parse_as_archive_sub_section(mainfile=archive.data.output, archive=archive, logger=logger)
-            nexus_parser.parse(mainfile=hdf5_file_obj, archive=archive, logger=logger, write_in_memory=True)
-            # archive.m_context.process_updated_raw_file(archive.data.output, allow_modify=True)
-            print(' #### \n ++++ dir : +++++ \n', dir(archive))
-            print(' ############### ++++++++++++++++++++++++++++++++++++++++++++++++++++ #################: ')
-            print(' #### \n ++++ dic : +++++ \n', archive.__dict__)
-            print(' #### \n ++++ archive.m_def : +++++ \n', )
-            print(' #### \n ++++ archive.m_def \n', )
-            print(archive.m_def.__dict__)
-            print(' ############### ++++++++++++++++++++++++++++++++++++++++++++++++++++ #################: ')
-            print(' #### \n ++++ archive.nexus.NXxrd_pan : +++++ \n', archive.nexus.NXxrd_pan.ENTRY)
-            print(' ############### ++++++++++++++++++++++++++++++++++++++++++++++++++++ #################: ')
-            print(' #### ++++ type(archive.nexus) : type(archive.nexus.NXxrd_pan) : archive.nexus.__dict__')
-            print(type(archive.nexus), ' : ',  type(archive.nexus.NXxrd_pan), ' : \n ', archive.nexus.__dict__)
-            print(' ############### ++++++++++++++++++++++++++++++++++++++++++++++++++++ #################: ')
-        except Exception as e:
-            # logger.error('could not trigger processing', mainfile=archive.data.output, exc_info=e)
-            logger.error('could not trigger processing', exc_info=e)
-            raise e
-        print(' ########## hdf5.id: ', hdf5_file_obj.keys())
-        print(' ######### hdf file ref : ', gc.get_reference(hdf5_file_obj))
-        # else:
-        #     logger.info('triggered processing', mainfile=archive.data.output)
-
-        # try:
-        #     archive.m_context.process_updated_raw_file('test.nxs', allow_modify=True)
-        # except Exception as e:
-        #     logger.error('could not trigger processing', mainfile=archive.data.output, exc_info=e)
-        #     raise e
-        # else:
-        #     logger.info('triggered processing', mainfile=archive.data.output)
+        populate_nexus_subsection(template=xrd_template, app_def=nxdl_name, archive=archive,
+                                  logger=logger, write_in_memory=True)
 
         if settings.source.xray_tube_material is not None:
             xray_tube_material = settings.source.xray_tube_material
