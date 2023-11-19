@@ -17,9 +17,7 @@
 #
 import numpy as np
 
-from pynxtools.dataconverter.readers.xrd.reader import get_template_from_xrd_reader
-from pynxtools.dataconverter.convert import transfer_data_into_template, get_nxdl_root_and_path
-from pynxtools.dataconverter.writer import Writer
+from pynxtools.dataconverter.convert import transfer_data_into_template
 from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
 from nomad.datamodel.metainfo.basesections import (
     Measurement,
@@ -27,6 +25,7 @@ from nomad.datamodel.metainfo.basesections import (
     CompositeSystemReference,
     ReadableIdentifiers,
 )
+from memory_profiler import profile
 from structlog.stdlib import (
     BoundLogger,
 )
@@ -238,7 +237,7 @@ class XRayDiffraction(Measurement):
         description=('NeXus file for data and metadata according to NeXus application definitions'
                      'NXxrd_pan. (Optional)'),
         a_eln=dict(component='StringEditQuantity'),
-        # default=""
+        default=""
     )
     diffraction_method_name = Quantity(
         type=MEnum(
@@ -318,19 +317,25 @@ class XRayDiffraction(Measurement):
             result.scan_axis = xrd_template.get(scan_axis, None)
             count_time = "/ENTRY[entry]/COLLECTION[collection]/count_time"
             result.integration_time = xrd_template.get(count_time, None)
-            samples=CompositeSystemReference()
+            samples = CompositeSystemReference()
             sample_id = "/ENTRY[entry]/SAMPLE[sample]/sample_id"
             samples.lab_id = xrd_template.get(sample_id, None)
             samples.normalize(archive, logger)
-            self.samples=[samples]
-
-        populate_nexus_subsection(template=xrd_template, app_def=nxdl_name, archive=archive,
-                                  logger=logger, write_in_memory=True)
+            self.samples = [samples]
+        if self.nexus_output:
+            if not self.nexus_output.endswith('.nxs'):
+                self.nexus_output = self.nexus_output + ".nxs"
+            populate_nexus_subsection(template=xrd_template, app_def=nxdl_name, archive=archive,
+                                    logger=logger, output_file_path=self.nexus_output,
+                                    write_in_memory=False,)
+        else:
+            populate_nexus_subsection(template=xrd_template, app_def=nxdl_name, archive=archive,
+                                    logger=logger, output_file_path=self.nexus_output,
+                                    write_in_memory=True)
 
         if settings.source.xray_tube_material is not None:
             xray_tube_material = settings.source.xray_tube_material
             settings.source.kalpha_one, settings.source.kalpha_two = estimate_kalpha_wavelengths(source_material=xray_tube_material)
-
         try:
             if settings.source.kalpha_one is not None:
                 result.source_peak_wavelength = settings.source.kalpha_one

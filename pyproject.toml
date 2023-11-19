@@ -10,11 +10,9 @@ readme = "README.md"
 requires-python = ">=3.9"
 classifiers = [ "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only", "Programming Language :: Python :: 3.9",]
 dependencies = [
-    "nomad-lab>=1.2.1.dev,<1.2.2",
     "structlog==22.3.0",
-    "xrayutilities>=1.7.4",
-    "pynxtools@git+https://github.com/FAIRmat-NFDI/pynxtools.git@XRD_reader_integretion",
-]
+    "xrayutilities>=1.7.4"]
+
 
 [project.optional-dependencies]
 dev = ["pytest",
