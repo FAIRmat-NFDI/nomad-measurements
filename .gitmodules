@@ -1,0 +1,3 @@
+[submodule "submodules/pynxtools"]
+	path = submodules/pynxtools
+	url = https://github.com/FAIRmat-NFDI/pynxtools.git

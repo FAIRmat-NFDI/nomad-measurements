@@ -17,12 +17,15 @@
 #
 import numpy as np
 
+from pynxtools.dataconverter.convert import transfer_data_into_template
+from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
 from nomad.datamodel.metainfo.basesections import (
     Measurement,
     MeasurementResult,
     CompositeSystemReference,
     ReadableIdentifiers,
 )
+from memory_profiler import profile
 from structlog.stdlib import (
     BoundLogger,
 )
@@ -60,63 +63,10 @@ from nomad.datamodel.results import (
     XRDMethod,
 )
 
-from nomad_measurements.xrd.xrd_parser import parse_and_convert_file
+from nomad_measurements.xrd.xrd_helper import (calculate_two_theta_or_scattering_vector,
+                                               estimate_kalpha_wavelengths)
 
 m_package = Package(name='nomad-measurements')
-
-
-def calculate_two_theta_or_scattering_vector(q=None, two_theta=None, wavelength=None):
-    """
-    Calculate the two-theta array from the scattering vector (q) or vice-versa,
-    given the wavelength of the X-ray source.
-
-    Args:
-        q (array-like, optional): Array of scattering vectors, in angstroms^-1.
-        two_theta (array-like, optional): Array of two-theta angles, in degrees.
-        wavelength (float): Wavelength of the X-ray source, in angstroms.
-
-    Returns:
-        numpy.ndarray: Array of two-theta angles, in degrees.
-    """
-    if q is not None:
-        return 2 * np.arcsin(q * wavelength / (4 * np.pi))
-    elif two_theta is not None:
-        return (4 * np.pi / wavelength) * np.sin(np.deg2rad(two_theta) / 2)
-    else:
-        raise ValueError("Either q or two_theta must be provided.")
-
-
-def estimate_kalpha_wavelengths(source_material):
-    """
-    Estimate the K-alpha1 and K-alpha2 wavelengths of an X-ray source given the material 
-    of the source.
-
-    Args:
-        source_material (str): Material of the X-ray source, such as 'Cu', 'Fe', 'Mo',
-        'Ag', 'In', 'Ga', etc.
-
-    Returns:
-        Tuple[float, float]: Estimated K-alpha1 and K-alpha2 wavelengths of the X-ray
-        source, in angstroms.
-    """
-    # Dictionary of K-alpha1 and K-alpha2 wavelengths for various X-ray source materials,
-    # in angstroms
-    kalpha_wavelengths = {
-        'Cr': (2.2910, 2.2936),
-        'Fe': (1.9359, 1.9397),
-        'Cu': (1.5406, 1.5444),
-        'Mo': (0.7093, 0.7136),
-        'Ag': (0.5594, 0.5638),
-        'In': (0.6535, 0.6577),
-        'Ga': (1.2378, 1.2443)
-    }
-
-    try:
-        kalpha1_wavelength, kalpha2_wavelength = kalpha_wavelengths[source_material]
-    except KeyError:
-        raise ValueError("Unknown X-ray source material.")
-
-    return kalpha1_wavelength, kalpha2_wavelength
 
 
 class XRayTubeSource(ArchiveSection):
@@ -188,13 +138,13 @@ class XRDResult(MeasurementResult):
             return len(self.two_theta)
         else:
             return 0
-    
+
     n_values = Quantity(
         type=int,
         derived=derive_n_values,
     )
     two_theta = Quantity(
-        type=np.dtype(np.float64), shape=['n_values'], 
+        type=np.dtype(np.float64), shape=['n_values'],
         unit='deg',
         description='The 2-theta range of the difractogram',
         a_plot={
@@ -272,12 +222,22 @@ class XRayDiffraction(Measurement):
     xrd_settings = SubSection(
         section_def=XRDSettings,
     )
+
     data_file = Quantity(
         type=str,
         description='Data file containing the difractogram',
         a_eln=dict(
             component='FileEditQuantity',
         ),
+    )
+    # Note: Include a_browser option in nexus_output if we add read ability from nxs type file.
+    # a_browser=dict(adaptor='RawFileAdaptor'),
+    nexus_output = Quantity(
+        type=str,
+        description=('NeXus file for data and metadata according to NeXus application definitions'
+                     'NXxrd_pan. (Optional)'),
+        a_eln=dict(component='StringEditQuantity'),
+        default=""
     )
     diffraction_method_name = Quantity(
         type=MEnum(
@@ -319,33 +279,60 @@ class XRayDiffraction(Measurement):
         # Use the xrd parser to populate the schema reading the data file
         if not self.data_file:
             return
-
+        import os
         result = XRDResult()
         settings = XRDSettings()
+        nxdl_name = 'NXxrd_pan'
+        raw_dir = archive.m_context.raw_path()
+        # instance could be different name.
+        xrd_template = transfer_data_into_template(nxdl_name=nxdl_name, input_file=os.path.join(raw_dir, self.data_file), reader='xrd')
         with archive.m_context.raw_file(self.data_file) as file:
-            xrd_dict = parse_and_convert_file(file.name)
-            result.intensity = xrd_dict.get('detector', None)
-            result.two_theta = xrd_dict['2Theta'] * ureg('degree') if '2Theta' in xrd_dict and xrd_dict['2Theta'] is not None else None
-            result.omega = xrd_dict['Omega'] * ureg('degree') if 'Omega' in xrd_dict and xrd_dict['Omega'] is not None else None
-            result.chi = xrd_dict['Chi'] * ureg('degree') if 'Chi' in xrd_dict and xrd_dict['Chi'] is not None else None
+            # archive.m_context.process_upload_raw_file(archive.data.output, allow_modify=True)
+            # Comes from detector
+            intensity = "/ENTRY[entry]/DATA[q_plot]/intensity"
+            result.intensity = xrd_template.get(intensity, None)
+            two_theta = "/ENTRY[entry]/2theta_plot/two_theta"
+            result.two_theta = xrd_template.get(two_theta, None) * ureg('degree') if xrd_template.get(two_theta, None) is not None else None
+            omega = "/ENTRY[entry]/2theta_plot/omega"
+            result.omega = xrd_template.get(omega, None) * ureg('degree') if xrd_template.get(omega, None) is not None else None
+            chi = "/ENTRY[entry]/2theta_plot/chi"
+            result.chi = xrd_template.get(chi, None) * ureg('degree') if xrd_template.get(chi, None) is not None else None
             if settings.source is None:
                 settings.source = XRayTubeSource()
-            metadata_dict = xrd_dict.get('metadata', {})
-            source_dict = metadata_dict.get('source', {})
-            settings.source.xray_tube_material = source_dict.get('anode_material', None)
-            settings.source.kalpha_one = source_dict.get('kAlpha1', None)
-            settings.source.kalpha_two = source_dict.get('kAlpha2', None)
-            settings.source.ratio_kalphatwo_kalphaone = source_dict.get('ratioKAlpha2KAlpha1', None)
-            settings.source.kbeta = source_dict.get('kBeta', None)
-            settings.source.xray_tube_voltage = source_dict.get('voltage', None)
-            settings.source.xray_tube_current = source_dict.get('current', None)
-            result.scan_axis = metadata_dict.get('scan_axis', None)
-            result.integration_time = xrd_dict['countTime'] * ureg('second') if xrd_dict['countTime'] is not None else None
-            samples=CompositeSystemReference()
-            samples.lab_id=xrd_dict['metadata']["sample_id"]
+            xray_tb_mat = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material"
+            settings.source.xray_tube_material = xrd_template.get(xray_tb_mat, None)
+            alpha_one = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one"
+            settings.source.kalpha_one = xrd_template.get(alpha_one, None)
+            alpha_two = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two"
+            settings.source.kalpha_two = xrd_template.get(alpha_two, None)
+            one_to_ratio = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone"
+            settings.source.ratio_kalphatwo_kalphaone = xrd_template.get(one_to_ratio, None)
+            kbeta = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta"
+            settings.source.kbeta = xrd_template.get(kbeta, None)
+            voltage = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage"
+            settings.source.xray_tube_voltage = xrd_template.get(voltage, None)
+            current = "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current"
+            settings.source.xray_tube_current = xrd_template.get(current, None)
+            scan_axis = "/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis"
+            result.scan_axis = xrd_template.get(scan_axis, None)
+            count_time = "/ENTRY[entry]/COLLECTION[collection]/count_time"
+            result.integration_time = xrd_template.get(count_time, None)
+            samples = CompositeSystemReference()
+            sample_id = "/ENTRY[entry]/SAMPLE[sample]/sample_id"
+            samples.lab_id = xrd_template.get(sample_id, None)
             samples.normalize(archive, logger)
-            self.samples=[samples]
-            
+            self.samples = [samples]
+        if self.nexus_output:
+            if not self.nexus_output.endswith('.nxs'):
+                self.nexus_output = self.nexus_output + ".nxs"
+            populate_nexus_subsection(template=xrd_template, app_def=nxdl_name, archive=archive,
+                                    logger=logger, output_file_path=self.nexus_output,
+                                    write_in_memory=False,)
+        else:
+            populate_nexus_subsection(template=xrd_template, app_def=nxdl_name, archive=archive,
+                                    logger=logger, output_file_path=self.nexus_output,
+                                    write_in_memory=True)
+
         if settings.source.xray_tube_material is not None:
             xray_tube_material = settings.source.xray_tube_material
             settings.source.kalpha_one, settings.source.kalpha_two = estimate_kalpha_wavelengths(source_material=xray_tube_material)
@@ -367,6 +354,7 @@ class XRayDiffraction(Measurement):
                     two_theta=result.two_theta, wavelength=result.source_peak_wavelength)
         except Exception:
             logger.warning("Unable to convert from two_theta to q_vector vice-versa")
+
         self.xrd_settings = settings
         self.results = [result]
 
