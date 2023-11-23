@@ -41,9 +41,6 @@ from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
     ELNComponentEnum,
 )
-from nomad.units import (
-    ureg,
-)
 from nomad.metainfo.metainfo import (
     Category,
 )
@@ -60,7 +57,7 @@ from nomad.datamodel.results import (
     XRDMethod,
 )
 
-from nomad_measurements.xrd.readers import parse_and_convert_file
+from nomad_measurements.xrd.readers import read_xrd
 
 m_package = Package(name='nomad-measurements')
 
@@ -113,8 +110,8 @@ def estimate_kalpha_wavelengths(source_material):
 
     try:
         kalpha1_wavelength, kalpha2_wavelength = kalpha_wavelengths[source_material]
-    except KeyError:
-        raise ValueError("Unknown X-ray source material.")
+    except KeyError as exc:
+        raise ValueError("Unknown X-ray source material.") from exc
 
     return kalpha1_wavelength, kalpha2_wavelength
 
@@ -248,17 +245,6 @@ class XRDResult(MeasurementResult):
         description='Integration time per channel',
     )
 
-    def normalize(self, archive, logger: BoundLogger) -> None:
-        '''
-        The normalizer for the `XRDResult` class.
-
-        Args:
-            archive (EntryArchive): The archive containing the section that is being
-            normalized.
-            logger (BoundLogger): A structlog logger.
-        '''
-        super(XRDResult, self).normalize(archive, logger)
-
 
 class XRayDiffraction(Measurement):
     '''
@@ -323,7 +309,7 @@ class XRayDiffraction(Measurement):
         result = XRDResult()
         settings = XRDSettings()
         with archive.m_context.raw_file(self.data_file) as file:
-            xrd_dict = parse_and_convert_file(file.name, logger)
+            xrd_dict = read_xrd(file.name, logger)
             result.intensity = xrd_dict.get('detector', None)
             result.two_theta = xrd_dict.get('2Theta', None)
             result.omega = xrd_dict.get('Omega',None)
