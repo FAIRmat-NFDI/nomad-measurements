@@ -60,7 +60,7 @@ from nomad.datamodel.results import (
     XRDMethod,
 )
 
-from nomad_measurements.xrd.xrd_parser import parse_and_convert_file
+from nomad_measurements.xrd.readers import parse_and_convert_file
 
 m_package = Package(name='nomad-measurements')
 
