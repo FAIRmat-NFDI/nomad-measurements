@@ -1,2 +1,3 @@
 data:
-  m_def: nomad_measurements.XRayDiffraction
+  m_def: nomad_measurements.xrd.XRayDiffraction
+  data_file: XRD-918-16_10.xrdml

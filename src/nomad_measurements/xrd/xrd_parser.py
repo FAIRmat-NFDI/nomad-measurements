@@ -1,10 +1,33 @@
-import re # for regular expressions
+#
+# Copyright The NOMAD Authors.
+#
+# This file is part of NOMAD. See https://nomad-lab.eu for further info.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 import os  # for file path operations
-import numpy as np
 import xml.etree.ElementTree as ET # for XML parsing
-from xrayutilities.io.panalytical_xml import XRDMLFile # for reading XRDML files
+from typing import (
+    Dict,
+    Any,
+)
+import numpy as np
+from structlog.stdlib import (
+    BoundLogger,
+)
 from nomad.units import ureg
 from nomad_measurements.xrd.IKZ import RASXfile
+
 
 class FileReader:
     '''A class to read files from a given file path.'''
@@ -26,81 +49,137 @@ class FileReader:
         return content
 
 
-class PanalyticalXRDMLParser:
-    '''A class to parse Panalytical XRDML files.'''
+def read_xrdml(mainfile: str, logger: BoundLogger=None) -> Dict[str, Any]:
+    '''
+    Function for reading the X-ray diffraction data in a Panalytical `.xrdml` file. 
 
-    def __init__(self, file_path):
-        '''
-        Args:
-            file_path (str): The path of the XRDML file to be parsed.
-        '''
-        self.file_path = file_path
+    Args:
+        mainfile (str): The path to the `.xrdml` file.
+        logger (BoundLogger): A structlog logger.
 
-    def parse_metadata(self):
-        '''Parses the metadata of the XRDML file.'''
+    Returns:
+        Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
+    '''
+    with open(mainfile, 'r', encoding='utf-8') as file:
+        element_tree = ET.parse(file)
+    root = element_tree.getroot()
+    ns_version = root.tag.split("}")[0].strip("{")
+    ns = {'xrdml': ns_version}
 
-        with open(self.file_path, 'r', encoding='utf-8') as file:
-            content = file.read()
+    def find_float(path):
+        result = root.find(path, ns)
+        if result is not None:
+            unit = result.get('unit', '')
+            if unit == 'Angstrom':
+                unit = 'angstrom'
+            return float(result.text) * ureg(unit)
+        return None
 
-        # Remove the XML encoding declaration if it exists
-        content = re.sub(r'<\?xml.*\?>', '', content)
+    def find_string(path):
+        result = root.find(path, ns)
+        if result is not None:
+            return result.text
+        return None
 
-        root = ET.fromstring(content)
+    xrd_measurement = root.find("xrdml:xrdMeasurement", ns)
+    scans = xrd_measurement.findall('xrdml:scan', ns)
+    if len(scans) > 1 and logger is not None:
+        logger.warning(
+            'Multi scan xrdml files are currently not supported. Only reading first scan.'
+        )
+    scan = scans[0]  # TODO: Implement multi-scan
 
-        ns_version = root.tag.split("}")[0].strip("{")
-        ns = {'xrd': ns_version}
+    data_points = scan.find('xrdml:dataPoints', ns)
+    intensities = data_points.find('xrdml:intensities', ns)
+    counting_time = data_points.find('xrdml:commonCountingTime', ns)
+    attenuation = data_points.find('xrdml:beamAttenuationFactors', ns)
 
-        xrd_measurement = root.find("xrd:xrdMeasurement", ns)
-        xrd_sample = root.find("xrd:sample", ns)
+    counting_time_value = (
+        np.fromstring(counting_time.text, sep=' ') * ureg(counting_time.get('unit'))
+    )
+    if attenuation is not None:
+        attenuation_values = np.fromstring(attenuation.text, sep=' ')
+        _values = attenuation_values
+    else:
+        attenuation_values = None
+        _values = 1
+    if intensities is not None:
+        intensities_array = (
+            np.fromstring(intensities.text, sep=' ')
+            # / counting_time_value.to('s').magnitude * ureg('cps')
+        )
+        counts_array = None
+    else:
+        counts = data_points.find('xrdml:counts', ns)
+        counts_array = np.fromstring(counts.text, sep=' ')
+        intensities_array = (
+            counts_array * _values
+            # / counting_time_value.to('s').magnitude * ureg('cps')
+        )
+    n_points = len(intensities_array)
 
-        def find_float(path):
-            result = xrd_measurement.find(path, ns)
-            if result is not None:
-                unit = result.get('unit', '')
-                if unit == 'Angstrom':
-                    unit = 'angstrom'
-                return float(result.text) * ureg(unit)
-            else:
-                return None
+    axes = {}
+    for axis in data_points.findall('xrdml:positions', ns):
+        name = axis.get('axis')
+        unit = axis.get('unit')
+        listed = axis.find('xrdml:listPositions', ns)
+        start = axis.find('xrdml:startPosition', ns)
+        end = axis.find('xrdml:endPosition', ns)
+        common = axis.find('xrdml:commonPosition', ns)
+        if listed is not None:
+            axes[name] = np.fromstring(listed.text, sep=' ') * ureg(unit)
+        elif start is not None and end is not None:
+            axes[name] = np.linspace(
+                float(start.text), float(end.text), n_points
+            ) * ureg(unit)
+        elif common is not None:
+            axes[name] = np.array([float(common.text)]) * ureg(unit)
+        else:
+            if logger is not None:
+                logger.warning('Unknown data for {name} axis.')
+            axes[name] = None
 
-        metadata = {
-            "sample_id": xrd_sample.find(".//{*}id", ns).text if xrd_sample.find(".//{*}id", ns) is not None else None,
+    return {
+        "countTime": counting_time_value,
+        "detector": intensities_array,
+        "counts": counts_array,
+        "beamAttenuationFactors": attenuation_values,
+        **axes,
+        "scanmotname": scan.get("scanAxis", None),
+        "metadata": {
+            "sample_id": find_string('xrdml:sample/xrdml:id'),
             "measurement_type": xrd_measurement.get("measurementType", None),
             "sample_mode": xrd_measurement.get("sampleMode", None),
             "source": {
-                "voltage": find_float("xrd:incidentBeamPath/xrd:xRayTube/xrd:tension"),
-                "kAlpha1": find_float("xrd:usedWavelength/xrd:kAlpha1"),
-                "kAlpha2": find_float("xrd:usedWavelength/xrd:kAlpha2"),
-                "kBeta": find_float("xrd:usedWavelength/xrd:kBeta"),
-                "ratioKAlpha2KAlpha1": find_float("xrd:usedWavelength/xrd:ratioKAlpha2KAlpha1"),
-                "anode_material": xrd_measurement.find("xrd:incidentBeamPath/xrd:xRayTube/xrd:anodeMaterial", ns).text if xrd_measurement.find("xrd:incidentBeamPath/xrd:xRayTube/xrd:anodeMaterial", ns) is not None else None,
+                "current": find_float(
+                    'xrdml:xrdMeasurement/xrdml:incidentBeamPath/xrdml:xRayTube'
+                    '/xrdml:current'
+                ),
+                "voltage": find_float(
+                    'xrdml:xrdMeasurement/xrdml:incidentBeamPath/xrdml:xRayTube'
+                    '/xrdml:tension'
+                ),
+                "kAlpha1": find_float(
+                    "xrdml:xrdMeasurement/xrdml:usedWavelength/xrdml:kAlpha1"
+                ),
+                "kAlpha2": find_float(
+                    "xrdml:xrdMeasurement/xrdml:usedWavelength/xrdml:kAlpha2"
+                ),
+                "kBeta": find_float(
+                    "xrdml:xrdMeasurement/xrdml:usedWavelength/xrdml:kBeta"
+                ),
+                "ratioKAlpha2KAlpha1": find_float(
+                    "xrdml:xrdMeasurement/xrdml:usedWavelength/xrdml:ratioKAlpha2KAlpha1"
+                ),
+                "anode_material": find_string(
+                    "xrdml:xrdMeasurement/xrdml:incidentBeamPath/xrdml:xRayTube"
+                    "/xrdml:anodeMaterial"
+                ),
             },
-
-            "scan_mode": xrd_measurement.find("xrd:scan", ns).get("mode") if xrd_measurement.find("xrd:scan", ns) is not None else None,
-            "scan_axis": xrd_measurement.find("xrd:scan", ns).get("scanAxis") if xrd_measurement.find("xrd:scan", ns) is not None else None,
-        }
-        return metadata
-
-
-    def parse_xrdml(self):
-        '''Parses the XRDML file using xrayutilities.
-
-        Returns:
-            dict: A dictionary containing the parsed XRDML data.
-        '''
-        # Read the XRDML file using xrayutilities
-        xrd_data = XRDMLFile(self.file_path)
-        result = xrd_data.scan.ddict
-
-
-        # Add the scanmotname, material, hkl to the dictionary
-        result["scanmotname"] = xrd_data.scan.scanmotname
-        result["material"] = xrd_data.scan.material
-        result["hkl"] = xrd_data.scan.hkl
-        # add the metadata to the dictionary
-        result["metadata"] = self.parse_metadata()
-
-        return result
+            "scan_mode": scan.get("mode", None),
+            "scan_axis": scan.get("scanAxis", None),
+        },
+    }
 
 
 class FormatParser:
@@ -110,6 +189,7 @@ class FormatParser:
         '''
         Args:
             file_path (str): The path of the file to be identified and parsed.
+            logger (BoundLogger): A structlog logger.
         '''
         self.file_path = file_path
         self.logger = logger
@@ -130,8 +210,7 @@ class FormatParser:
             dict: A dictionary containing the parsed XRDML
         data.
         '''
-        xrdml_parser = PanalyticalXRDMLParser(self.file_path)
-        return xrdml_parser.parse_xrdml()
+        return read_xrdml(self.file_path, self.logger)
 
     def parse_panalytical_udf(self):
         '''Parse the Panalytical .udf file.
@@ -214,6 +293,7 @@ def parse_and_convert_file(file_path, logger):
     '''The main function to parse and convert a file.
     Args:
         file_path (str): The path of the file to be parsed and converted.
+        logger (BoundLogger): A structlog logger.
 
     Returns:
         dict: The parsed and converted data in a common dictionary format.
