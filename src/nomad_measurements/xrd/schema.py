@@ -343,7 +343,7 @@ class XRayDiffraction(Measurement):
             result.scan_axis = metadata_dict.get('scan_axis', None)
             result.integration_time = xrd_dict.get('countTime',None)
             samples=CompositeSystemReference()
-            samples.lab_id=xrd_dict['metadata']["sample_id"]
+            samples.lab_id=metadata_dict.get('sample_id', None)
             samples.normalize(archive, logger)
             self.samples=[samples]
             

@@ -3,7 +3,8 @@ normalize:
     include:
     - MetainfoNormalizer
 plugins:
-  include: schemas/example
+  include: 
+    - nomad_measurements.xrd
   options:
-    schemas/example:
-      python_package: nomad_measurements
+    parsers/nomad_measurements/xrd:
+      python_package: nomad_measurements.xrd
