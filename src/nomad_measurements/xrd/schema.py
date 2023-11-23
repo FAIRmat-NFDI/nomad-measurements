@@ -325,9 +325,10 @@ class XRayDiffraction(Measurement):
         with archive.m_context.raw_file(self.data_file) as file:
             xrd_dict = parse_and_convert_file(file.name, logger)
             result.intensity = xrd_dict.get('detector', None)
-            result.two_theta = xrd_dict['2Theta'] * ureg('degree') if '2Theta' in xrd_dict and xrd_dict['2Theta'] is not None else None
-            result.omega = xrd_dict['Omega'] * ureg('degree') if 'Omega' in xrd_dict and xrd_dict['Omega'] is not None else None
-            result.chi = xrd_dict['Chi'] * ureg('degree') if 'Chi' in xrd_dict and xrd_dict['Chi'] is not None else None
+            result.two_theta = xrd_dict.get('2Theta', None)
+            result.omega = xrd_dict.get('Omega',None)
+            result.chi = xrd_dict.get('Chi', None)
+            result.phi = xrd_dict.get('Phi', None)
             if settings.source is None:
                 settings.source = XRayTubeSource()
             metadata_dict = xrd_dict.get('metadata', {})
@@ -340,7 +341,7 @@ class XRayDiffraction(Measurement):
             settings.source.xray_tube_voltage = source_dict.get('voltage', None)
             settings.source.xray_tube_current = source_dict.get('current', None)
             result.scan_axis = metadata_dict.get('scan_axis', None)
-            result.integration_time = xrd_dict['countTime'] * ureg('second') if xrd_dict['countTime'] is not None else None
+            result.integration_time = xrd_dict.get('countTime',None)
             samples=CompositeSystemReference()
             samples.lab_id=xrd_dict['metadata']["sample_id"]
             samples.normalize(archive, logger)

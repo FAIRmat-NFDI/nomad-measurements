@@ -179,10 +179,9 @@ class RASXfile(object):
 
         self._ndscan = len(np.unique(list(map(len, data))))==1
         if self._ndscan:
-            data = np.array(data)
-        else:
+            data = np.array(data)    
+        else:  # not originally part of Carsten's code 
             raise NotImplementedError("Unequal lengths of multiple scans in a file not supported.")
-
         imgdata = np.array(imgdata)
 
         self.data = data
@@ -190,7 +189,6 @@ class RASXfile(object):
         self.meta = meta
         self.positions = collections.defaultdict(list)
         self.units = dict()
-
         ## retrieving information about axis
         for mdata in meta:
             for axis in mdata["Axes"].values():
@@ -224,9 +222,3 @@ class RASXfile(object):
             return time.mktime(parsed_time)
         else:
             return parsed_time
-
-    def get_data(self):
-        return self.data
-    
-    def get_metainfo(self):
-        return self.meta

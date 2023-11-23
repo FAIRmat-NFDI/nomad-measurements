@@ -2,9 +2,9 @@ import re # for regular expressions
 import os  # for file path operations
 import numpy as np
 import xml.etree.ElementTree as ET # for XML parsing
-# from xrayutilities.io.panalytical_xml import XRDMLFile # for reading XRDML files
+from xrayutilities.io.panalytical_xml import XRDMLFile # for reading XRDML files
 from nomad.units import ureg
-from .IKZ import RASXfile
+from nomad_measurements.xrd.IKZ import RASXfile
 
 class FileReader:
     '''A class to read files from a given file path.'''
@@ -17,7 +17,7 @@ class FileReader:
 
     def read_file(self):
         '''Reads the content of a file from the given file path.
-        
+
         Returns:
             str: The content of the file.
         '''
@@ -52,7 +52,7 @@ class PanalyticalXRDMLParser:
 
         xrd_measurement = root.find("xrd:xrdMeasurement", ns)
         xrd_sample = root.find("xrd:sample", ns)
-        
+
         def find_float(path):
             result = xrd_measurement.find(path, ns)
             if result is not None:
@@ -89,8 +89,7 @@ class PanalyticalXRDMLParser:
             dict: A dictionary containing the parsed XRDML data.
         '''
         # Read the XRDML file using xrayutilities
-        # xrd_data = XRDMLFile(self.file_path)
-        xrd_data = {}
+        xrd_data = XRDMLFile(self.file_path)
         result = xrd_data.scan.ddict
 
 
@@ -117,7 +116,7 @@ class FormatParser:
 
     def identify_format(self):
         '''Identifies the format of a given file.
-        
+
         Returns:
             str: The file extension of the file.
         '''
@@ -179,7 +178,7 @@ class FormatParser:
 
         if file_format == ".xrdml":
             return self.parse_panalytical_xrdml()
-        elif file_format == ".rasx": 
+        elif file_format == ".rasx":
             return self.parse_rigaku_rasx()
         elif file_format == ".udf":
             return self.parse_panalytical_udf()
@@ -230,27 +229,27 @@ def parse_and_convert_file(file_path, logger):
     return common_data
 
 def read_rigaku_RASX(file_path, logger):
-    ''' Reads .rasx files from Rigaku instruments
-        - reader is based on IKZ submodule 
+    '''
+    Reads .rasx files from Rigaku instruments
+        - reader is based on IKZ submodule
         - currently supports one scan per file
         - in case of multiple scans per file, only the first scan is read
+
     Args:
         file_path (string): absolute path of the file
         logger (object): logger object for propagating errors and warnings
+
     Returns:
         dict: populated with data from Rigaku .RASX files
     '''
     reader = RASXfile(file_path)
-    data = reader.get_data()
-    metainfo = reader.get_metainfo()
+    data = reader.data
+    metainfo = reader.meta
     pdata = reader.get_RSM()
-
-    if not metainfo[0]['ScanInformation']['AxisName'] == "TwoTheta":
-        raise NotImplementedError(f"{metainfo[0]['ScanInformation']['AxisName']} scan not supported. Only TwoTheta scan is supported.")
 
     ## in case of 2D scan, only select the first line scan, other angles than 2Theta are held constant
     if not data.shape[0] == 1:
-        logger.warn("2D scan currently not supported. Taking the data from the first line scan.")
+        logger.warning("2D scan currently not supported. Taking the data from the first line scan.")
         for key in pdata:
             if type(pdata[key])==np.ndarray:
                 if pdata[key].ndim == 2:
@@ -262,21 +261,36 @@ def read_rigaku_RASX(file_path, logger):
             pdata["Omega"] = pdata["Omega"][0]
     metainfo = metainfo[0]
 
+    _count_time = None
+    if metainfo["ScanInformation"]["Mode"].lower() == "continuous":
+        _speed_unit = ureg(metainfo["ScanInformation"]["SpeedUnit"].replace("min","minute"))
+        _count_time_unit = ureg(metainfo["ScanInformation"]["PositionUnit"]) / _speed_unit
+        _count_time = metainfo["ScanInformation"]["Step"] / metainfo["ScanInformation"]["Speed"]
+        _count_time = np.array([_count_time]) * _count_time_unit
+
+    axis = {}
+    for ax in ["Omega", "Chi", "Phi"]:
+        if not isinstance(pdata[ax], np.ndarray):
+            axis[ax] = np.array([pdata[ax]]) 
+        else:
+            axis[ax] = pdata[ax]  
+
     output = {
         "detector"  : pdata["Intensity"],
-        "2Theta"    : pdata["TwoTheta"],
-        "Omega"     : pdata["Omega"],
-        "Chi"       : pdata["Chi"],
-        "countTime" : None,         # not found in .rasx 
+        "2Theta"    : pdata[metainfo["ScanInformation"]["AxisName"]] *   ureg(reader.units[metainfo["ScanInformation"]["AxisName"]]),
+        "Omega"     : axis["Omega"] * ureg(reader.units["Omega"]),
+        "Chi"       : axis["Chi"] * ureg(reader.units["Chi"]),
+        "Phi"       : axis["Phi"] * ureg(reader.units["Phi"]),
+        "countTime" : _count_time,
         "metadata"  : {
             "sample_id" : None,     # not found in .rasx
             "scan_axis" : metainfo["ScanInformation"]["AxisName"],
             "source"    : {
                 "anode_material"    : metainfo["HardwareConfig"]["xraygenerator"]["TargetName"],
-                "kAlpha1"           : metainfo["HardwareConfig"]["xraygenerator"]["WavelengthKalpha1"],
-                "kAlpha2"           : metainfo["HardwareConfig"]["xraygenerator"]["WavelengthKalpha2"],
-                "kBeta"             : metainfo["HardwareConfig"]["xraygenerator"]["WavelengthKbeta"],
-                "voltage"           : metainfo["HardwareConfig"]["xraygenerator"]["Voltage"] * ureg(metainfo["HardwareConfig"]["xraygenerator"]["VoltageUnit"]), 
+                "kAlpha1"           : metainfo["HardwareConfig"]["xraygenerator"]["WavelengthKalpha1"]  * ureg("angstrom"),
+                "kAlpha2"           : metainfo["HardwareConfig"]["xraygenerator"]["WavelengthKalpha2"]  * ureg("angstrom"),
+                "kBeta"             : metainfo["HardwareConfig"]["xraygenerator"]["WavelengthKbeta"]    * ureg("angstrom"),
+                "voltage"           : metainfo["HardwareConfig"]["xraygenerator"]["Voltage"] * ureg(metainfo["HardwareConfig"]["xraygenerator"]["VoltageUnit"]),
                 "current"           : metainfo["HardwareConfig"]["xraygenerator"]["Current"] * ureg(metainfo["HardwareConfig"]["xraygenerator"]["CurrentUnit"]),
                 "ratioKAlpha2KAlpha1"   : None,     # not found in .rasx
             },
