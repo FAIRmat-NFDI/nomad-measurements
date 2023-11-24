@@ -18,7 +18,6 @@
 
 from nomad.datamodel import EntryArchive
 from nomad.metainfo import (
-    MSection,
     Quantity,
 )
 from nomad.parsing import MatchingParser
@@ -34,6 +33,9 @@ from nomad_measurements.xrd import ELNXRayDiffraction
 
 
 class XRDDataFile(EntryData):
+    '''
+    Section for a XRD data file.
+    '''
     measurement = Quantity(
         type=ELNXRayDiffraction,
         a_eln=ELNAnnotation(
@@ -43,13 +45,17 @@ class XRDDataFile(EntryData):
 
 
 class XRDParser(MatchingParser):
-
+    '''
+    Parser for matching XRD files and creating instances of ELNXRayDiffraction
+    '''
     def __init__(self):
         super().__init__(
             code_name='XRD Parser',
         )
 
-    def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
+    def parse(
+            self, mainfile: str, archive: EntryArchive, logger=None, child_archives=None
+        ) -> None:
         data_file = mainfile.split('/')[-1]
         entry = ELNXRayDiffraction.m_from_dict(ELNXRayDiffraction.m_def.a_template)
         entry.data_file = data_file
