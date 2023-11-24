@@ -31,7 +31,7 @@ from nomad_measurements.xrd.IKZ import RASXfile
 
 def read_panalytical_xrdml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
     '''
-    Function for reading the X-ray diffraction data in a Panalytical `.xrdml` file. 
+    Function for reading the X-ray diffraction data in a Panalytical `.xrdml` file.
 
     Args:
         file_path (str): The path to the `.xrdml` file.
@@ -185,9 +185,9 @@ def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
                 '2D scan currently not supported. '
                 'Taking the data from the first line scan.'
             )
-        for data in p_data.items():
+        for key, data in p_data.items():
             if isinstance(data, np.ndarray) and data.ndim == 2:
-                data = data[0,:].squeeze()
+                p_data[key] = data[0,:].squeeze()
 
         if not len(np.unique(p_data['Omega'])) == 1:
             raise ValueError(
