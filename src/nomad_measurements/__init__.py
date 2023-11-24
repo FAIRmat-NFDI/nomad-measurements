@@ -42,6 +42,9 @@ from nomad.datamodel.metainfo.annotations import (
 
 
 class NOMADMeasurementsCategory(EntryDataCategory):
+    '''
+    A category for all measurements defined in the `nomad-measurements` plugin.
+    '''
     m_def = Category(label='NOMAD Measurements', categories=[EntryDataCategory])
 
 
