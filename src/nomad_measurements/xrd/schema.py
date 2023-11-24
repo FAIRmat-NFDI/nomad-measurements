@@ -21,6 +21,7 @@ from typing import (
     Any,
 )
 import numpy as np
+import plotly.express as px
 
 from nomad.datamodel.metainfo.basesections import (
     Measurement,
@@ -51,6 +52,10 @@ from nomad.datamodel.results import (
     Method,
     MeasurementMethod,
     XRDMethod,
+)
+from nomad.datamodel.metainfo.plot import (
+    PlotSection,
+    PlotlyFigure,
 )
 
 from nomad_measurements import (
@@ -379,7 +384,7 @@ class XRayDiffraction(Measurement):
             )
 
 
-class ELNXRayDiffraction(XRayDiffraction, EntryData):
+class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
     '''
     Example section for how XRayDiffraction can be implemented with a general reader for
     common XRD file types.
@@ -393,20 +398,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         a_template={
             'measurement_identifiers': {},
         },
-        a_plot=[
-            {
-                'label': 'Intensity (log scale)',
-                'x': 'results/:/two_theta',
-                'y': 'results/:/intensity',
-                'layout': {'yaxis': {'type': 'log'}},
-            },
-            {
-                'label': 'Intensity (lin scale)',
-                'x': 'results/:/two_theta',
-                'y': 'results/:/intensity',
-                'layout': {'yaxis': {'type': 'lin'}},
-            }
-        ],
     )
     data_file = Quantity(
         type=str,
@@ -479,6 +470,25 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                 xrd_dict = read_xrd(file.name, logger)
             self.write_xrd_data(xrd_dict, archive, logger)
         super().normalize(archive, logger)
+
+        line_linear = px.line(x=self.results[0].two_theta, y=self.results[0].intensity,
+                              labels={
+                                  'x': '2θ (°)',
+                                  'y': 'Intensity',
+                              },
+                              title='Intensity (linear scale)'
+                              )
+
+        line_log = px.line(x=self.results[0].two_theta, y=self.results[0].intensity,
+                            log_y=True,
+                            labels={
+                                  'x': '2θ (°)',
+                                  'y': 'Intensity',
+                            },
+                            title='Intensity (log scale)')
+
+        self.figures.append(PlotlyFigure(label="Log Plot", index=1, figure=line_log.to_plotly_json()))
+        self.figures.append(PlotlyFigure(label="Linear Plot", index=2, figure=line_linear.to_plotly_json()))
 
 
 m_package.__init_metainfo__()
