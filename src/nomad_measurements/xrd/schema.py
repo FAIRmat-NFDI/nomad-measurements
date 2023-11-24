@@ -17,14 +17,14 @@
 #
 import numpy as np
 
+from structlog.stdlib import (
+    BoundLogger,
+)
 from nomad.datamodel.metainfo.basesections import (
     Measurement,
     MeasurementResult,
     CompositeSystemReference,
     ReadableIdentifiers,
-)
-from structlog.stdlib import (
-    BoundLogger,
 )
 from nomad.metainfo import (
     Package,
@@ -291,47 +291,36 @@ class XRayDiffraction(Measurement):
     results = Measurement.results.m_copy()
     results.section_def = XRDResult
 
-    def normalize(self, archive, logger: BoundLogger) -> None:
-        '''
-        The normalizer for the `XRayDiffraction` class.
-
-        Args:
-            archive (EntryArchive): The archive containing the section that is being
-            normalized.
-            logger (BoundLogger): A structlog logger.
-        '''
-        super(XRayDiffraction, self).normalize(archive, logger)
-
-        # Use the xrd parser to populate the schema reading the data file
-        if not self.data_file:
-            return
-
+    def write_xrd_data(self, archive, logger: BoundLogger) -> None:
         result = XRDResult()
         settings = XRDSettings()
+        settings.source = XRayTubeSource()
+        samples=CompositeSystemReference()
+
         with archive.m_context.raw_file(self.data_file) as file:
             xrd_dict = read_xrd(file.name, logger)
-            result.intensity = xrd_dict.get('detector', None)
-            result.two_theta = xrd_dict.get('2Theta', None)
-            result.omega = xrd_dict.get('Omega',None)
-            result.chi = xrd_dict.get('Chi', None)
-            result.phi = xrd_dict.get('Phi', None)
-            if settings.source is None:
-                settings.source = XRayTubeSource()
-            metadata_dict = xrd_dict.get('metadata', {})
-            source_dict = metadata_dict.get('source', {})
-            settings.source.xray_tube_material = source_dict.get('anode_material', None)
-            settings.source.kalpha_one = source_dict.get('kAlpha1', None)
-            settings.source.kalpha_two = source_dict.get('kAlpha2', None)
-            settings.source.ratio_kalphatwo_kalphaone = source_dict.get('ratioKAlpha2KAlpha1', None)
-            settings.source.kbeta = source_dict.get('kBeta', None)
-            settings.source.xray_tube_voltage = source_dict.get('voltage', None)
-            settings.source.xray_tube_current = source_dict.get('current', None)
-            result.scan_axis = metadata_dict.get('scan_axis', None)
-            result.integration_time = xrd_dict.get('countTime',None)
-            samples=CompositeSystemReference()
-            samples.lab_id=metadata_dict.get('sample_id', None)
-            samples.normalize(archive, logger)
-            self.samples=[samples]
+        metadata_dict = xrd_dict.get('metadata', {})
+        source_dict = metadata_dict.get('source', {})
+
+        result.intensity = xrd_dict.get('detector', None)
+        result.two_theta = xrd_dict.get('2Theta', None)
+        result.omega = xrd_dict.get('Omega',None)
+        result.chi = xrd_dict.get('Chi', None)
+        result.phi = xrd_dict.get('Phi', None)
+        result.scan_axis = metadata_dict.get('scan_axis', None)
+        result.integration_time = xrd_dict.get('countTime',None)
+
+        settings.source.xray_tube_material = source_dict.get('anode_material', None)
+        settings.source.kalpha_one = source_dict.get('kAlpha1', None)
+        settings.source.kalpha_two = source_dict.get('kAlpha2', None)
+        settings.source.ratio_kalphatwo_kalphaone = source_dict.get('ratioKAlpha2KAlpha1', None)
+        settings.source.kbeta = source_dict.get('kBeta', None)
+        settings.source.xray_tube_voltage = source_dict.get('voltage', None)
+        settings.source.xray_tube_current = source_dict.get('current', None)
+
+        samples.lab_id=metadata_dict.get('sample_id', None)
+        samples.normalize(archive, logger)
+        
             
         if settings.source.xray_tube_material is not None:
             xray_tube_material = settings.source.xray_tube_material
@@ -354,9 +343,24 @@ class XRayDiffraction(Measurement):
                     two_theta=result.two_theta, wavelength=result.source_peak_wavelength)
         except Exception:
             logger.warning("Unable to convert from two_theta to q_vector vice-versa")
+
+        self.samples = [samples]
         self.xrd_settings = settings
         self.results = [result]
 
+
+    def normalize(self, archive, logger: BoundLogger) -> None:
+        '''
+        The normalizer for the `XRayDiffraction` class.
+
+        Args:
+            archive (EntryArchive): The archive containing the section that is being
+            normalized.
+            logger (BoundLogger): A structlog logger.
+        '''
+        super().normalize(archive, logger)
+        if self.data_file:
+            self.write_xrd_data(archive, logger)
         if not archive.results:
             archive.results = Results()
         if not archive.results.properties:
