@@ -97,7 +97,7 @@ def calculate_two_theta_or_q(
     if q is not None and two_theta is None:
         return q, 2 * np.arcsin(q * wavelength / (4 * np.pi))
     if two_theta is not None and q is None:
-        return (4 * np.pi / wavelength) * np.sin(two_theta.to('radian') / 2), q
+        return (4 * np.pi / wavelength) * np.sin(two_theta.to('radian') / 2), two_theta
     return q, two_theta
 
 
@@ -297,10 +297,10 @@ class XRDResult(MeasurementResult):
         '''
         super().normalize(archive, logger)
         if self.source_peak_wavelength is not None:
-            self.two_theta, self.q_vector = calculate_two_theta_or_q(
+            self.q_vector, self.two_theta = calculate_two_theta_or_q(
                 wavelength=self.source_peak_wavelength,
                 two_theta=self.two_theta,
-                q=self.q,
+                q=self.q_vector,
             )
 
 
@@ -360,6 +360,7 @@ class XRayDiffraction(Measurement):
             for result in self.results:
                 if result.source_peak_wavelength is None:
                     result.source_peak_wavelength = self.xrd_settings.source.kalpha_one
+                    result.normalize(archive, logger)
         if not archive.results:
             archive.results = Results()
         if not archive.results.properties:
@@ -430,7 +431,8 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         '''
         metadata_dict: dict = xrd_dict.get('metadata', {})
         source_dict: dict = metadata_dict.get('source', {})
-        self.results = [XRDResult(
+
+        result = XRDResult(
             intensity=xrd_dict.get('detector', None),
             two_theta=xrd_dict.get('2Theta', None),
             omega=xrd_dict.get('Omega',None),
@@ -438,22 +440,32 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             phi=xrd_dict.get('Phi', None),
             scan_axis=metadata_dict.get('scan_axis', None),
             integration_time=xrd_dict.get('countTime',None),
-        )]
-        self.xrd_settings = XRDSettings(
-            source = XRayTubeSource(
-                xray_tube_material=source_dict.get('anode_material', None),
-                kalpha_one=source_dict.get('kAlpha1', None),
-                kalpha_two=source_dict.get('kAlpha2', None),
-                ratio_kalphatwo_kalphaone=source_dict.get('ratioKAlpha2KAlpha1', None),
-                kbeta=source_dict.get('kBeta', None),
-                xray_tube_voltage=source_dict.get('voltage', None),
-                xray_tube_current=source_dict.get('current', None),
-            )
         )
+        result.normalize(archive, logger)
+
+        source = XRayTubeSource(
+            xray_tube_material=source_dict.get('anode_material', None),
+            kalpha_one=source_dict.get('kAlpha1', None),
+            kalpha_two=source_dict.get('kAlpha2', None),
+            ratio_kalphatwo_kalphaone=source_dict.get('ratioKAlpha2KAlpha1', None),
+            kbeta=source_dict.get('kBeta', None),
+            xray_tube_voltage=source_dict.get('voltage', None),
+            xray_tube_current=source_dict.get('current', None),
+        )
+        source.normalize(archive, logger)
+
+        xrd_settings = XRDSettings(
+            source=source
+        )
+        xrd_settings.normalize(archive, logger)
+
         sample = CompositeSystemReference(
             lab_id=metadata_dict.get('sample_id', None),
         )
         sample.normalize(archive, logger)
+
+        self.results = [result]
+        self.xrd_settings = xrd_settings
         self.samples = [sample]
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
@@ -478,13 +490,14 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
                               },
                               title='Intensity (linear scale)'
                               )
-
-        line_log = px.line(x=self.results[0].two_theta, y=self.results[0].intensity,
-                            log_y=True,
-                            labels={
-                                  'x': '2θ (°)',
-                                  'y': 'Intensity',
-                            },
+        line_log = px.line(
+            x=self.results[0].two_theta,
+            y=self.results[0].intensity,
+            log_y=True,
+            labels={
+                'x': '2θ (°)',
+                'y': 'Intensity',
+            },
                             title='Intensity (log scale)')
 
         self.figures.append(PlotlyFigure(label="Log Plot", index=1, figure=line_log.to_plotly_json()))
