@@ -482,14 +482,15 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
                 xrd_dict = read_xrd(file.name, logger)
             self.write_xrd_data(xrd_dict, archive, logger)
         super().normalize(archive, logger)
-
-        line_linear = px.line(x=self.results[0].two_theta, y=self.results[0].intensity,
-                              labels={
-                                  'x': '2θ (°)',
-                                  'y': 'Intensity',
-                              },
-                              title='Intensity (linear scale)'
-                              )
+        line_linear = px.line(
+            x=self.results[0].two_theta,
+            y=self.results[0].intensity,
+            labels={
+                'x': '2θ (°)',
+                'y': 'Intensity',
+            },
+            title='Intensity (linear scale)',
+        )
         line_log = px.line(
             x=self.results[0].two_theta,
             y=self.results[0].intensity,
@@ -498,10 +499,20 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
                 'x': '2θ (°)',
                 'y': 'Intensity',
             },
-                            title='Intensity (log scale)')
-
-        self.figures.append(PlotlyFigure(label="Log Plot", index=1, figure=line_log.to_plotly_json()))
-        self.figures.append(PlotlyFigure(label="Linear Plot", index=2, figure=line_linear.to_plotly_json()))
+            title='Intensity (log scale)',
+        )
+        self.figures.extend([
+            PlotlyFigure(
+                label="Log Plot",
+                index=1,
+                figure=line_log.to_plotly_json(),
+            ),
+            PlotlyFigure(
+                label="Linear Plot",
+                index=2,
+                figure=line_linear.to_plotly_json(),
+            ),
+        ])
 
 
 m_package.__init_metainfo__()
