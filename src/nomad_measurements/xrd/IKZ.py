@@ -326,3 +326,82 @@ class RASXfile(object):
             return time.mktime(parsed_time)
         else:
             return parsed_time
+
+
+class BRMLfile(object):
+    def __init__(self, path, exp_nbr=0, encoding="utf-8", verbose=True):
+        self.path = path
+        with zipfile.ZipFile(path, 'r') as fh:
+            experiment = "Experiment%i"%exp_nbr
+            datacontainer = "%s/DataContainer.xml"%experiment
+
+            with fh.open(datacontainer, "r") as xml:
+                data = xmltodict.parse(xml.read(), encoding=encoding)
+            rawlist = data["DataContainer"]["RawDataReferenceList"]["string"]
+            if not isinstance(rawlist, list):
+                rawlist = [rawlist]
+
+            self.data = collections.defaultdict(list)
+            self.motors = self.data # collections.defaultdict(list)
+            for i, rawpath in enumerate(rawlist):
+                if verbose:
+                    if not i:
+                        print("Loading frame %i"%i, end="")
+                    else:
+                        print(", %i"%i, end="")
+                with fh.open(rawpath, "r") as xml:
+                    data = xmltodict.parse(xml.read(), encoding=encoding)
+                dataroute = data["RawData"]["DataRoutes"]["DataRoute"]
+                scaninfo = dataroute["ScanInformation"]
+                nsteps = int(scaninfo["MeasurementPoints"])
+                if nsteps==1:
+                    rawdata = np.array(dataroute["Datum"].split(","))
+                elif nsteps>1:
+                    rawdata = np.array([d.split(",") for d in dataroute["Datum"]])
+
+                rawdata = rawdata.astype(float).T
+                rdv = dataroute["DataViews"]["RawDataView"]
+                for view in rdv:
+                    viewtype = view["@xsi:type"]
+                    vstart = int(view["@Start"])
+                    vlen = int(view["@Length"])
+                    if viewtype=="FixedRawDataView":
+                        vname = view["@LogicName"]
+                        self.data[vname].append(rawdata[vstart:(vstart+vlen)])
+                    elif viewtype=="RecordedRawDataView":
+                        vname = view["Recording"]["@LogicName"]
+                        self.data[vname].append(rawdata[vstart:(vstart+vlen)])
+                        
+                self.data["ScanName"].append(scaninfo["@ScanName"])
+                self.data["TimePerStep"].append(scaninfo["TimePerStep"])
+                self.data["TimePerStepEffective"].append(scaninfo["TimePerStepEffective"])
+                self.data["ScanMode"].append(scaninfo["ScanMode"])
+                
+                scanaxes = scaninfo["ScanAxes"]["ScanAxisInfo"]
+                if not isinstance(scanaxes, list):
+                    scanaxes = [scanaxes]
+                for axis in scanaxes:
+                    aname = axis["@AxisName"]
+                    aunit = axis["Unit"]["@Base"]
+                    aref = float(axis["Reference"])
+                    astart = float(axis["Start"]) + aref
+                    astop = float(axis["Stop"]) + aref
+                    astep = float(axis["Increment"])
+                    nint = int(round(abs(astop-astart)/astep))
+                    self.data[aname].append(np.linspace(astart, astop, nint+1))
+
+                drives = data["RawData"]["FixedInformation"]["Drives"]["InfoData"]
+                for axis in drives:
+                    aname = axis["@LogicName"]
+                    apos = float(axis["Position"]["@Value"])
+                    self.motors[aname].append(apos)
+            
+            
+            for key in self.data:
+                self.data[key] = np.array(self.data[key]).squeeze()
+                if not self.data[key].shape:
+                    self.data[key] = self.data[key].item()
+            for key in self.motors:
+                self.motors[key] = np.array(self.motors[key]).squeeze()
+                if not self.motors[key].shape:
+                    self.motors[key] = self.motors[key].item()
