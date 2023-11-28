@@ -297,7 +297,7 @@ def read_nexus_xrd(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
     Function for reading X-ray diffraction data using the NeXus reader.
 
     Args:
-        file_path (str): The path to the `.xrdml` file.
+        file_path (str): The path to the xrd file.
         logger (BoundLogger): A structlog logger.
 
     Returns:
