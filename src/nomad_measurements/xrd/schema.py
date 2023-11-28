@@ -19,6 +19,7 @@ from typing import (
     TYPE_CHECKING,
     Dict,
     Any,
+    Callable,
 )
 import numpy as np
 import plotly.express as px
@@ -61,9 +62,7 @@ from nomad.datamodel.metainfo.plot import (
 from nomad_measurements import (
     NOMADMeasurementsCategory,
 )
-from nomad_measurements.xrd.readers import (
-    read_xrd,
-)
+from nomad_measurements.xrd import readers
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -415,6 +414,19 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         component=ELNComponentEnum.EnumEditQuantity,
     )
 
+    def get_read_write_functions(self) -> tuple[Callable, Callable]:
+        '''
+        Method for getting the correct read and write functions for the current data file.
+
+        Returns:
+            tuple[Callable, Callable]: The read, write functions.
+        '''
+        if self.data_file.endswith('.rasx'):
+            return readers.read_rigaku_rasx, self.write_xrd_data
+        if self.data_file.endswith('.xrdml'):
+            return readers.read_panalytical_xrdml, self.write_xrd_data
+        return None, None
+
     def write_xrd_data(
             self,
             xrd_dict: Dict[str, Any],
@@ -468,6 +480,22 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         self.xrd_settings = xrd_settings
         self.samples = [sample]
 
+    def write_nx_xrd(
+            self,
+            xrd_dict: Dict[str, Any],
+            archive: 'EntryArchive',
+            logger: 'BoundLogger',
+        ) -> None:
+        '''
+        Write method for populating the `ELNXRayDiffraction` section from a NeXus dict.
+
+        Args:
+            xrd_dict (Dict[str, Any]): A dictionary with the XRD data.
+            archive (EntryArchive): The archive containing the section.
+            logger (BoundLogger): A structlog logger.
+        '''
+        raise NotImplementedError
+
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         '''
         The normalize function of the `ELNXRayDiffraction` section.
@@ -478,9 +506,14 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             logger (BoundLogger): A structlog logger.
         '''
         if not self.results and self.data_file is not None:
+            read_function, write_function = self.get_read_write_functions()
+            if read_function is None or write_function is None:
+                logger.warn(
+                    f'No compatible reader found for the file: "{self.data_file}".'
+                )
             with archive.m_context.raw_file(self.data_file) as file:
-                xrd_dict = read_xrd(file.name, logger)
-            self.write_xrd_data(xrd_dict, archive, logger)
+                xrd_dict = read_function(file.name, logger)
+            write_function(xrd_dict, archive, logger)
         super().normalize(archive, logger)
 
         if not self.results:

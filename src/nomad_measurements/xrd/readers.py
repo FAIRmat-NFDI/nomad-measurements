@@ -292,6 +292,20 @@ def read_bruker_brml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
     return output
 
 
+def read_nexus_xrd(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
+    '''
+    Function for reading X-ray diffraction data using the NeXus reader.
+
+    Args:
+        file_path (str): The path to the `.xrdml` file.
+        logger (BoundLogger): A structlog logger.
+
+    Returns:
+        Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
+    '''
+    raise NotImplementedError
+
+
 def read_xrd(file_path: str, logger: BoundLogger) -> Dict[str, Any]:
     '''
     Function for reading an XRD file.
