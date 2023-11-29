@@ -482,6 +482,10 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
                 xrd_dict = read_xrd(file.name, logger)
             self.write_xrd_data(xrd_dict, archive, logger)
         super().normalize(archive, logger)
+
+        if not self.results:
+            return
+
         line_linear = px.line(
             x=self.results[0].two_theta,
             y=self.results[0].intensity,
