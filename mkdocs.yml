@@ -1,0 +1,50 @@
+site_name: Documentation
+site_description: |
+  The documentation for NOMAD pluging nomad-measurements.
+site_author: The NOMAD Authors
+nav:
+  - Home: index.md
+  - Explanation: explanation/explanation.md
+  - How-To Guides:
+    - Use this Plugin: how_to/use_this_plugin.md
+  - References: reference/references.md
+  - Tutorials: tutorial/tutorial.md
+theme:
+  name: material
+  palette:
+    primary: '#2A4CDF'
+    accent: '#008A67'
+  font:
+    text: 'Titillium Web'
+  logo: assets/nomad-logo.png
+  favicon: assets/favicon.png
+  features:
+    - navigation.instant
+  custom_dir: docs/theme
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - toc:
+      permalink: True
+  - pymdownx.arithmatex:
+      generic: true
+  - attr_list
+  - mkdocs-click
+  - pymdownx.extra
+extra:
+  generator: false
+  homepage: https://nomad-lab.eu
+use_directory_urls: false
+extra_css:
+  - stylesheets/extra.css
+extra_javascript:
+  - javascript.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
