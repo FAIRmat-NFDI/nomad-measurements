@@ -4,11 +4,11 @@ site_description: |
 site_author: The NOMAD Authors
 nav:
   - Home: index.md
-  - Explanation: explanation.md
+  - Explanation: explanation/explanation.md
   - How-To Guides:
     - Use this Plugin: how_to/use_this_plugin.md
-  - References: references.md
-  - Tutorials: tutorial.md
+  - References: reference/references.md
+  - Tutorials: tutorial/tutorial.md
 theme:
   name: material
   palette:
