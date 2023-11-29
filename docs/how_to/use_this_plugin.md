@@ -20,4 +20,4 @@ plugins:
   options:
     schemas/nomad_measurements/xrd:
       python_package: nomad_measurements.xrd
- ```
+```
