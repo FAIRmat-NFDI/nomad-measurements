@@ -59,6 +59,7 @@ from nomad.datamodel.metainfo.plot import (
     PlotSection,
     PlotlyFigure,
 )
+from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
 from pynxtools.dataconverter.template import Template
 from nomad_measurements import (
     NOMADMeasurementsCategory,
@@ -75,6 +76,24 @@ if TYPE_CHECKING:
     import pint
 
 m_package = Package(name='nomad_xrd')
+
+
+def handle_nexus_subsection(xrd_template, nexus_out,nxdl_name: str, archive, logger):
+    """
+    """
+    if nexus_out:
+        if not nexus_out.endswith('.nxs'):
+            nexus_out = nexus_out + ".nxs"
+        populate_nexus_subsection(template=xrd_template, 
+                                  app_def=nxdl_name, 
+                                  archive=archive,
+                                  logger=logger, 
+                                  output_file_path=nexus_out,
+                                  write_in_memory=False,)
+    else:
+        populate_nexus_subsection(template=xrd_template, app_def=nxdl_name, archive=archive,
+                                logger=logger, output_file_path=nexus_out,
+                                write_in_memory=True)
 
 
 def calculate_two_theta_or_q(
@@ -414,6 +433,7 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
     )
+
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
         '''
