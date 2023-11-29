@@ -32,25 +32,6 @@ from pynxtools.dataconverter.template import Template
 from nomad_measurements.xrd.IKZ import RASXfile, BRMLfile
 
 
-def read_panalytical_xrdml_by_nx(file, archive: 'EntryArchive')->Template:
-    """Read panalytical xrdml file with nexus reader.
-
-    Parameters
-    ----------
-    file : str
-        Raw input file name.
-    archive : EntryArchive
-        Nomad archive.
-    """
-    nxdl_name = 'NXxrd_pan'
-    raw_dir = archive.m_context.raw_path()
-    xrd_template = transfer_data_into_template(nxdl_name=nxdl_name, 
-                                               input_file=os.path.join(raw_dir, 
-                                                                       file), 
-                                               reader='xrd')
-    return xrd_template
-
-
 def read_panalytical_xrdml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
     '''
     Function for reading the X-ray diffraction data in a Panalytical `.xrdml` file.
@@ -314,18 +295,23 @@ def read_bruker_brml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
     return output
 
 
-def read_nexus_xrd(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
-    '''
-    Function for reading X-ray diffraction data using the NeXus reader.
+def read_nexus_xrd(file_path: str, 
+                   logger: BoundLogger=None) -> Dict[str, Any]:
+    '''Read panalytical xrdml file with nexus reader.
 
-    Args:
-        file_path (str): The path to the xrd file.
-        logger (BoundLogger): A structlog logger.
-
-    Returns:
-        Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
+    Parameters
+    ----------
+    file : str
+        Raw input file name.
+    logger: 'BoundLogger'
+        Nomad logger.
     '''
-    raise NotImplementedError
+    nxdl_name = 'NXxrd_pan'
+    xrd_template = transfer_data_into_template(nxdl_name=nxdl_name,
+                                               input_file=file_path,
+                                               reader='xrd',
+                                               logger=logger)
+    return xrd_template
 
 
 def read_xrd(file_path: str, logger: BoundLogger) -> Dict[str, Any]:

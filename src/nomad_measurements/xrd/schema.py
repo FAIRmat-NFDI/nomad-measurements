@@ -78,12 +78,13 @@ if TYPE_CHECKING:
 m_package = Package(name='nomad_xrd')
 
 
-def handle_nexus_subsection(xrd_template, nexus_out,nxdl_name: str, archive, logger):
-    """
-    """
+def handle_nexus_subsection(xrd_template, nexus_out, archive, logger):
+    '''
+    '''
+    nxdl_name = 'NXxrd_pan'
     if nexus_out:
         if not nexus_out.endswith('.nxs'):
-            nexus_out = nexus_out + ".nxs"
+            nexus_out = nexus_out + '.nxs'
         populate_nexus_subsection(template=xrd_template, 
                                   app_def=nxdl_name, 
                                   archive=archive,
@@ -426,6 +427,15 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             component=ELNComponentEnum.FileEditQuantity,
         ),
     )
+    nexus_output = Quantity(
+        type=str,
+        description='Output file containing data according to nexus standard.',
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.FileEditQuantity,
+        ),
+        default='output.nxs'
+    )
+
     measurement_identifiers = SubSection(
         section_def=ReadableIdentifiers,
     )
@@ -445,7 +455,7 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         if self.data_file.endswith('.rasx'):
             return readers.read_rigaku_rasx, self.write_xrd_data
         if self.data_file.endswith('.xrdml'):
-            return readers.read_panalytical_xrdml, self.write_xrd_data
+            return readers.read_nexus_xrd, self.write_nx_xrd
         return None, None
 
     def write_xrd_data(
@@ -516,26 +526,65 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             logger (BoundLogger): A structlog logger.
         '''
         result = XRDResult(
-            intensity=xrd_dict.get("/ENTRY[entry]/DATA[q_plot]/intensity", None),
-            two_theta=xrd_dict.get("/ENTRY[entry]/2theta_plot/two_theta", None),
-            omega=xrd_dict.get("/ENTRY[entry]/2theta_plot/omega",None),
-            chi=xrd_dict.get("/ENTRY[entry]/2theta_plot/chi", None),
-            phi=xrd_dict.get("/ENTRY[entry]/2theta_plot/omega", None),
-            scan_axis=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis", None),
-            integration_time=xrd_dict.get("/ENTRY[entry]/COLLECTION[collection]/count_time", None),
+            intensity=xrd_dict.get(
+                '/ENTRY[entry]/DATA[q_plot]/intensity',
+                None,
+            ),
+            two_theta=xrd_dict.get(
+                '/ENTRY[entry]/2theta_plot/two_theta',
+                None,
+            ),
+            omega=xrd_dict.get(
+                '/ENTRY[entry]/2theta_plot/omega',
+                None,
+            ),
+            chi=xrd_dict.get(
+                '/ENTRY[entry]/2theta_plot/chi',
+                None),
+            phi=xrd_dict.get(
+                '/ENTRY[entry]/2theta_plot/omega',
+                None,
+            ),
+            scan_axis=xrd_dict.get(
+                '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis',
+                None,
+            ),
+            integration_time=xrd_dict.get(
+                '/ENTRY[entry]/COLLECTION[collection]/count_time',
+                None
+            ),
         )
         result.normalize(archive, logger)
 
         source = XRayTubeSource(
-            xray_tube_material=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material", 
-                                            None),
-            kalpha_one=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one", None),
-            kalpha_two=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two", None),
-            ratio_kalphatwo_kalphaone=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone", 
-                                                   None),
-            kbeta=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta", None),
-            xray_tube_voltage=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage", None),
-            xray_tube_current=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current", None),
+            xray_tube_material=xrd_dict.get(
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material',
+                None,
+            ),
+            kalpha_one=xrd_dict.get(
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one', 
+                None,
+            ),
+            kalpha_two=xrd_dict.get(
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two',
+                None,
+                ),
+            ratio_kalphatwo_kalphaone=xrd_dict.get(
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone', 
+                None,
+                ),
+            kbeta=xrd_dict.get(
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta',
+                None,
+            ),
+            xray_tube_voltage=xrd_dict.get(
+                'ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage',
+                None
+            ),
+            xray_tube_current=xrd_dict.get(
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current',
+                None,
+            ),
         )
         source.normalize(archive, logger)
 
@@ -545,7 +594,10 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         xrd_settings.normalize(archive, logger)
 
         sample = CompositeSystemReference(
-            lab_id=xrd_dict.get("/ENTRY[entry]/SAMPLE[sample]/sample_id", None),
+            lab_id=xrd_dict.get(
+                '/ENTRY[entry]/SAMPLE[sample]/sample_id', 
+                None,
+                ),
         )
         sample.normalize(archive, logger)
 
@@ -608,5 +660,10 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             ),
         ])
 
+        # if reads by nexus reader.
+        if isinstance(xrd_dict, Template):
+            handle_nexus_subsection(xrd_dict,
+                                    self.nexus_output,
+                                    archive, logger)
 
 m_package.__init_metainfo__()
