@@ -90,11 +90,12 @@ def handle_nexus_subsection(xrd_template, nexus_out, archive, logger):
                                   archive=archive,
                                   logger=logger, 
                                   output_file_path=nexus_out,
-                                  write_in_memory=False,)
+                                  on_temp_file=False)
     else:
-        populate_nexus_subsection(template=xrd_template, app_def=nxdl_name, archive=archive,
-                                logger=logger, output_file_path=nexus_out,
-                                write_in_memory=True)
+        populate_nexus_subsection(template=xrd_template, 
+                                  app_def=nxdl_name, archive=archive,
+                                  logger=logger, output_file_path=nexus_out,
+                                  on_temp_file=True)
 
 
 def calculate_two_theta_or_q(
