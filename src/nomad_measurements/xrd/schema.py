@@ -21,6 +21,7 @@ from typing import (
     Any,
     Callable,
 )
+import os
 import numpy as np
 import plotly.express as px
 
@@ -58,7 +59,7 @@ from nomad.datamodel.metainfo.plot import (
     PlotSection,
     PlotlyFigure,
 )
-
+from pynxtools.dataconverter.template import Template
 from nomad_measurements import (
     NOMADMeasurementsCategory,
 )
@@ -482,19 +483,55 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
 
     def write_nx_xrd(
             self,
-            xrd_dict: Dict[str, Any],
+            xrd_dict: Template,  # Template inherites dict and acts like dict.
             archive: 'EntryArchive',
             logger: 'BoundLogger',
         ) -> None:
         '''
-        Write method for populating the `ELNXRayDiffraction` section from a NeXus dict.
+        Populate `ELNXRayDiffraction` section from a NeXus Template.
 
         Args:
             xrd_dict (Dict[str, Any]): A dictionary with the XRD data.
             archive (EntryArchive): The archive containing the section.
             logger (BoundLogger): A structlog logger.
         '''
-        raise NotImplementedError
+        result = XRDResult(
+            intensity=xrd_dict.get("/ENTRY[entry]/DATA[q_plot]/intensity", None),
+            two_theta=xrd_dict.get("/ENTRY[entry]/2theta_plot/two_theta", None),
+            omega=xrd_dict.get("/ENTRY[entry]/2theta_plot/omega",None),
+            chi=xrd_dict.get("/ENTRY[entry]/2theta_plot/chi", None),
+            phi=xrd_dict.get("/ENTRY[entry]/2theta_plot/omega", None),
+            scan_axis=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis", None),
+            integration_time=xrd_dict.get("/ENTRY[entry]/COLLECTION[collection]/count_time", None),
+        )
+        result.normalize(archive, logger)
+
+        source = XRayTubeSource(
+            xray_tube_material=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material", 
+                                            None),
+            kalpha_one=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one", None),
+            kalpha_two=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two", None),
+            ratio_kalphatwo_kalphaone=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone", 
+                                                   None),
+            kbeta=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta", None),
+            xray_tube_voltage=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage", None),
+            xray_tube_current=xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current", None),
+        )
+        source.normalize(archive, logger)
+
+        xrd_settings = XRDSettings(
+            source=source
+        )
+        xrd_settings.normalize(archive, logger)
+
+        sample = CompositeSystemReference(
+            lab_id=xrd_dict.get("/ENTRY[entry]/SAMPLE[sample]/sample_id", None),
+        )
+        sample.normalize(archive, logger)
+
+        self.results = [result]
+        self.xrd_settings = xrd_settings
+        self.samples = [sample]
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         '''

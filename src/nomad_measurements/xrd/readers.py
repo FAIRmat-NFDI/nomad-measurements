@@ -25,8 +25,30 @@ import numpy as np
 from structlog.stdlib import (
     BoundLogger,
 )
+from nomad.datamodel.datamodel import EntryArchive
 from nomad.units import ureg
+from pynxtools.dataconverter.convert import transfer_data_into_template
+from pynxtools.dataconverter.template import Template
 from nomad_measurements.xrd.IKZ import RASXfile, BRMLfile
+
+
+def read_panalytical_xrdml_by_nx(file, archive: 'EntryArchive')->Template:
+    """Read panalytical xrdml file with nexus reader.
+
+    Parameters
+    ----------
+    file : str
+        Raw input file name.
+    archive : EntryArchive
+        Nomad archive.
+    """
+    nxdl_name = 'NXxrd_pan'
+    raw_dir = archive.m_context.raw_path()
+    xrd_template = transfer_data_into_template(nxdl_name=nxdl_name, 
+                                               input_file=os.path.join(raw_dir, 
+                                                                       file), 
+                                               reader='xrd')
+    return xrd_template
 
 
 def read_panalytical_xrdml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
