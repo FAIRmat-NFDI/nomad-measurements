@@ -26,7 +26,7 @@ from structlog.stdlib import (
     BoundLogger,
 )
 from nomad.units import ureg
-from nomad_measurements.xrd.IKZ import RASXfile
+from nomad_measurements.xrd.IKZ import RASXfile, BRMLfile
 
 
 def read_panalytical_xrdml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
@@ -233,6 +233,67 @@ def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
         },
     }
 
+
+def read_bruker_brml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
+    '''
+    Reads .brml files from Bruker instruments
+        - reader is based on IKZ submodule
+    Args:
+        file_path (string): absolute path of the file.
+        logger (BoundLogger): A structlog logger for propagating errors and warnings.
+
+    Returns:
+        Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
+    '''
+    reader = BRMLfile(file_path, verbose=False)
+    data = reader.data
+    meta_info = reader.meta_info
+
+    counter_key = []
+    for k in data.keys():
+        if 'counter' in k.lower():
+            counter_key.append(k)
+    if len(counter_key) > 1:
+        raise ValueError("More than one counters found.")
+
+    for key in ['Theta','Chi','Phi']:
+        # theta and omega are synonymous in .brml
+        if key not in data:
+            raise ValueError(f"Missing data for {key}.")
+        if not isinstance(data[key]['Value'],np.ndarray):
+            data[key]['Value'] = np.array([data[key]['Value']])
+
+    source = meta_info['tube']
+
+    output = {
+        'detector': data[counter_key[0]],
+        '2Theta': data['TwoTheta']['Value'] * ureg(data['TwoTheta']['Unit']),
+        'Omega': data['Theta']['Value'] * ureg(data['Theta']['Unit']), 
+        # theta and omega are synonymous in .brml
+        'Chi': data['Chi']['Value'] * ureg(data['Chi']['Unit']),
+        'Phi': data['Phi']['Value'] * ureg(data['Phi']['Unit']),
+        'countTime': None,
+        'metadata': {
+            'sample_id': None,
+            'scan_axis': data['ScanName'],
+            'source': {
+                'anode_material': source['TubeMaterial'],
+                'kAlpha1': (float(source['WaveLengthAlpha1']['@Value'])
+                    * ureg(source['WaveLengthAlpha1']['@Unit'])),
+                'kAlpha2': (float(source['WaveLengthAlpha2']['@Value'])
+                    * ureg(source['WaveLengthAlpha2']['@Unit'])),
+                'kBeta': (float(source['WaveLengthBeta']['@Value'])
+                    * ureg(source['WaveLengthBeta']['@Unit'])),
+                'ratioKAlpha2KAlpha1': (float(source['WaveLengthRatio']['@Value'])
+                    * ureg(source['WaveLengthRatio']['@Unit'])),
+                'voltage': (float(source['Generator']['Voltage']['@Value'])
+                    * ureg(source['Generator']['Voltage']['@Unit'])),
+                'current': (float(source['Generator']['Current']['@Value']))
+                    * ureg(source['Generator']['Current']['@Unit']),
+            },
+        },
+    }
+
     return output
 
 
@@ -253,4 +314,6 @@ def read_xrd(file_path: str, logger: BoundLogger) -> Dict[str, Any]:
         return read_panalytical_xrdml(file_path, logger)
     if file_path.endswith('.rasx'):
         return read_rigaku_rasx(file_path, logger)
+    if file_path.endswith('.brml'):
+        return read_bruker_brml(file_path,logger)
     raise ValueError(f'Unsupported file format: {file_path.split(".")[-1]}')
