@@ -388,13 +388,20 @@ class BRMLfile(object):
                     astop = float(axis["Stop"]) + aref
                     astep = float(axis["Increment"])
                     nint = int(round(abs(astop-astart)/astep))
-                    self.data[aname].append(np.linspace(astart, astop, nint+1))
+                    adata = {}
+                    adata["Value"] = np.linspace(astart, astop, nint+1)
+                    adata["Unit"] = aunit.lower()
+                    self.data[aname].append(adata)
 
                 drives = data["RawData"]["FixedInformation"]["Drives"]["InfoData"]
                 for axis in drives:
                     aname = axis["@LogicName"]
                     apos = float(axis["Position"]["@Value"])
-                    self.motors[aname].append(apos)
+                    aunit = axis["Position"]["@Unit"]
+                    adata = {}
+                    adata["Value"] = apos
+                    adata["Unit"] = aunit.lower()
+                    self.motors[aname].append(adata)
             
                 # <start>: not originally part of Carsten's code
                 self.meta_info = collections.defaultdict(list)
