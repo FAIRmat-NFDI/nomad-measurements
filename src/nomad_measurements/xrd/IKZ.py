@@ -396,6 +396,21 @@ class BRMLfile(object):
                     apos = float(axis["Position"]["@Value"])
                     self.motors[aname].append(apos)
             
+                # <start>: not originally part of Carsten's code
+                self.meta_info = collections.defaultdict(list)
+
+                meta_info_tube = None
+                mounted_optics_info = (data["RawData"]["FixedInformation"]["Instrument"]
+                    ["PrimaryTracks"]["TrackInfoData"]["MountedOptics"]["InfoData"])
+                for component in mounted_optics_info:
+                    if component["@xsi:type"] == "TubeMountInfoData":
+                        meta_info_tube = component["Tube"]
+                
+                if meta_info_tube is not None:
+                    self.meta_info["tube"] = meta_info_tube
+                
+                self.meta_info[""]
+                # <end>: not originally part of Carsten's code
             
             for key in self.data:
                 self.data[key] = np.array(self.data[key]).squeeze()
