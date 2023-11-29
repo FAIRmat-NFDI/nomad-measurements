@@ -1,23 +1,44 @@
 [build-system]
-requires = [ "setuptools>=61.0.0",]
+requires = [
+    "setuptools>=61.0.0",
+    "setuptools-scm>=8.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "nomad_measurements"
-version = "0.0.1"
-description = "A plugin for NOMAD"
+name = "nomad-measurements"
+dynamic = ["version"]
+description = "A plugin for NOMAD containing base sections for material processing."
 readme = "README.md"
+authors = [
+    { name = "Hampus Näsström", email = 'hampus.naesstroem@physik.hu-berlin.de' },
+    { name = "Andrea Albino", email = 'andrea.albino@physik.hu-berlin.de' },
+    { name = "Sebastian Brückner", email = 'sebastian.brueckner@ikz-berlin.de' },
+    { name = "Sarthak Kapoor", email = 'sarthak.kapoor@physik.hu-berlin.de' },
+]
 requires-python = ">=3.9"
-classifiers = [ "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only", "Programming Language :: Python :: 3.9",]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "License :: OSI Approved :: Apache Software License",
+]
 dependencies = [
     "nomad-lab>=1.2.1.dev,<1.2.2",
     "pytest",
     "structlog==22.3.0",
-    "xrayutilities>=1.7.4",
 ]
 
 [project.license]
 file = "LICENSE"
 
+[project.urls]
+"Homepage" = "https://github.com/FAIRmat-NFDI/nomad-measurements"
+"Bug Tracker" = "https://github.com/FAIRmat-NFDI/nomad-measurements/issues"
+
 [tool.setuptools.packages.find]
-where = [ "src",]
+where = [
+    "src",
+]
+
+[tool.setuptools_scm]
