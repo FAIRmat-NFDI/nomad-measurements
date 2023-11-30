@@ -653,12 +653,12 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         )
         self.figures.extend([
             PlotlyFigure(
-                label="Log Plot",
+                label='Log Plot',
                 index=1,
                 figure=line_log.to_plotly_json(),
             ),
             PlotlyFigure(
-                label="Linear Plot",
+                label='Linear Plot',
                 index=2,
                 figure=line_linear.to_plotly_json(),
             ),
