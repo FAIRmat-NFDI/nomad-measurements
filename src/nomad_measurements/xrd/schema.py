@@ -93,8 +93,10 @@ def handle_nexus_subsection(xrd_template, nexus_out, archive, logger):
                                   on_temp_file=False)
     else:
         populate_nexus_subsection(template=xrd_template, 
-                                  app_def=nxdl_name, archive=archive,
-                                  logger=logger, output_file_path=nexus_out,
+                                  app_def=nxdl_name, 
+                                  archive=archive,
+                                  logger=logger, 
+                                  output_file_path=nexus_out,
                                   on_temp_file=True)
 
 
@@ -528,7 +530,7 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         '''
         result = XRDResult(
             intensity=xrd_dict.get(
-                '/ENTRY[entry]/DATA[q_plot]/intensity',
+                '/ENTRY[entry]/2theta_plot/intensity',
                 None,
             ),
             two_theta=xrd_dict.get(
@@ -543,7 +545,7 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
                 '/ENTRY[entry]/2theta_plot/chi',
                 None),
             phi=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/omega',
+                '/ENTRY[entry]/2theta_plot/phi',
                 None,
             ),
             scan_axis=xrd_dict.get(
@@ -615,6 +617,7 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             normalized.
             logger (BoundLogger): A structlog logger.
         '''
+        xrd_dict = None
         if not self.results and self.data_file is not None:
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:
@@ -662,7 +665,7 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         ])
 
         # If reads by nexus reader.
-        if isinstance(xrd_dict, Template):
+        if xrd_dict is not None and isinstance(xrd_dict, Template):
             handle_nexus_subsection(xrd_dict,
                                     self.nexus_output,
                                     archive, logger)
