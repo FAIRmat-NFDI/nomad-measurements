@@ -74,7 +74,7 @@ if TYPE_CHECKING:
     )
     import pint
 
-m_package = Package(name='nomad-measurements-xrd')
+m_package = Package(name='nomad_xrd')
 
 
 def calculate_two_theta_or_q(
