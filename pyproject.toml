@@ -24,7 +24,7 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = [
-    "nomad-lab>=1.2.1.dev,<1.2.2",
+    "nomad-lab>=1.2.1",
     "pytest",
     "structlog==22.3.0",
 ]
