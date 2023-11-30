@@ -661,7 +661,7 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             ),
         ])
 
-        # if reads by nexus reader.
+        # If reads by nexus reader.
         if isinstance(xrd_dict, Template):
             handle_nexus_subsection(xrd_dict,
                                     self.nexus_output,

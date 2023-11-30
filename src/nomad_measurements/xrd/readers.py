@@ -309,8 +309,7 @@ def read_nexus_xrd(file_path: str,
     nxdl_name = 'NXxrd_pan'
     xrd_template = transfer_data_into_template(nxdl_name=nxdl_name,
                                                input_file=file_path,
-                                               reader='xrd',
-                                               logger=logger)
+                                               reader='xrd')
     return xrd_template
 
 
