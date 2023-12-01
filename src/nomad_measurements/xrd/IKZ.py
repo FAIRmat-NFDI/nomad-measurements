@@ -338,6 +338,7 @@ class BRMLfile(object):
             with fh.open(datacontainer, "r") as xml:
                 data = xmltodict.parse(xml.read(), encoding=encoding)
             rawlist = data["DataContainer"]["RawDataReferenceList"]["string"]
+            # rawlist contains the reference to all the raw files (multiple in case of RSM)
             if not isinstance(rawlist, list):
                 rawlist = [rawlist]
 
@@ -350,6 +351,7 @@ class BRMLfile(object):
                     else:
                         print(", %i"%i, end="")
                 with fh.open(rawpath, "r") as xml:
+                    # entering RawData<int>.xml
                     data = xmltodict.parse(xml.read(), encoding=encoding)
                 dataroute = data["RawData"]["DataRoutes"]["DataRoute"]
                 scaninfo = dataroute["ScanInformation"]
@@ -388,7 +390,7 @@ class BRMLfile(object):
                     astop = float(axis["Stop"]) + aref
                     astep = float(axis["Increment"])
                     nint = int(round(abs(astop-astart)/astep))
-                    adata = {}
+                    adata = {} # not originally part of Carsten's code
                     adata["Value"] = np.linspace(astart, astop, nint+1)
                     adata["Unit"] = aunit.lower()
                     self.data[aname].append(adata)
@@ -398,26 +400,22 @@ class BRMLfile(object):
                     aname = axis["@LogicName"]
                     apos = float(axis["Position"]["@Value"])
                     aunit = axis["Position"]["@Unit"]
-                    adata = {}
+                    adata = {} # not originally part of Carsten's code
                     adata["Value"] = apos
                     adata["Unit"] = aunit.lower()
                     self.motors[aname].append(adata)
             
-                # <start>: not originally part of Carsten's code
+                # (block starts) not originally part of Carsten's code
                 self.meta_info = collections.defaultdict(list)
-
                 meta_info_tube = None
                 mounted_optics_info = (data["RawData"]["FixedInformation"]["Instrument"]
                     ["PrimaryTracks"]["TrackInfoData"]["MountedOptics"]["InfoData"])
                 for component in mounted_optics_info:
                     if component["@xsi:type"] == "TubeMountInfoData":
                         meta_info_tube = component["Tube"]
-                
                 if meta_info_tube is not None:
                     self.meta_info["tube"] = meta_info_tube
-                
-                self.meta_info[""]
-                # <end>: not originally part of Carsten's code
+                # (block ends) not originally part of Carsten's code
             
             for key in self.data:
                 self.data[key] = np.array(self.data[key]).squeeze()
