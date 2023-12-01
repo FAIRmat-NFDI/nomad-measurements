@@ -295,21 +295,23 @@ def read_bruker_brml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
     return output
 
 
-def read_nexus_xrd(file_path: str, 
-                   logger: BoundLogger=None) -> Dict[str, Any]:
-    '''Read panalytical xrdml file with nexus reader.
+def read_nexus_xrd(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
+    '''
+    Function for reading the X-ray diffraction data in a Nexus file.
 
-    Parameters
-    ----------
-    file : str
-        Raw input file name.
-    logger: 'BoundLogger'
-        Nomad logger.
+    Args:
+        file_path (str): The path to the X-ray diffraction data file.
+        logger (BoundLogger, optional): A structlog logger. Defaults to None.
+
+    Returns:
+        Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
     '''
     nxdl_name = 'NXxrd_pan'
-    xrd_template = transfer_data_into_template(nxdl_name=nxdl_name,
-                                               input_file=file_path,
-                                               reader='xrd')
+    xrd_template = transfer_data_into_template(
+        nxdl_name=nxdl_name,
+        input_file=file_path,
+        reader='xrd',
+    )
     return xrd_template
 
 

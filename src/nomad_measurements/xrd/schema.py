@@ -65,6 +65,7 @@ from nomad_measurements import (
     NOMADMeasurementsCategory,
 )
 from nomad_measurements.xrd import readers
+from nomad_measurements.utils import merge_sections
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -78,26 +79,42 @@ if TYPE_CHECKING:
 m_package = Package(name='nomad_xrd')
 
 
-def handle_nexus_subsection(xrd_template, nexus_out, archive, logger):
+def handle_nexus_subsection(
+        xrd_template: Template,
+        nexus_out: str,
+        archive: 'EntryArchive',
+        logger: 'BoundLogger'
+    ):
     '''
+    Function for populating the NeXus section from the xrd_template.
+
+    Args:
+        xrd_template (Template): The xrd data in a NeXus Template.
+        nexus_out (str): The name of the optional NeXus output file.
+        archive (EntryArchive): The archive containing the section.
+        logger (BoundLogger): A structlog logger.
     '''
     nxdl_name = 'NXxrd_pan'
     if nexus_out:
         if not nexus_out.endswith('.nxs'):
             nexus_out = nexus_out + '.nxs'
-        populate_nexus_subsection(template=xrd_template, 
-                                  app_def=nxdl_name, 
-                                  archive=archive,
-                                  logger=logger, 
-                                  output_file_path=nexus_out,
-                                  on_temp_file=False)
+        populate_nexus_subsection(
+            template=xrd_template,
+            app_def=nxdl_name,
+            archive=archive,
+            logger=logger,
+            output_file_path=nexus_out,
+            on_temp_file=False,
+        )
     else:
-        populate_nexus_subsection(template=xrd_template, 
-                                  app_def=nxdl_name, 
-                                  archive=archive,
-                                  logger=logger, 
-                                  output_file_path=nexus_out,
-                                  on_temp_file=True)
+        populate_nexus_subsection(
+            template=xrd_template,
+            app_def=nxdl_name,
+            archive=archive,
+            logger=logger,
+            output_file_path=nexus_out,
+            on_temp_file=True,
+        )
 
 
 def calculate_two_theta_or_q(
@@ -164,7 +181,6 @@ class XRayTubeSource(ArchiveSection):
     xray_tube_material = Quantity(
         type=MEnum(sorted(['Cu', 'Cr', 'Mo', 'Fe', 'Ag', 'In', 'Ga'])),
         description='Type of the X-ray tube',
-        default='Cu',
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.EnumEditQuantity,
         ),
@@ -430,15 +446,6 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             component=ELNComponentEnum.FileEditQuantity,
         ),
     )
-    nexus_output = Quantity(
-        type=str,
-        description='Output file containing data according to nexus standard.',
-        a_eln=ELNAnnotation(
-            component=ELNComponentEnum.FileEditQuantity,
-        ),
-        default='output.nxs'
-    )
-
     measurement_identifiers = SubSection(
         section_def=ReadableIdentifiers,
     )
@@ -446,7 +453,14 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
     )
-
+    generate_nexus_file = Quantity(
+        type=bool,
+        description='Whether or not to generate a NeXus output file (if possible).',
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.BoolEditQuantity,
+            label='Generate NeXus file',
+        ),
+    )
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
         '''
@@ -510,13 +524,16 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         )
         sample.normalize(archive, logger)
 
-        self.results = [result]
-        self.xrd_settings = xrd_settings
-        self.samples = [sample]
+        xrd = ELNXRayDiffraction(
+            results = [result],
+            xrd_settings = xrd_settings,
+            samples = [sample],
+        )
+        merge_sections(self, xrd, logger)
 
     def write_nx_xrd(
             self,
-            xrd_dict: Template,  # Template inherites dict and acts like dict.
+            xrd_dict: Template,
             archive: 'EntryArchive',
             logger: 'BoundLogger',
         ) -> None:
@@ -604,9 +621,23 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         )
         sample.normalize(archive, logger)
 
-        self.results = [result]
-        self.xrd_settings = xrd_settings
-        self.samples = [sample]
+        xrd = ELNXRayDiffraction(
+            results = [result],
+            xrd_settings = xrd_settings,
+            samples = [sample],
+        )
+        merge_sections(self, xrd, logger)
+
+        nexus_output = None
+        if self.generate_nexus_file:
+            archive_name = archive.metadata.mainfile.split('.')[0]
+            nexus_output = f'{archive_name}_output.nxs'
+        handle_nexus_subsection(
+            xrd_dict,
+            nexus_output,
+            archive,
+            logger,
+        )
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         '''
@@ -617,8 +648,7 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             normalized.
             logger (BoundLogger): A structlog logger.
         '''
-        xrd_dict = None
-        if not self.results and self.data_file is not None:
+        if self.data_file is not None:
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:
                 logger.warn(
@@ -663,11 +693,5 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
                 figure=line_linear.to_plotly_json(),
             ),
         ])
-
-        # If reads by nexus reader.
-        if xrd_dict is not None and isinstance(xrd_dict, Template):
-            handle_nexus_subsection(xrd_dict,
-                                    self.nexus_output,
-                                    archive, logger)
 
 m_package.__init_metainfo__()
