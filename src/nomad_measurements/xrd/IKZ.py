@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 import collections
 import numpy as np
 import time
+import xmltodict
 from structlog.stdlib import (
     BoundLogger,
 )
