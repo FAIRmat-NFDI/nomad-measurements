@@ -175,26 +175,24 @@ def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
         Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
     '''
     reader = RASXfile(file_path, verbose=False)
-    data = reader.data
-    metainfo = reader.meta
-    p_data = reader.get_RSM()
+    data_shape = reader.data.shape
+    metainfo = reader.meta[0]
+    p_data = reader.get_1d_scan()
+    source = reader.get_source_info()
 
-    if not data.shape[0] == 1:
+    if not data_shape[0] == 1:
         if logger is not None:
             logger.warning(
                 '2D scan currently not supported. '
                 'Taking the data from the first line scan.'
             )
         for key, data in p_data.items():
-            if isinstance(data, np.ndarray) and data.ndim == 2:
-                p_data[key] = data[0,:].squeeze()
-
-        if not len(np.unique(p_data['Omega'])) == 1:
-            raise ValueError(
-                'Unexpected array of Omega angles. Should contain same value of angles.'
-            )
-        p_data['Omega'] = p_data['Omega'][0]
-    metainfo = metainfo[0]
+            if isinstance(data[0], np.ndarray) and data[0].ndim == 2:
+                p_data[key][0] = data[0][0,:].squeeze()
+                if len(np.unique(p_data[key][0])) == 1:
+                    # shrinking duplicate data populated by `RASXFile`
+                    first_val = p_data[key][0][0]
+                    p_data[key][0] = np.array([first_val])
 
     count_time = None
     if metainfo['ScanInformation']['Mode'].lower() == 'continuous':
@@ -208,34 +206,61 @@ def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
         )
         count_time = np.array([count_time]) * count_time_unit
 
-    axis = {}
-    for ax in ['Omega', 'Chi', 'Phi']:
-        if not isinstance(p_data[ax], np.ndarray):
-            axis[ax] = np.array([p_data[ax]])
-        else:
-            axis[ax] = p_data[ax]
-    source = metainfo['HardwareConfig']['xraygenerator']
+    scan_axis = metainfo['ScanInformation']['AxisName']
 
     output = {
-        'detector': p_data['Intensity'],
-        '2Theta': (
-            p_data[metainfo['ScanInformation']['AxisName']]
-            * ureg(reader.units[metainfo['ScanInformation']['AxisName']])
+        'detector': (
+            p_data['intensity'][0]
+            if p_data['intensity'] else None
         ),
-        'Omega': axis['Omega'] * ureg(reader.units['Omega']),
-        'Chi': axis['Chi'] * ureg(reader.units['Chi']),
-        'Phi': axis['Phi'] * ureg(reader.units['Phi']),
+        '2Theta': (
+            p_data[scan_axis][0] * ureg(p_data[scan_axis][1])
+            if p_data[scan_axis] else None
+        ),
+        'Omega': (
+            p_data['Omega_position'][0] * ureg(p_data['Omega_position'][1])
+            if p_data['Omega_position'] else None
+        ),
+        'Chi': (
+            p_data['Chi_position'][0] * ureg(p_data['Chi_position'][1])
+            if p_data['Chi_position'] else None
+        ),
+        'Phi': (
+            p_data['Phi_position'][0] * ureg(p_data['Phi_position'][1])
+            if p_data['Phi_position'] else None
+        ),
         'countTime': count_time,
         'metadata': {
             'sample_id': None,
-            'scan_axis': metainfo['ScanInformation']['AxisName'],
+            'scan_axis': scan_axis,
             'source': {
-                'anode_material': source['TargetName'],
-                'kAlpha1': source['WavelengthKalpha1']  * ureg('angstrom'),
-                'kAlpha2': source['WavelengthKalpha2']  * ureg('angstrom'),
-                'kBeta': source['WavelengthKbeta']    * ureg('angstrom'),
-                'voltage': source['Voltage'] * ureg(source['VoltageUnit']),
-                'current': source['Current'] * ureg(source['CurrentUnit']),
+                'anode_material': (
+                    source['TargetName'][0]
+                    if source['TargetName'] else None
+                ),
+                'kAlpha1': (
+                    source['WavelengthKalpha1'][0]
+                    * ureg(source['WavelengthKalpha1'][1])
+                    if source['WavelengthKalpha1'] else None
+                ),
+                'kAlpha2': (
+                    source['WavelengthKalpha2'][0]
+                    * ureg(source['WavelengthKalpha2'][1])
+                    if source['WavelengthKalpha2'] else None
+                ),
+                'kBeta': (
+                    source['WavelengthKbeta'][0]
+                    * ureg(source['WavelengthKbeta'][1])
+                    if source['WavelengthKbeta'] else None
+                ),
+                'voltage': (
+                    source['Voltage'][0] * ureg(source['Voltage'][1])
+                    if source['Voltage'] else None
+                ),
+                'current': (
+                    source['Current'][0] * ureg(source['Current'][1])
+                    if source['Current'] else None
+                ),
                 'ratioKAlpha2KAlpha1': None,
             },
         },

@@ -240,6 +240,8 @@ class RASXfile(object):
             ax_data = self.positions[axis]
             if not isinstance(ax_data,np.ndarray):
                 ax_data = np.array([ax_data])
+            if np.ndim(ax_data):
+                ax_data = ax_data[:,None] * np.ones_like(intensity)
             output[axis+"_position"] = [
                 ax_data,
                 self.units.get(axis,'deg'),
