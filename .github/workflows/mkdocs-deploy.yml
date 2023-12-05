@@ -10,22 +10,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
 
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install mkdocs mkdocs-material pymdown-extensions mkdocs-click
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mkdocs mkdocs-material pymdown-extensions mkdocs-click
 
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        deploy_branch: gh-pages  # The branch the built site will be pushed to
-        publish_dir: ./site     # The folder MkDocs generates the site to
+      - name: Build and deploy
+        run: |
+          mkdocs gh-deploy --force --remote-branch gh-pages
