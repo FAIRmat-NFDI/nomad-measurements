@@ -5,7 +5,7 @@
 
 # NOMAD's Measurements Plugin
 This is a plugin for [NOMAD](https://nomad-lab.eu) which contains base sections for
-material processing.
+materials science measurements.
 
 ## Getting started
 `nomad-measurements` can be installed from PyPI using `pip`:
@@ -13,14 +13,14 @@ material processing.
 pip install nomad-measurements
 ```
 ### Setting up your OASIS
-Read the [NOMAD plugin documentation](https://nomad-lab.eu/prod/v1/staging/docs/plugins/plugins.html#add-a-plugin-to-your-nomad) for all details on how to deploy the plugin on your NOMAD instance. 
+Read the [NOMAD plugin documentation](https://nomad-lab.eu/prod/v1/staging/docs/plugins/plugins.html#add-a-plugin-to-your-nomad) for all details on how to deploy the plugin on your NOMAD instance.
 
 You need to modify the ```nomad.yaml``` configuration file of your NOMAD instance.
-To include, for example, the XRD plugin you need to add the following lines: . 
+To include, for example, the XRD plugin you need to add the following lines: .
 
 ```yaml
 plugins:
-  include: 
+  include:
   - 'parsers/nomad_measurements/xrd'
   options:
     parsers/nomad_measurements/xrd:
