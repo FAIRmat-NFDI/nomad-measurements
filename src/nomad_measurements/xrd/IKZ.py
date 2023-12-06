@@ -233,13 +233,16 @@ class RASXfile(object):
         two_theta, intensity, _ = self.data.transpose(2,0,1).squeeze()
         output = collections.defaultdict(list)
         output['intensity'] = [intensity,'']
-        scan_axis = self.meta[0]["ScanInformation"]["AxisName"]
-        output[scan_axis] = [
+        scan_axis = None
+        scan_info = self.meta[0]('ScanInformation',None)
+        if scan_info:
+            scan_axis = scan_info.get('AxisName', None)
+        output['two_theta'] = [
             two_theta,
             self.units.get(scan_axis,'deg'),
         ]
 
-        for axis in ["Omega", "Chi", "Phi","TwoTheta"]:
+        for axis in ["Omega", "Chi", "Phi"]:
             if axis not in self.positions.keys():
                 continue
             ax_data = self.positions[axis]
@@ -273,7 +276,7 @@ class RASXfile(object):
 
     def get_source_info(self):
         '''
-        Collects meta information of the source along with associated units.
+        Collects meta information of the X-ray source along with associated units.
 
         Returns:
             Dict[str, Any]: Each dict item contains a list with numerical value

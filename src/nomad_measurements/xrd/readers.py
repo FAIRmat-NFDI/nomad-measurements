@@ -201,8 +201,8 @@ def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
             if p_data['intensity'] else None
         ),
         '2Theta': (
-            p_data[scan_axis][0] * ureg(p_data[scan_axis][1])
-            if p_data[scan_axis] else None
+            p_data['two_theta'][0] * ureg(p_data['two_theta'][1])
+            if p_data['two_theta'] else None
         ),
         'Omega': (
             p_data['Omega_position'][0] * ureg(p_data['Omega_position'][1])
