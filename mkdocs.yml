@@ -1,7 +1,9 @@
 site_name: Documentation
 site_description: |
-  The documentation for NOMAD pluging nomad-measurements.
+  The documentation for NOMAD plugin nomad-measurements.
 site_author: The NOMAD Authors
+repo_url: https://github.com/FAIRmat-NFDI/nomad-measurements
+
 nav:
   - Home: index.md
   - Explanation: explanation/explanation.md
@@ -9,6 +11,8 @@ nav:
     - Use this Plugin: how_to/use_this_plugin.md
   - References: reference/references.md
   - Tutorials: tutorial/tutorial.md
+plugins:
+ - search
 theme:
   name: material
   palette:
