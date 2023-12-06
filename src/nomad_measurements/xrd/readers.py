@@ -195,59 +195,39 @@ def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
 
         scan_axis = scan_info.get('AxisName',None)
 
+    def set_quantity(quantity_list):
+        '''
+        Sets the quantity based on whether value or/and unit are available.
+
+        Args:
+            quantity_list (List): Contains value at index 0 and unit at index 1.
+
+        Returns:
+            Any: Processed quantity with datatype depending on the value.
+        '''
+        if not quantity_list:
+            return None
+        if not quantity_list[1]:
+            return quantity_list[0]
+        return quantity_list[0] * ureg(quantity_list[1])
+
     output = {
-        'detector': (
-            p_data['intensity'][0]
-            if p_data['intensity'] else None
-        ),
-        '2Theta': (
-            p_data['two_theta'][0] * ureg(p_data['two_theta'][1])
-            if p_data['two_theta'] else None
-        ),
-        'Omega': (
-            p_data['Omega_position'][0] * ureg(p_data['Omega_position'][1])
-            if p_data['Omega_position'] else None
-        ),
-        'Chi': (
-            p_data['Chi_position'][0] * ureg(p_data['Chi_position'][1])
-            if p_data['Chi_position'] else None
-        ),
-        'Phi': (
-            p_data['Phi_position'][0] * ureg(p_data['Phi_position'][1])
-            if p_data['Phi_position'] else None
-        ),
+        'detector': set_quantity(p_data['intensity']),
+        '2Theta': set_quantity(p_data['two_theta']),
+        'Omega': set_quantity(p_data['Omega_position']),
+        'Chi': set_quantity(p_data['Chi_position']),
+        'Phi': set_quantity(p_data['Phi_position']),
         'countTime': count_time,
         'metadata': {
             'sample_id': None,
             'scan_axis': scan_axis,
             'source': {
-                'anode_material': (
-                    source['TargetName'][0]
-                    if source['TargetName'] else None
-                ),
-                'kAlpha1': (
-                    source['WavelengthKalpha1'][0]
-                    * ureg(source['WavelengthKalpha1'][1])
-                    if source['WavelengthKalpha1'] else None
-                ),
-                'kAlpha2': (
-                    source['WavelengthKalpha2'][0]
-                    * ureg(source['WavelengthKalpha2'][1])
-                    if source['WavelengthKalpha2'] else None
-                ),
-                'kBeta': (
-                    source['WavelengthKbeta'][0]
-                    * ureg(source['WavelengthKbeta'][1])
-                    if source['WavelengthKbeta'] else None
-                ),
-                'voltage': (
-                    source['Voltage'][0] * ureg(source['Voltage'][1])
-                    if source['Voltage'] else None
-                ),
-                'current': (
-                    source['Current'][0] * ureg(source['Current'][1])
-                    if source['Current'] else None
-                ),
+                'anode_material': set_quantity(source['TargetName']),
+                'kAlpha1': set_quantity(source['WavelengthKalpha1']),
+                'kAlpha2': set_quantity(source['WavelengthKalpha2']),
+                'kBeta': set_quantity(source['WavelengthKbeta']),
+                'voltage': set_quantity(source['Voltage']),
+                'current': set_quantity(source['Current']),
                 'ratioKAlpha2KAlpha1': None,
             },
         },
