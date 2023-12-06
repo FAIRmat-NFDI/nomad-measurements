@@ -210,6 +210,8 @@ class RASXfile(object):
                 continue
             axdata = self.positions[axis]
             if np.ndim(axdata):
+                # duplicate values to match dimensions of intensity
+                # useful when num_scans > 1
                 axdata = axdata[:,None] * np.ones_like(I)
             output[axis] = axdata
 
@@ -251,7 +253,7 @@ class RASXfile(object):
 
     def get_source_info(self):
         '''
-        Collects meta information about the source
+        Collects meta information of the source along with associated units.
 
         Returns:
             Dict[str, Any]: Each dict item contains a list with numerical value
