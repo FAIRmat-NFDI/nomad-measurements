@@ -222,7 +222,8 @@ class RASXfile(object):
 
     def get_1d_scan(self, logger: BoundLogger=None):
         '''
-        Collect the values and units of intensity, two_theta, and axis positions.
+        Collect the values and units of intensity, two_theta, and axis positions. Adapts 
+        the output if collected data has multiple/2d scans.
 
         Returns:
             Dict[str, Any]: Each dict item contains a list with numerical value
@@ -234,7 +235,7 @@ class RASXfile(object):
         output = collections.defaultdict(list)
         output['intensity'] = [intensity,'']
         scan_axis = None
-        scan_info = self.meta[0]('ScanInformation',None)
+        scan_info = self.meta[0].get('ScanInformation',None)
         if scan_info:
             scan_axis = scan_info.get('AxisName', None)
         output['two_theta'] = [
@@ -242,7 +243,7 @@ class RASXfile(object):
             self.units.get(scan_axis,'deg'),
         ]
 
-        for axis in ["Omega", "Chi", "Phi"]:
+        for axis in ['Omega', 'Chi', 'Phi']:
             if axis not in self.positions.keys():
                 continue
             ax_data = self.positions[axis]
@@ -250,7 +251,7 @@ class RASXfile(object):
                 ax_data = np.array([ax_data])
             if np.ndim(ax_data):
                 ax_data = ax_data[:,None] * np.ones_like(intensity)
-            output[axis+"_position"] = [
+            output[axis+'_position'] = [
                 ax_data,
                 self.units.get(axis,'deg'),
             ]
@@ -258,7 +259,7 @@ class RASXfile(object):
         if not self.data.shape[0] == 1:
             if logger is not None:
                 logger.warning(
-                    '2D scan currently not supported. '
+                    'Multiple/2D scan currently not supported. '
                     'Taking the data from the first line scan.'
                 )
             for key, data in output.items():
@@ -270,8 +271,14 @@ class RASXfile(object):
                         output[key][0] = np.array([first_val])
 
         return output
-    
+
     def get_scan_info(self):
+        '''
+        Collects the scan information from self.meta if available.
+
+        Returns:
+            Dict[str, Any]: contains information about the scan
+        '''
         return self.meta[0].get('ScanInformation',None)
 
     def get_source_info(self):
