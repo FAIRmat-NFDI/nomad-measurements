@@ -175,38 +175,25 @@ def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
         Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
     '''
     reader = RASXfile(file_path, verbose=False)
-    data_shape = reader.data.shape
-    metainfo = reader.meta[0]
-    p_data = reader.get_1d_scan()
+    scan_info = reader.get_scan_info()
+    p_data = reader.get_1d_scan(logger)
     source = reader.get_source_info()
 
-    if not data_shape[0] == 1:
-        if logger is not None:
-            logger.warning(
-                '2D scan currently not supported. '
-                'Taking the data from the first line scan.'
-            )
-        for key, data in p_data.items():
-            if isinstance(data[0], np.ndarray) and data[0].ndim == 2:
-                p_data[key][0] = data[0][0,:].squeeze()
-                if len(np.unique(p_data[key][0])) == 1:
-                    # shrinking duplicate data populated by `RASXFile`
-                    first_val = p_data[key][0][0]
-                    p_data[key][0] = np.array([first_val])
-
     count_time = None
-    if metainfo['ScanInformation']['Mode'].lower() == 'continuous':
-        speed_unit = ureg(
-            metainfo['ScanInformation']['SpeedUnit'].replace('min','minute')
-        )
-        count_time_unit = ureg(metainfo['ScanInformation']['PositionUnit']) / speed_unit
-        count_time = (
-            metainfo['ScanInformation']['Step']
-            / metainfo['ScanInformation']['Speed']
-        )
-        count_time = np.array([count_time]) * count_time_unit
+    scan_axis = None
 
-    scan_axis = metainfo['ScanInformation']['AxisName']
+    if scan_info:
+        required_keys = ['Mode','SpeedUnit','PositionUnit','Step', 'Speed']
+        if all(key in scan_info and scan_info[key] for key in required_keys):
+            if scan_info['Mode'].lower() == 'continuous':
+                speed_unit = ureg(scan_info['SpeedUnit'].replace('min','minute'))
+                count_time_unit = ureg(scan_info['PositionUnit']) / speed_unit
+                count_time = (
+                    np.array([scan_info['Step'] / scan_info['Speed']])
+                    * count_time_unit
+                )
+
+        scan_axis = scan_info.get('AxisName',None)
 
     output = {
         'detector': (

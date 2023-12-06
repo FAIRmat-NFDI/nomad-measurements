@@ -13,6 +13,9 @@ import xml.etree.ElementTree as ET
 import collections
 import numpy as np
 import time
+from structlog.stdlib import (
+    BoundLogger,
+)
 
 def try_scalar(val):
     try:
@@ -217,7 +220,7 @@ class RASXfile(object):
 
         return output
 
-    def get_1d_scan(self):
+    def get_1d_scan(self, logger: BoundLogger=None):
         '''
         Collect the values and units of intensity, two_theta, and axis positions.
 
@@ -249,7 +252,24 @@ class RASXfile(object):
                 self.units.get(axis,'deg'),
             ]
 
+        if not self.data.shape[0] == 1:
+            if logger is not None:
+                logger.warning(
+                    '2D scan currently not supported. '
+                    'Taking the data from the first line scan.'
+                )
+            for key, data in output.items():
+                if isinstance(data[0], np.ndarray) and data[0].ndim == 2:
+                    output[key][0] = data[0][0,:].squeeze()
+                    if len(np.unique(output[key][0])) == 1:
+                        # shrinking duplicate data populated by self.__init__()
+                        first_val = output[key][0][0]
+                        output[key][0] = np.array([first_val])
+
         return output
+    
+    def get_scan_info(self):
+        return self.meta[0].get('ScanInformation',None)
 
     def get_source_info(self):
         '''
