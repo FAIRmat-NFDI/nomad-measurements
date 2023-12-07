@@ -231,29 +231,29 @@ class RASXfile(object):
                 is not available, the dict item will default to []. If units are not 
                 available for two_theta or axis positions, they will default to 'deg'.
         '''
-        two_theta, intensity, _ = self.data.transpose(2,0,1).squeeze()
+        two_theta, intensity, _ = self.data.transpose(2, 0, 1).squeeze()
         output = collections.defaultdict(list)
-        output['intensity'] = [intensity,'']
+        output['intensity'] = [intensity, '']
         scan_axis = None
-        scan_info = self.meta[0].get('ScanInformation',None)
+        scan_info = self.meta[0].get('ScanInformation', None)
         if scan_info:
             scan_axis = scan_info.get('AxisName', None)
         output['two_theta'] = [
             two_theta,
-            self.units.get(scan_axis,'deg'),
+            self.units.get(scan_axis, 'deg'),
         ]
 
         for axis in ['Omega', 'Chi', 'Phi']:
             if axis not in self.positions.keys():
                 continue
             ax_data = self.positions[axis]
-            if not isinstance(ax_data,np.ndarray):
+            if not isinstance(ax_data, np.ndarray):
                 ax_data = np.array([ax_data])
             if np.ndim(ax_data):
-                ax_data = ax_data[:,None] * np.ones_like(intensity)
-            output[axis+'_position'] = [
+                ax_data = ax_data[:, None] * np.ones_like(intensity)
+            output[axis + '_position'] = [
                 ax_data,
-                self.units.get(axis,'deg'),
+                self.units.get(axis, 'deg'),
             ]
 
         if not self.data.shape[0] == 1:
@@ -314,7 +314,7 @@ class RASXfile(object):
             if source[wavelength]:
                 output[wavelength] = [
                     source[wavelength],
-                    source.get(wavelength+'Unit','angstrom'),
+                    source.get(wavelength + 'Unit', 'angstrom'),
                 ]
 
         return output

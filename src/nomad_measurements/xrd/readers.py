@@ -193,7 +193,8 @@ def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
                     * count_time_unit
                 )
 
-        scan_axis = scan_info.get('AxisName',None)
+        scan_axis = scan_info.get('AxisName', None)
+
 
     def set_quantity(quantity_list):
         '''
