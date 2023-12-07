@@ -1,12 +1,12 @@
-# Welcome to the `nomad-measurements` plugin documentation
+# Welcome to the **NOMAD-measurements** plugin documentation
 
-This plugin provides NOMAD schemas, readers and parsers for materials science measurements.
+This plugin provides NOMAD schemas, readers, and parsers for materials science measurements.
 
-## Introduction
+## Getting Started
 
-This is a NOMAD plugin. For information on how to use them, see [NOMAD Plugins](https://nomad-lab/prod/v1/staging/docs/plugins.html).
+This is a NOMAD plugin. For information on how to use them, see [NOMAD Plugins](https://nomad-lab.eu/prod/v1.0/docs/plugins.html).
 
-## Supported measurement techniques
+## Supported Measurement Techniques
 
 At the moment, the following measurement techniques are supported:
 

@@ -3,6 +3,7 @@ site_description: |
   The documentation for NOMAD plugin nomad-measurements.
 site_author: The NOMAD Authors
 repo_url: https://github.com/FAIRmat-NFDI/nomad-measurements
+edit_uri: ""
 
 nav:
   - Home: index.md
