@@ -175,67 +175,59 @@ def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
         Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
     '''
     reader = RASXfile(file_path, verbose=False)
-    data = reader.data
-    metainfo = reader.meta
-    p_data = reader.get_RSM()
-
-    if not data.shape[0] == 1:
-        if logger is not None:
-            logger.warning(
-                '2D scan currently not supported. '
-                'Taking the data from the first line scan.'
-            )
-        for key, data in p_data.items():
-            if isinstance(data, np.ndarray) and data.ndim == 2:
-                p_data[key] = data[0,:].squeeze()
-
-        if not len(np.unique(p_data['Omega'])) == 1:
-            raise ValueError(
-                'Unexpected array of Omega angles. Should contain same value of angles.'
-            )
-        p_data['Omega'] = p_data['Omega'][0]
-    metainfo = metainfo[0]
+    scan_info = reader.get_scan_info()
+    p_data = reader.get_1d_scan(logger)
+    source = reader.get_source_info()
 
     count_time = None
-    if metainfo['ScanInformation']['Mode'].lower() == 'continuous':
-        speed_unit = ureg(
-            metainfo['ScanInformation']['SpeedUnit'].replace('min','minute')
-        )
-        count_time_unit = ureg(metainfo['ScanInformation']['PositionUnit']) / speed_unit
-        count_time = (
-            metainfo['ScanInformation']['Step']
-            / metainfo['ScanInformation']['Speed']
-        )
-        count_time = np.array([count_time]) * count_time_unit
+    scan_axis = None
 
-    axis = {}
-    for ax in ['Omega', 'Chi', 'Phi']:
-        if not isinstance(p_data[ax], np.ndarray):
-            axis[ax] = np.array([p_data[ax]])
-        else:
-            axis[ax] = p_data[ax]
-    source = metainfo['HardwareConfig']['xraygenerator']
+    if scan_info:
+        required_keys = ['Mode','SpeedUnit','PositionUnit','Step', 'Speed']
+        if all(key in scan_info and scan_info[key] for key in required_keys):
+            if scan_info['Mode'].lower() == 'continuous':
+                speed_unit = ureg(scan_info['SpeedUnit'].replace('min','minute'))
+                count_time_unit = ureg(scan_info['PositionUnit']) / speed_unit
+                count_time = (
+                    np.array([scan_info['Step'] / scan_info['Speed']])
+                    * count_time_unit
+                )
+
+        scan_axis = scan_info.get('AxisName', None)
+
+
+    def set_quantity(value: Any=None, unit: str=None) -> Any:
+        '''
+        Sets the quantity based on whether value or/and unit are available.
+
+        Args:
+            value (Any): Value of the quantity.
+            unit (str): Unit of the quantity.
+
+        Returns:
+            Any: Processed quantity with datatype depending on the value.
+        '''
+        if not unit:
+            return value
+        return value * ureg(unit)
 
     output = {
-        'detector': p_data['Intensity'],
-        '2Theta': (
-            p_data[metainfo['ScanInformation']['AxisName']]
-            * ureg(reader.units[metainfo['ScanInformation']['AxisName']])
-        ),
-        'Omega': axis['Omega'] * ureg(reader.units['Omega']),
-        'Chi': axis['Chi'] * ureg(reader.units['Chi']),
-        'Phi': axis['Phi'] * ureg(reader.units['Phi']),
+        'detector': set_quantity(*p_data['intensity']),
+        '2Theta': set_quantity(*p_data['two_theta']),
+        'Omega': set_quantity(*p_data['Omega_position']),
+        'Chi': set_quantity(*p_data['Chi_position']),
+        'Phi': set_quantity(*p_data['Phi_position']),
         'countTime': count_time,
         'metadata': {
             'sample_id': None,
-            'scan_axis': metainfo['ScanInformation']['AxisName'],
+            'scan_axis': scan_axis,
             'source': {
-                'anode_material': source['TargetName'],
-                'kAlpha1': source['WavelengthKalpha1']  * ureg('angstrom'),
-                'kAlpha2': source['WavelengthKalpha2']  * ureg('angstrom'),
-                'kBeta': source['WavelengthKbeta']    * ureg('angstrom'),
-                'voltage': source['Voltage'] * ureg(source['VoltageUnit']),
-                'current': source['Current'] * ureg(source['CurrentUnit']),
+                'anode_material': set_quantity(*source['TargetName']),
+                'kAlpha1': set_quantity(*source['WavelengthKalpha1']),
+                'kAlpha2': set_quantity(*source['WavelengthKalpha2']),
+                'kBeta': set_quantity(*source['WavelengthKbeta']),
+                'voltage': set_quantity(*source['Voltage']),
+                'current': set_quantity(*source['Current']),
                 'ratioKAlpha2KAlpha1': None,
             },
         },

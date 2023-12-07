@@ -13,6 +13,9 @@ import xml.etree.ElementTree as ET
 import collections
 import numpy as np
 import time
+from structlog.stdlib import (
+    BoundLogger,
+)
 
 def try_scalar(val):
     try:
@@ -188,7 +191,7 @@ class RASXfile(object):
         self.images = imgdata
         self.meta = meta
         self.positions = collections.defaultdict(list)
-        self.units = dict()
+        self.units = collections.defaultdict(str)
         ## retrieving information about axis
         for mdata in meta:
             for axis in mdata["Axes"].values():
@@ -210,11 +213,112 @@ class RASXfile(object):
                 continue
             axdata = self.positions[axis]
             if np.ndim(axdata):
+                # duplicate values to match dimensions of intensity
+                # useful when num_scans > 1
                 axdata = axdata[:,None] * np.ones_like(I)
             output[axis] = axdata
 
         return output
-    
+
+    def get_1d_scan(self, logger: BoundLogger=None):
+        '''
+        Collect the values and units of intensity, two_theta, and axis positions. Adapts 
+        the output if collected data has multiple/2d scans.
+
+        Returns:
+            Dict[str, Any]: Each dict item contains a list with numerical value
+                (numpy.ndarray) at index 0 and unit (str) at index 1. If quantity 
+                is not available, the dict item will default to []. If units are not 
+                available for two_theta or axis positions, they will default to 'deg'.
+        '''
+        two_theta, intensity, _ = self.data.transpose(2, 0, 1).squeeze()
+        output = collections.defaultdict(list)
+        output['intensity'] = [intensity, '']
+        scan_axis = None
+        scan_info = self.meta[0].get('ScanInformation', None)
+        if scan_info:
+            scan_axis = scan_info.get('AxisName', None)
+        output['two_theta'] = [
+            two_theta,
+            self.units.get(scan_axis, 'deg'),
+        ]
+
+        for axis in ['Omega', 'Chi', 'Phi']:
+            if axis not in self.positions.keys():
+                continue
+            ax_data = self.positions[axis]
+            if not isinstance(ax_data, np.ndarray):
+                ax_data = np.array([ax_data])
+            if np.ndim(ax_data):
+                ax_data = ax_data[:, None] * np.ones_like(intensity)
+            output[axis + '_position'] = [
+                ax_data,
+                self.units.get(axis, 'deg'),
+            ]
+
+        if not self.data.shape[0] == 1:
+            if logger is not None:
+                logger.warning(
+                    'Multiple/2D scan currently not supported. '
+                    'Taking the data from the first line scan.'
+                )
+            for key, data in output.items():
+                if isinstance(data[0], np.ndarray) and data[0].ndim == 2:
+                    output[key][0] = data[0][0,:].squeeze()
+                    if len(np.unique(output[key][0])) == 1:
+                        # shrinking duplicate data populated by self.__init__()
+                        first_val = output[key][0][0]
+                        output[key][0] = np.array([first_val])
+
+        return output
+
+    def get_scan_info(self):
+        '''
+        Collects the scan information from self.meta if available.
+
+        Returns:
+            Dict[str, Any]: contains information about the scan
+        '''
+        return self.meta[0].get('ScanInformation',None)
+
+    def get_source_info(self):
+        '''
+        Collects meta information of the X-ray source along with associated units.
+
+        Returns:
+            Dict[str, Any]: Each dict item contains a list with numerical value
+                (float or int) at index 0 and unit (str) at index 1. One exception
+                is the item with key 'TargetName' which has str at both indices.
+                If quantity is not available, the dict item will default to [].
+        '''
+        output = collections.defaultdict(list)
+        source = collections.defaultdict(list,
+            self.meta[0]['HardwareConfig']['xraygenerator'])
+
+        if source['TargetName']:
+            output['TargetName'] = [
+                source['TargetName'],
+                '',
+            ]
+        if source['Voltage']:
+            output['Voltage'] = [
+                source['Voltage'],
+                source.get('VoltageUnit','kV'),
+            ]
+        if source['Current']:
+            output['Current'] = [
+                source['Current'],
+                source.get('CurrentUnit','mA'),
+            ]
+        for wavelength in ['WavelengthKalpha1', 'WavelengthKalpha2', 'WavelengthKbeta']:
+            if source[wavelength]:
+                output[wavelength] = [
+                    source[wavelength],
+                    source.get(wavelength + 'Unit', 'angstrom'),
+                ]
+
+        return output
+
     def get_starttime(self, idx=0, to_seconds=True):
         starttime = self.meta[idx]["ScanInformation"]["StartTime"]
         parsed_time = time.strptime(starttime, "%Y-%m-%dT%H:%M:%SZ")
