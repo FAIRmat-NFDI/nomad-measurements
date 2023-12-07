@@ -196,39 +196,38 @@ def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
         scan_axis = scan_info.get('AxisName', None)
 
 
-    def set_quantity(quantity_list):
+    def set_quantity(value: Any=None, unit: str=None) -> Any:
         '''
         Sets the quantity based on whether value or/and unit are available.
 
         Args:
-            quantity_list (List): Contains value at index 0 and unit at index 1.
+            value (Any): Value of the quantity.
+            unit (str): Unit of the quantity.
 
         Returns:
             Any: Processed quantity with datatype depending on the value.
         '''
-        if not quantity_list:
-            return None
-        if not quantity_list[1]:
-            return quantity_list[0]
-        return quantity_list[0] * ureg(quantity_list[1])
+        if not unit:
+            return value
+        return value * ureg(unit)
 
     output = {
-        'detector': set_quantity(p_data['intensity']),
-        '2Theta': set_quantity(p_data['two_theta']),
-        'Omega': set_quantity(p_data['Omega_position']),
-        'Chi': set_quantity(p_data['Chi_position']),
-        'Phi': set_quantity(p_data['Phi_position']),
+        'detector': set_quantity(*p_data['intensity']),
+        '2Theta': set_quantity(*p_data['two_theta']),
+        'Omega': set_quantity(*p_data['Omega_position']),
+        'Chi': set_quantity(*p_data['Chi_position']),
+        'Phi': set_quantity(*p_data['Phi_position']),
         'countTime': count_time,
         'metadata': {
             'sample_id': None,
             'scan_axis': scan_axis,
             'source': {
-                'anode_material': set_quantity(source['TargetName']),
-                'kAlpha1': set_quantity(source['WavelengthKalpha1']),
-                'kAlpha2': set_quantity(source['WavelengthKalpha2']),
-                'kBeta': set_quantity(source['WavelengthKbeta']),
-                'voltage': set_quantity(source['Voltage']),
-                'current': set_quantity(source['Current']),
+                'anode_material': set_quantity(*source['TargetName']),
+                'kAlpha1': set_quantity(*source['WavelengthKalpha1']),
+                'kAlpha2': set_quantity(*source['WavelengthKalpha2']),
+                'kBeta': set_quantity(*source['WavelengthKbeta']),
+                'voltage': set_quantity(*source['Voltage']),
+                'current': set_quantity(*source['Current']),
                 'ratioKAlpha2KAlpha1': None,
             },
         },
