@@ -19,6 +19,7 @@ from typing import (
     TYPE_CHECKING,
     Dict,
     Any,
+    Callable,
 )
 import numpy as np
 import plotly.express as px
@@ -57,13 +58,12 @@ from nomad.datamodel.metainfo.plot import (
     PlotSection,
     PlotlyFigure,
 )
-
+# from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
 from nomad_measurements import (
     NOMADMeasurementsCategory,
 )
-from nomad_measurements.xrd.readers import (
-    read_xrd,
-)
+from nomad_measurements.xrd import readers
+from nomad_measurements.utils import merge_sections
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -73,8 +73,50 @@ if TYPE_CHECKING:
         BoundLogger,
     )
     import pint
+    from pynxtools.dataconverter.template import Template
 
 m_package = Package(name='nomad_xrd')
+
+
+def populate_nexus_subsection(**kwargs):
+    raise NotImplementedError
+
+def handle_nexus_subsection(
+        xrd_template: 'Template',
+        nexus_out: str,
+        archive: 'EntryArchive',
+        logger: 'BoundLogger'
+    ):
+    '''
+    Function for populating the NeXus section from the xrd_template.
+
+    Args:
+        xrd_template (Template): The xrd data in a NeXus Template.
+        nexus_out (str): The name of the optional NeXus output file.
+        archive (EntryArchive): The archive containing the section.
+        logger (BoundLogger): A structlog logger.
+    '''
+    nxdl_name = 'NXxrd_pan'
+    if nexus_out:
+        if not nexus_out.endswith('.nxs'):
+            nexus_out = nexus_out + '.nxs'
+        populate_nexus_subsection(
+            template=xrd_template,
+            app_def=nxdl_name,
+            archive=archive,
+            logger=logger,
+            output_file_path=nexus_out,
+            on_temp_file=False,
+        )
+    else:
+        populate_nexus_subsection(
+            template=xrd_template,
+            app_def=nxdl_name,
+            archive=archive,
+            logger=logger,
+            output_file_path=nexus_out,
+            on_temp_file=True,
+        )
 
 
 def calculate_two_theta_or_q(
@@ -141,7 +183,6 @@ class XRayTubeSource(ArchiveSection):
     xray_tube_material = Quantity(
         type=MEnum(sorted(['Cu', 'Cr', 'Mo', 'Fe', 'Ag', 'In', 'Ga'])),
         description='Type of the X-ray tube',
-        default='Cu',
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.EnumEditQuantity,
         ),
@@ -395,6 +436,7 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         label='X-Ray Diffraction (XRD)',
         a_eln=ELNAnnotation(
             lane_width='800px',
+            hide=['generate_nexus_file'],
         ),
         a_template={
             'measurement_identifiers': {},
@@ -414,6 +456,29 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
     )
+    generate_nexus_file = Quantity(
+        type=bool,
+        description='Whether or not to generate a NeXus output file (if possible).',
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.BoolEditQuantity,
+            label='Generate NeXus file',
+        ),
+    )
+
+    def get_read_write_functions(self) -> tuple[Callable, Callable]:
+        '''
+        Method for getting the correct read and write functions for the current data file.
+
+        Returns:
+            tuple[Callable, Callable]: The read, write functions.
+        '''
+        if self.data_file.endswith('.rasx'):
+            return readers.read_rigaku_rasx, self.write_xrd_data
+        if self.data_file.endswith('.xrdml'):
+            return readers.read_panalytical_xrdml, self.write_xrd_data
+        if self.data_file.endswith('.brml'):
+            return readers.read_bruker_brml, self.write_xrd_data
+        return None, None
 
     def write_xrd_data(
             self,
@@ -464,9 +529,120 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         )
         sample.normalize(archive, logger)
 
-        self.results = [result]
-        self.xrd_settings = xrd_settings
-        self.samples = [sample]
+        xrd = ELNXRayDiffraction(
+            results = [result],
+            xrd_settings = xrd_settings,
+            samples = [sample],
+        )
+        merge_sections(self, xrd, logger)
+
+    def write_nx_xrd(
+            self,
+            xrd_dict: 'Template',
+            archive: 'EntryArchive',
+            logger: 'BoundLogger',
+        ) -> None:
+        '''
+        Populate `ELNXRayDiffraction` section from a NeXus Template.
+
+        Args:
+            xrd_dict (Dict[str, Any]): A dictionary with the XRD data.
+            archive (EntryArchive): The archive containing the section.
+            logger (BoundLogger): A structlog logger.
+        '''
+        result = XRDResult(
+            intensity=xrd_dict.get(
+                '/ENTRY[entry]/2theta_plot/intensity',
+                None,
+            ),
+            two_theta=xrd_dict.get(
+                '/ENTRY[entry]/2theta_plot/two_theta',
+                None,
+            ),
+            omega=xrd_dict.get(
+                '/ENTRY[entry]/2theta_plot/omega',
+                None,
+            ),
+            chi=xrd_dict.get(
+                '/ENTRY[entry]/2theta_plot/chi',
+                None),
+            phi=xrd_dict.get(
+                '/ENTRY[entry]/2theta_plot/phi',
+                None,
+            ),
+            scan_axis=xrd_dict.get(
+                '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis',
+                None,
+            ),
+            integration_time=xrd_dict.get(
+                '/ENTRY[entry]/COLLECTION[collection]/count_time',
+                None
+            ),
+        )
+        result.normalize(archive, logger)
+
+        source = XRayTubeSource(
+            xray_tube_material=xrd_dict.get(
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material',
+                None,
+            ),
+            kalpha_one=xrd_dict.get(
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one', 
+                None,
+            ),
+            kalpha_two=xrd_dict.get(
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two',
+                None,
+                ),
+            ratio_kalphatwo_kalphaone=xrd_dict.get(
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone', 
+                None,
+                ),
+            kbeta=xrd_dict.get(
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta',
+                None,
+            ),
+            xray_tube_voltage=xrd_dict.get(
+                'ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage',
+                None
+            ),
+            xray_tube_current=xrd_dict.get(
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current',
+                None,
+            ),
+        )
+        source.normalize(archive, logger)
+
+        xrd_settings = XRDSettings(
+            source=source
+        )
+        xrd_settings.normalize(archive, logger)
+
+        sample = CompositeSystemReference(
+            lab_id=xrd_dict.get(
+                '/ENTRY[entry]/SAMPLE[sample]/sample_id', 
+                None,
+                ),
+        )
+        sample.normalize(archive, logger)
+
+        xrd = ELNXRayDiffraction(
+            results = [result],
+            xrd_settings = xrd_settings,
+            samples = [sample],
+        )
+        merge_sections(self, xrd, logger)
+
+        nexus_output = None
+        if self.generate_nexus_file:
+            archive_name = archive.metadata.mainfile.split('.')[0]
+            nexus_output = f'{archive_name}_output.nxs'
+        handle_nexus_subsection(
+            xrd_dict,
+            nexus_output,
+            archive,
+            logger,
+        )
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         '''
@@ -477,10 +653,16 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             normalized.
             logger (BoundLogger): A structlog logger.
         '''
-        if not self.results and self.data_file is not None:
-            with archive.m_context.raw_file(self.data_file) as file:
-                xrd_dict = read_xrd(file.name, logger)
-            self.write_xrd_data(xrd_dict, archive, logger)
+        if self.data_file is not None:
+            read_function, write_function = self.get_read_write_functions()
+            if read_function is None or write_function is None:
+                logger.warn(
+                    f'No compatible reader found for the file: "{self.data_file}".'
+                )
+            else:
+                with archive.m_context.raw_file(self.data_file) as file:
+                    xrd_dict = read_function(file.name, logger)
+                write_function(xrd_dict, archive, logger)
         super().normalize(archive, logger)
 
         if not self.results:
@@ -507,16 +689,15 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         )
         self.figures.extend([
             PlotlyFigure(
-                label="Log Plot",
+                label='Log Plot',
                 index=1,
                 figure=line_log.to_plotly_json(),
             ),
             PlotlyFigure(
-                label="Linear Plot",
+                label='Linear Plot',
                 index=2,
                 figure=line_linear.to_plotly_json(),
             ),
         ])
-
 
 m_package.__init_metainfo__()

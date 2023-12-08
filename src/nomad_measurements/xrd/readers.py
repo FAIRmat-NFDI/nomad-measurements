@@ -20,16 +20,23 @@ import xml.etree.ElementTree as ET
 from typing import (
     Dict,
     Any,
+    TYPE_CHECKING
 )
 import numpy as np
-from structlog.stdlib import (
-    BoundLogger,
-)
 from nomad.units import ureg
+# from pynxtools.dataconverter.convert import transfer_data_into_template
 from nomad_measurements.xrd.IKZ import RASXfile, BRMLfile
 
+if TYPE_CHECKING:
+    from structlog.stdlib import (
+        BoundLogger,
+    )
 
-def read_panalytical_xrdml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
+
+def transfer_data_into_template(**kwargs):
+    raise NotImplementedError
+
+def read_panalytical_xrdml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
     '''
     Function for reading the X-ray diffraction data in a Panalytical `.xrdml` file.
 
@@ -160,7 +167,7 @@ def read_panalytical_xrdml(file_path: str, logger: BoundLogger=None) -> Dict[str
     }
 
 
-def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
+def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
     '''
     Reads .rasx files from Rigaku instruments
         - reader is based on IKZ module
@@ -235,7 +242,7 @@ def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
 
     return output
 
-def read_bruker_brml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
+def read_bruker_brml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
     '''
     Reads .brml files from Bruker instruments
         - reader is based on IKZ module
@@ -291,24 +298,21 @@ def read_bruker_brml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
 
     return output
 
-
-def read_xrd(file_path: str, logger: BoundLogger) -> Dict[str, Any]:
+def read_nexus_xrd(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
     '''
-    Function for reading an XRD file.
+    Function for reading the X-ray diffraction data in a Nexus file.
 
     Args:
-        file_path (str): The path of the file to be read.
-        logger (BoundLogger): A structlog logger.
+        file_path (str): The path to the X-ray diffraction data file.
+        logger (BoundLogger, optional): A structlog logger. Defaults to None.
 
     Returns:
-        dict: The parsed and converted data in a common dictionary format.
+        Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
     '''
-    file_path = os.path.abspath(file_path)
-
-    if file_path.endswith('.xrdml'):
-        return read_panalytical_xrdml(file_path, logger)
-    if file_path.endswith('.rasx'):
-        return read_rigaku_rasx(file_path, logger)
-    if file_path.endswith('.brml'):
-        return read_bruker_brml(file_path,logger)
-    raise ValueError(f'Unsupported file format: {file_path.split(".")[-1]}')
+    nxdl_name = 'NXxrd_pan'
+    xrd_template = transfer_data_into_template(
+        nxdl_name=nxdl_name,
+        input_file=file_path,
+        reader='xrd',
+    )
+    return xrd_template
