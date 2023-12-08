@@ -476,6 +476,8 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             return readers.read_rigaku_rasx, self.write_xrd_data
         if self.data_file.endswith('.xrdml'):
             return readers.read_panalytical_xrdml, self.write_xrd_data
+        if self.data_file.endswith('.brml'):
+            return readers.read_bruker_brml, self.write_xrd_data
         return None, None
 
     def write_xrd_data(

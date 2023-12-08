@@ -316,25 +316,3 @@ def read_nexus_xrd(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]
         reader='xrd',
     )
     return xrd_template
-
-
-def read_xrd(file_path: str, logger: 'BoundLogger') -> Dict[str, Any]:
-    '''
-    Function for reading an XRD file.
-
-    Args:
-        file_path (str): The path of the file to be read.
-        logger (BoundLogger): A structlog logger.
-
-    Returns:
-        dict: The parsed and converted data in a common dictionary format.
-    '''
-    file_path = os.path.abspath(file_path)
-
-    if file_path.endswith('.xrdml'):
-        return read_panalytical_xrdml(file_path, logger)
-    if file_path.endswith('.rasx'):
-        return read_rigaku_rasx(file_path, logger)
-    if file_path.endswith('.brml'):
-        return read_bruker_brml(file_path,logger)
-    raise ValueError(f'Unsupported file format: {file_path.split(".")[-1]}')
