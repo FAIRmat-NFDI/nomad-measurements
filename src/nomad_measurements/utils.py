@@ -100,7 +100,7 @@ def merge_sections(
                     update.m_get_sub_section(sub_section_def, i),
                     logger,
                 )
-        else:
+        elif update.m_sub_section_count(sub_section_def) > 0:
             warning = f'Merging sections with different number of "{name}" sub sections.'
             if logger:
                 logger.warning(warning)
