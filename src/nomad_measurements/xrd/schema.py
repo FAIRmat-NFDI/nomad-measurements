@@ -21,7 +21,6 @@ from typing import (
     Any,
     Callable,
 )
-import os
 import numpy as np
 import plotly.express as px
 
