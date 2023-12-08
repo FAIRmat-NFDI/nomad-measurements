@@ -242,7 +242,7 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
 
     return output
 
-def read_bruker_brml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
+def read_bruker_brml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
     '''
     Reads .brml files from Bruker instruments
         - reader is based on IKZ module
