@@ -163,7 +163,7 @@ def read_panalytical_xrdml(file_path: str, logger: BoundLogger=None) -> Dict[str
 def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
     '''
     Reads .rasx files from Rigaku instruments
-        - reader is based on IKZ submodule
+        - reader is based on IKZ module
         - currently supports one scan per file
         - in case of multiple scans per file, only the first scan is read
 
@@ -238,7 +238,8 @@ def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
 def read_bruker_brml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
     '''
     Reads .brml files from Bruker instruments
-        - reader is based on IKZ submodule
+        - reader is based on IKZ module
+
     Args:
         file_path (string): absolute path of the file.
         logger (BoundLogger): A structlog logger for propagating errors and warnings.
@@ -247,50 +248,43 @@ def read_bruker_brml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
         Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
     '''
     reader = BRMLfile(file_path, verbose=False)
-    data = reader.data
-    meta_info = reader.meta_info
+    data = reader.get_1d_scan(logger)
+    scan_info = reader.get_scan_info()
+    source = reader.get_source_info()
 
-    counter_key = []
-    for k in data.keys():
-        if 'counter' in k.lower():
-            counter_key.append(k)
-    if len(counter_key) > 1:
-        raise ValueError("More than one counters found.")
+    def set_quantity(value: Any=None, unit: str=None) -> Any:
+        '''
+        Sets the quantity based on whether value or/and unit are available.
 
-    for key in ['Theta','Chi','Phi']:
-        # theta and omega are synonymous in .brml
-        if key not in data:
-            raise ValueError(f"Missing data for {key}.")
-        if not isinstance(data[key]['Value'],np.ndarray):
-            data[key]['Value'] = np.array([data[key]['Value']])
+        Args:
+            value (Any): Value of the quantity.
+            unit (str): Unit of the quantity.
 
-    source = meta_info['tube']
+        Returns:
+            Any: Processed quantity with datatype depending on the value.
+        '''
+        if not unit:
+            return value
+        return value * ureg(unit)
 
     output = {
-        'detector': data[counter_key[0]],
-        '2Theta': data['TwoTheta']['Value'] * ureg(data['TwoTheta']['Unit']),
-        'Omega': data['Theta']['Value'] * ureg(data['Theta']['Unit']), 
-        # theta and omega are synonymous in .brml
-        'Chi': data['Chi']['Value'] * ureg(data['Chi']['Unit']),
-        'Phi': data['Phi']['Value'] * ureg(data['Phi']['Unit']),
+        'detector': set_quantity(*data['intensity']),
+        '2Theta': set_quantity(*data['TwoTheta']),
+        'Omega': set_quantity(*data['Theta']), # theta and omega are synonymous in .brml
+        'Chi': set_quantity(*data['Chi']),
+        'Phi': set_quantity(*data['Phi']),
         'countTime': None,
         'metadata': {
             'sample_id': None,
-            'scan_axis': data['ScanName'],
+            'scan_axis': set_quantity(*scan_info['ScanName']),
             'source': {
-                'anode_material': source['TubeMaterial'],
-                'kAlpha1': (float(source['WaveLengthAlpha1']['@Value'])
-                    * ureg(source['WaveLengthAlpha1']['@Unit'])),
-                'kAlpha2': (float(source['WaveLengthAlpha2']['@Value'])
-                    * ureg(source['WaveLengthAlpha2']['@Unit'])),
-                'kBeta': (float(source['WaveLengthBeta']['@Value'])
-                    * ureg(source['WaveLengthBeta']['@Unit'])),
-                'ratioKAlpha2KAlpha1': (float(source['WaveLengthRatio']['@Value'])
-                    * ureg(source['WaveLengthRatio']['@Unit'])),
-                'voltage': (float(source['Generator']['Voltage']['@Value'])
-                    * ureg(source['Generator']['Voltage']['@Unit'])),
-                'current': (float(source['Generator']['Current']['@Value']))
-                    * ureg(source['Generator']['Current']['@Unit']),
+                'anode_material': set_quantity(*source['TubeMaterial']),
+                'kAlpha1': set_quantity(*source['WaveLengthAlpha1']),
+                'kAlpha2': set_quantity(*source['WaveLengthAlpha2']),
+                'kBeta': set_quantity(*source['WaveLengthBeta']),
+                'ratioKAlpha2KAlpha1': set_quantity(*source['WaveLengthRatio']),
+                'voltage': set_quantity(*source['Voltage']),
+                'current': set_quantity(*source['Current']),
             },
         },
     }
