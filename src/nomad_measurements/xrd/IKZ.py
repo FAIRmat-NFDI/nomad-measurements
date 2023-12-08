@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 import collections
 import numpy as np
 import time
+import xmltodict
 from structlog.stdlib import (
     BoundLogger,
 )
@@ -259,7 +260,7 @@ class RASXfile(object):
         if not self.data.shape[0] == 1:
             if logger is not None:
                 logger.warning(
-                    'Multiple/2D scan currently not supported. '
+                    'Multiple/2D/RSM scan currently not supported. '
                     'Taking the data from the first line scan.'
                 )
             for key, data in output.items():
@@ -326,3 +327,220 @@ class RASXfile(object):
             return time.mktime(parsed_time)
         else:
             return parsed_time
+
+
+class BRMLfile(object):
+    def __init__(self, path, exp_nbr=0, encoding="utf-8", verbose=True):
+        self.path = path
+        with zipfile.ZipFile(path, 'r') as fh:
+            experiment = "Experiment%i"%exp_nbr
+            datacontainer = "%s/DataContainer.xml"%experiment
+
+            with fh.open(datacontainer, "r") as xml:
+                data = xmltodict.parse(xml.read(), encoding=encoding)
+            rawlist = data["DataContainer"]["RawDataReferenceList"]["string"]
+            # rawlist contains the reference to all the raw files (multiple in case of RSM)
+            if not isinstance(rawlist, list):
+                rawlist = [rawlist]
+
+            self.data = collections.defaultdict(list)
+            self.motors = self.data # collections.defaultdict(list)
+            for i, rawpath in enumerate(rawlist):
+                if verbose:
+                    if not i:
+                        print("Loading frame %i"%i, end="")
+                    else:
+                        print(", %i"%i, end="")
+                with fh.open(rawpath, "r") as xml:
+                    # entering RawData<int>.xml
+                    data = xmltodict.parse(xml.read(), encoding=encoding)
+                dataroute = data["RawData"]["DataRoutes"]["DataRoute"]
+                scaninfo = dataroute["ScanInformation"]
+                nsteps = int(scaninfo["MeasurementPoints"])
+                if nsteps==1:
+                    rawdata = np.array(dataroute["Datum"].split(","))
+                elif nsteps>1:
+                    rawdata = np.array([d.split(",") for d in dataroute["Datum"]])
+
+                rawdata = rawdata.astype(float).T
+                rdv = dataroute["DataViews"]["RawDataView"]
+                for view in rdv:
+                    viewtype = view["@xsi:type"]
+                    vstart = int(view["@Start"])
+                    vlen = int(view["@Length"])
+                    if viewtype=="FixedRawDataView":
+                        vname = view["@LogicName"]
+                        self.data[vname].append(rawdata[vstart:(vstart+vlen)])
+                    elif viewtype=="RecordedRawDataView":
+                        vname = view["Recording"]["@LogicName"]
+                        self.data[vname].append(rawdata[vstart:(vstart+vlen)])
+
+                self.data["ScanName"].append(scaninfo["@ScanName"])
+                self.data["TimePerStep"].append(scaninfo["TimePerStep"])
+                self.data["TimePerStepEffective"].append(scaninfo["TimePerStepEffective"])
+                self.data["ScanMode"].append(scaninfo["ScanMode"])
+
+                scanaxes = scaninfo["ScanAxes"]["ScanAxisInfo"]
+                if not isinstance(scanaxes, list):
+                    scanaxes = [scanaxes]
+                for axis in scanaxes:
+                    aname = axis["@AxisName"]
+                    aunit = axis["Unit"]["@Base"]
+                    aref = float(axis["Reference"])
+                    astart = float(axis["Start"]) + aref
+                    astop = float(axis["Stop"]) + aref
+                    astep = float(axis["Increment"])
+                    nint = int(round(abs(astop-astart)/astep))
+                    adata = {} # not originally part of Carsten's code
+                    adata["Value"] = np.linspace(astart, astop, nint+1)
+                    adata["Unit"] = aunit.lower()
+                    self.data[aname].append(adata)
+
+                drives = data["RawData"]["FixedInformation"]["Drives"]["InfoData"]
+                for axis in drives:
+                    aname = axis["@LogicName"]
+                    apos = float(axis["Position"]["@Value"])
+                    aunit = axis["Position"]["@Unit"]
+                    adata = {} # not originally part of Carsten's code
+                    adata["Value"] = apos
+                    adata["Unit"] = aunit.lower()
+                    self.motors[aname].append(adata)
+
+            # (block starts) not originally part of Carsten's code
+            try:
+                self.mounted_optics_info = (
+                    data["RawData"]["FixedInformation"]["Instrument"]
+                    ["PrimaryTracks"]["TrackInfoData"]["MountedOptics"]["InfoData"]
+                )
+            except (KeyError, TypeError):
+                self.mounted_optics_info = []
+            # (block end) not originally part of Carsten's code
+
+            for key in self.data:
+                self.data[key] = np.array(self.data[key]).squeeze()
+                if not self.data[key].shape:
+                    self.data[key] = self.data[key].item()
+            for key in self.motors:
+                self.motors[key] = np.array(self.motors[key]).squeeze()
+                if not self.motors[key].shape:
+                    self.motors[key] = self.motors[key].item()
+
+    def get_1d_scan(self, logger: BoundLogger=None):
+        '''
+        Collect the values and units of intensity, two_theta, and axis positions. Adapts
+        the output if collected data has multiple/2d scans.
+
+        Returns:
+            Dict[str, Any]: Each dict item contains a list with numerical value
+                (numpy.ndarray) at index 0 and unit (str) at index 1. If quantity
+                is not available, the dict item will default to []. If units are not
+                available for two_theta or axis positions, they will default to 'deg'.
+        '''
+        output = collections.defaultdict(list)
+
+        counter_key = []
+        for key in self.data.keys():
+            if 'counter' in key.lower():
+                counter_key.append(key)
+        if len(counter_key) > 1:
+            raise ValueError("More than one intensity counters found.")
+
+        if not self.data.get(counter_key[0]).ndim == 1:
+            if logger is not None:
+                logger.warning(
+                    'Multiple/2D/RSM scan currently not supported. '
+                    'Taking the data from the first line scan.'
+                )
+            for key in [counter_key[0], 'TwoTheta', 'Theta', 'Chi', 'Phi']:
+                val = self.data.get(key, None)
+                if val is not None:
+                    self.data[key] = val[0]
+
+        if counter_key:
+            output['intensity'] = [self.data.get(counter_key[0]), '']
+
+        for key in ['TwoTheta', 'Theta', 'Chi', 'Phi']:
+            data = self.data.get(key)
+            if data is not None:
+                val = data.get('Value')
+                if val is not None:
+                    if not isinstance(val, np.ndarray):
+                        val = np.array([val])
+                    output[key] = [
+                        val,
+                        data.get('Unit', 'deg'),
+                    ]
+
+        return output
+
+    def get_scan_info(self):
+        '''
+        Collects the scan information from self.data if available.
+
+        Returns:
+            Dict[str, Any]: contains information about the scan
+        '''
+        output = collections.defaultdict(list)
+        for key in ['ScanName']:
+            if self.data.get(key) is not None:
+                output[key] = [
+                    self.data.get(key)[0],
+                    '',
+                ]
+
+        return output
+
+    def get_source_info(self):
+        '''
+        Collects meta information of the X-ray source along with associated units.
+
+        Returns:
+            Dict[str, Any]: Each dict item contains a list with numerical value
+                (float or int) at index 0 and unit (str) at index 1. One exception
+                is the item with key 'TubeMaterial' which has str at both indices.
+                If quantity is not available, the dict item will default to [].
+        '''
+        output = collections.defaultdict(list)
+
+        source = {}
+        for component in self.mounted_optics_info:
+            if component["@xsi:type"] == "TubeMountInfoData":
+                source = component.get("Tube", {})
+        if not source:
+            return output
+
+        if source.get('TubeMaterial'):
+            output['TubeMaterial'] = [
+                source['TubeMaterial'],
+                '',
+            ]
+        if source.get('Generator', {}).get('Voltage'):
+            val = source['Generator']['Voltage'].get('@Value')
+            if val is not None:
+                val = float(val)
+                output['Voltage'] = [
+                    val,
+                    source['Generator']['Voltage'].get('@Unit', 'kV'),
+                ]
+        if source.get('Generator', {}).get('Current'):
+            val = source['Generator']['Current'].get('@Value')
+            if val is not None:
+                val = float(val)
+                output['Current'] = [
+                    val,
+                    source['Generator']['Current'].get('@Unit', 'mA'),
+                ]
+        for wavelength in [
+            'WaveLengthAlpha1', 'WaveLengthAlpha2',
+            'WaveLengthBeta', 'WaveLengthRatio',
+        ]:
+            if source.get(wavelength):
+                val = source[wavelength].get('@Value')
+                if val is not None:
+                    val = float(val)
+                    output[wavelength] = [
+                        val,
+                        source[wavelength].get('@Unit', 'angstrom'),
+                    ]
+
+        return output
