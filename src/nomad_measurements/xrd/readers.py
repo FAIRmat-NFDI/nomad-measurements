@@ -20,19 +20,23 @@ import xml.etree.ElementTree as ET
 from typing import (
     Dict,
     Any,
+    TYPE_CHECKING
 )
 import numpy as np
-from structlog.stdlib import (
-    BoundLogger,
-)
-from nomad.datamodel.datamodel import EntryArchive
 from nomad.units import ureg
-from pynxtools.dataconverter.convert import transfer_data_into_template
-from pynxtools.dataconverter.template import Template
+# from pynxtools.dataconverter.convert import transfer_data_into_template
 from nomad_measurements.xrd.IKZ import RASXfile, BRMLfile
 
+if TYPE_CHECKING:
+    from structlog.stdlib import (
+        BoundLogger,
+    )
 
-def read_panalytical_xrdml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
+
+def transfer_data_into_template(**kwargs):
+    raise NotImplementedError
+
+def read_panalytical_xrdml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
     '''
     Function for reading the X-ray diffraction data in a Panalytical `.xrdml` file.
 
@@ -163,7 +167,7 @@ def read_panalytical_xrdml(file_path: str, logger: BoundLogger=None) -> Dict[str
     }
 
 
-def read_rigaku_rasx(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
+def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
     '''
     Reads .rasx files from Rigaku instruments
         - reader is based on IKZ module
@@ -294,8 +298,7 @@ def read_bruker_brml(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]
 
     return output
 
-
-def read_nexus_xrd(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
+def read_nexus_xrd(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
     '''
     Function for reading the X-ray diffraction data in a Nexus file.
 
@@ -315,7 +318,7 @@ def read_nexus_xrd(file_path: str, logger: BoundLogger=None) -> Dict[str, Any]:
     return xrd_template
 
 
-def read_xrd(file_path: str, logger: BoundLogger) -> Dict[str, Any]:
+def read_xrd(file_path: str, logger: 'BoundLogger') -> Dict[str, Any]:
     '''
     Function for reading an XRD file.
 

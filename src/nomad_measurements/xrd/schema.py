@@ -59,8 +59,7 @@ from nomad.datamodel.metainfo.plot import (
     PlotSection,
     PlotlyFigure,
 )
-from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
-from pynxtools.dataconverter.template import Template
+# from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
 from nomad_measurements import (
     NOMADMeasurementsCategory,
 )
@@ -75,12 +74,16 @@ if TYPE_CHECKING:
         BoundLogger,
     )
     import pint
+    from pynxtools.dataconverter.template import Template
 
 m_package = Package(name='nomad_xrd')
 
 
+def populate_nexus_subsection(**kwargs):
+    raise NotImplementedError
+
 def handle_nexus_subsection(
-        xrd_template: Template,
+        xrd_template: 'Template',
         nexus_out: str,
         archive: 'EntryArchive',
         logger: 'BoundLogger'
@@ -434,6 +437,7 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         label='X-Ray Diffraction (XRD)',
         a_eln=ELNAnnotation(
             lane_width='800px',
+            hide=['generate_nexus_file'],
         ),
         a_template={
             'measurement_identifiers': {},
@@ -472,7 +476,7 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         if self.data_file.endswith('.rasx'):
             return readers.read_rigaku_rasx, self.write_xrd_data
         if self.data_file.endswith('.xrdml'):
-            return readers.read_nexus_xrd, self.write_nx_xrd
+            return readers.read_panalytical_xrdml, self.write_xrd_data
         return None, None
 
     def write_xrd_data(
@@ -533,7 +537,7 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
 
     def write_nx_xrd(
             self,
-            xrd_dict: Template,
+            xrd_dict: 'Template',
             archive: 'EntryArchive',
             logger: 'BoundLogger',
         ) -> None:
