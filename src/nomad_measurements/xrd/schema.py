@@ -659,9 +659,10 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
                 logger.warn(
                     f'No compatible reader found for the file: "{self.data_file}".'
                 )
-            with archive.m_context.raw_file(self.data_file) as file:
-                xrd_dict = read_function(file.name, logger)
-            write_function(xrd_dict, archive, logger)
+            else:
+                with archive.m_context.raw_file(self.data_file) as file:
+                    xrd_dict = read_function(file.name, logger)
+                write_function(xrd_dict, archive, logger)
         super().normalize(archive, logger)
 
         if not self.results:
