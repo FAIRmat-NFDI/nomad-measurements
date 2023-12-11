@@ -18,27 +18,18 @@
 import re
 import os
 import json
-
-import numpy as np
-
+from typing import (
+    TYPE_CHECKING
+)
 from nomad.datamodel.metainfo.basesections import (
     Measurement,
-    MeasurementResult,
-    CompositeSystemReference,
     ReadableIdentifiers,
-)
-from nomad.datamodel.metainfo.eln import (
-    NexusDataConverter
-)
-from structlog.stdlib import (
-    BoundLogger,
 )
 from nomad.metainfo import (
     Package,
     Quantity,
     Section,
     SubSection,
-    MEnum,
 )
 from nomad.datamodel.data import (
     ArchiveSection,
@@ -48,13 +39,18 @@ from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
     ELNComponentEnum,
 )
-from nomad.units import (
-    ureg,
-)
 
 from nomad_measurements import NOMADMeasurementsCategory
 
-from pynxtools.dataconverter.convert import convert  # pylint: disable=import-error
+from pynxtools.dataconverter.convert import convert
+
+if TYPE_CHECKING:
+    from nomad.datamodel.datamodel import (
+        EntryArchive,
+    )
+    from structlog.stdlib import (
+        BoundLogger,
+    )
 
 
 m_package = Package(name='nomad-measurements Transmission')
@@ -99,7 +95,7 @@ class Transmission(Measurement):
         section_def=Operator,
     )
 
-    def normalize(self, archive, logger: BoundLogger) -> None:
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger') -> None:
         super(Transmission, self).normalize(archive, logger)
         raw_path = archive.m_context.raw_path()
         eln_filename = '_transmission_eln_temp.json'
@@ -147,7 +143,6 @@ class Transmission(Measurement):
             raise e
         else:
             logger.info('triggered processing', mainfile=output)
-
 
 
 class ELNTransmission(Transmission, EntryData):

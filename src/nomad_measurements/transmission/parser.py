@@ -15,10 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-from nomad.datamodel import EntryArchive
+from typing import (
+    TYPE_CHECKING
+)
 from nomad.metainfo import (
-    MSection,
     Quantity,
 )
 from nomad.parsing import MatchingParser
@@ -31,6 +31,11 @@ from nomad.datamodel.data import (
 
 from nomad_measurements.utils import create_archive
 from nomad_measurements.transmission import ELNTransmission
+
+if TYPE_CHECKING:
+    from nomad.datamodel.datamodel import (
+        EntryArchive,
+    )
 
 
 class TransmissionDataFile(EntryData):
@@ -49,7 +54,7 @@ class TransmissionParser(MatchingParser):
             code_name='XRD Parser',
         )
 
-    def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
+    def parse(self, mainfile: str, archive: 'EntryArchive', logger) -> None:
         data_file = mainfile.split('/')[-1]
         entry = ELNTransmission.m_from_dict(ELNTransmission.m_def.a_template)
         entry.data_file = data_file

@@ -25,9 +25,12 @@ classifiers = [
 ]
 dependencies = [
     "nomad-lab>=1.2.1",
+    "xmltodict==0.13.0",
+]
+[project.optional-dependencies]
+dev = [
     "pytest",
     "structlog==22.3.0",
-    "xmltodict==0.13.0",
 ]
 
 [project.license]

@@ -7,6 +7,9 @@
 '''
 
 from __future__ import print_function
+from typing import (
+    TYPE_CHECKING
+)
 import zipfile
 import sys
 import xml.etree.ElementTree as ET
@@ -14,9 +17,11 @@ import collections
 import numpy as np
 import time
 import xmltodict
-from structlog.stdlib import (
-    BoundLogger,
-)
+if TYPE_CHECKING:
+    from structlog.stdlib import (
+        BoundLogger,
+    )
+
 
 def try_scalar(val):
     try:
@@ -114,7 +119,7 @@ def parse_rasx_metadata(xml):
         if len(attrib) < len(axis.attrib):
             missing = set(axis.attrib).difference(set(attrib))
             for key in missing:
-                print("Warning: unknown axis attribute: %s"%k)
+                print("Warning: unknown axis attribute: %s"%key)
         axes[axis.attrib["Name"]] = Axis(**attrib)
 
 
@@ -221,7 +226,7 @@ class RASXfile(object):
 
         return output
 
-    def get_1d_scan(self, logger: BoundLogger=None):
+    def get_1d_scan(self, logger: 'BoundLogger'=None):
         '''
         Collect the values and units of intensity, two_theta, and axis positions. Adapts 
         the output if collected data has multiple/2d scans.
@@ -425,7 +430,7 @@ class BRMLfile(object):
                 if not self.motors[key].shape:
                     self.motors[key] = self.motors[key].item()
 
-    def get_1d_scan(self, logger: BoundLogger=None):
+    def get_1d_scan(self, logger: 'BoundLogger'=None):
         '''
         Collect the values and units of intensity, two_theta, and axis positions. Adapts
         the output if collected data has multiple/2d scans.
