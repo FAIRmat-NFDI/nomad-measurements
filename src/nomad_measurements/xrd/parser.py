@@ -15,8 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-from nomad.datamodel import EntryArchive
+from typing import (
+    TYPE_CHECKING
+)
 from nomad.metainfo import (
     Quantity,
 )
@@ -30,6 +31,11 @@ from nomad.datamodel.data import (
 
 from nomad_measurements.utils import create_archive
 from nomad_measurements.xrd import ELNXRayDiffraction
+
+if TYPE_CHECKING:
+    from nomad.datamodel.datamodel import (
+        EntryArchive,
+    )
 
 
 class XRDDataFile(EntryData):
@@ -54,7 +60,7 @@ class XRDParser(MatchingParser):
         )
 
     def parse(
-            self, mainfile: str, archive: EntryArchive, logger=None, child_archives=None
+            self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None
         ) -> None:
         data_file = mainfile.split('/')[-1]
         entry = ELNXRayDiffraction.m_from_dict(ELNXRayDiffraction.m_def.a_template)
