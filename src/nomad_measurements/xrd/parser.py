@@ -65,6 +65,6 @@ class XRDParser(MatchingParser):
         data_file = mainfile.split('/')[-1]
         entry = ELNXRayDiffraction.m_from_dict(ELNXRayDiffraction.m_def.a_template)
         entry.data_file = data_file
-        file_name = f'{data_file[:-6]}.archive.json'
+        file_name = f'{"".join(data_file.split(".")[:-1])}.archive.json'
         archive.data = XRDDataFile(measurement=create_archive(entry,archive,file_name))
-        archive.metadata.entry_name = data_file[:-6] + ' data file'
+        archive.metadata.entry_name = "".join(data_file.split(".")[:-1]) + ' data file'
