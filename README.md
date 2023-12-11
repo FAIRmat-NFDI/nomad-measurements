@@ -34,7 +34,7 @@ git clone git@github.com:FAIRmat-NFDI/nomad-measurements.git
 cd nomad-measurements
 ```
 
-And install the package in editable mode:
+And install the package in editable mode with the development ('dev') dependencies:
 ```sh
-pip install -e .
+pip install -e .[dev]
 ```
