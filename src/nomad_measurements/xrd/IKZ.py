@@ -364,6 +364,8 @@ class BRMLfile(object):
 
                 rawdata = rawdata.astype(float).T
                 rdv = dataroute["DataViews"]["RawDataView"]
+                if not isinstance(rdv,list):
+                    rdv = [rdv]
                 for view in rdv:
                     viewtype = view["@xsi:type"]
                     vstart = int(view["@Start"])
@@ -397,6 +399,8 @@ class BRMLfile(object):
                     self.data[aname].append(adata)
 
                 drives = data["RawData"]["FixedInformation"]["Drives"]["InfoData"]
+                if not isinstance(drives,list):
+                    drives = [drives]
                 for axis in drives:
                     aname = axis["@LogicName"]
                     apos = float(axis["Position"]["@Value"])
