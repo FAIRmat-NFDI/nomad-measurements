@@ -24,6 +24,7 @@ from typing import (
 import numpy as np
 from nomad.units import ureg
 # from pynxtools.dataconverter.convert import transfer_data_into_template
+from nomad_measurements.utils import to_pint_quantity
 from nomad_measurements.xrd.IKZ import RASXfile, BRMLfile
 
 if TYPE_CHECKING:
@@ -201,39 +202,23 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
 
         scan_axis = scan_info.get('AxisName', None)
 
-
-    def set_quantity(value: Any=None, unit: str=None) -> Any:
-        '''
-        Sets the quantity based on whether value or/and unit are available.
-
-        Args:
-            value (Any): Value of the quantity.
-            unit (str): Unit of the quantity.
-
-        Returns:
-            Any: Processed quantity with datatype depending on the value.
-        '''
-        if not unit:
-            return value
-        return value * ureg(unit)
-
     output = {
-        'detector': set_quantity(*p_data['intensity']),
-        '2Theta': set_quantity(*p_data['two_theta']),
-        'Omega': set_quantity(*p_data['Omega_position']),
-        'Chi': set_quantity(*p_data['Chi_position']),
-        'Phi': set_quantity(*p_data['Phi_position']),
+        'detector': to_pint_quantity(*p_data['intensity']),
+        '2Theta': to_pint_quantity(*p_data['two_theta']),
+        'Omega': to_pint_quantity(*p_data['Omega_position']),
+        'Chi': to_pint_quantity(*p_data['Chi_position']),
+        'Phi': to_pint_quantity(*p_data['Phi_position']),
         'countTime': count_time,
         'metadata': {
             'sample_id': None,
             'scan_axis': scan_axis,
             'source': {
-                'anode_material': set_quantity(*source['TargetName']),
-                'kAlpha1': set_quantity(*source['WavelengthKalpha1']),
-                'kAlpha2': set_quantity(*source['WavelengthKalpha2']),
-                'kBeta': set_quantity(*source['WavelengthKbeta']),
-                'voltage': set_quantity(*source['Voltage']),
-                'current': set_quantity(*source['Current']),
+                'anode_material': to_pint_quantity(*source['TargetName']),
+                'kAlpha1': to_pint_quantity(*source['WavelengthKalpha1']),
+                'kAlpha2': to_pint_quantity(*source['WavelengthKalpha2']),
+                'kBeta': to_pint_quantity(*source['WavelengthKbeta']),
+                'voltage': to_pint_quantity(*source['Voltage']),
+                'current': to_pint_quantity(*source['Current']),
                 'ratioKAlpha2KAlpha1': None,
             },
         },
@@ -258,39 +243,24 @@ def read_bruker_brml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
     scan_info = reader.get_scan_info()
     source = reader.get_source_info()
 
-    def set_quantity(value: Any=None, unit: str=None) -> Any:
-        '''
-        Sets the quantity based on whether value or/and unit are available.
-
-        Args:
-            value (Any): Value of the quantity.
-            unit (str): Unit of the quantity.
-
-        Returns:
-            Any: Processed quantity with datatype depending on the value.
-        '''
-        if not unit:
-            return value
-        return value * ureg(unit)
-
     output = {
-        'detector': set_quantity(*data['intensity']),
-        '2Theta': set_quantity(*data['TwoTheta']),
-        'Omega': set_quantity(*data['Theta']), # theta and omega are synonymous in .brml
-        'Chi': set_quantity(*data['Chi']),
-        'Phi': set_quantity(*data['Phi']),
+        'detector': to_pint_quantity(*data['intensity']),
+        '2Theta': to_pint_quantity(*data['TwoTheta']),
+        'Omega': to_pint_quantity(*data['Theta']), # theta and omega are synonymous in .brml
+        'Chi': to_pint_quantity(*data['Chi']),
+        'Phi': to_pint_quantity(*data['Phi']),
         'countTime': None,
         'metadata': {
             'sample_id': None,
-            'scan_axis': set_quantity(*scan_info['ScanName']),
+            'scan_axis': to_pint_quantity(*scan_info['ScanName']),
             'source': {
-                'anode_material': set_quantity(*source['TubeMaterial']),
-                'kAlpha1': set_quantity(*source['WaveLengthAlpha1']),
-                'kAlpha2': set_quantity(*source['WaveLengthAlpha2']),
-                'kBeta': set_quantity(*source['WaveLengthBeta']),
-                'ratioKAlpha2KAlpha1': set_quantity(*source['WaveLengthRatio']),
-                'voltage': set_quantity(*source['Voltage']),
-                'current': set_quantity(*source['Current']),
+                'anode_material': to_pint_quantity(*source['TubeMaterial']),
+                'kAlpha1': to_pint_quantity(*source['WaveLengthAlpha1']),
+                'kAlpha2': to_pint_quantity(*source['WaveLengthAlpha2']),
+                'kBeta': to_pint_quantity(*source['WaveLengthBeta']),
+                'ratioKAlpha2KAlpha1': to_pint_quantity(*source['WaveLengthRatio']),
+                'voltage': to_pint_quantity(*source['Voltage']),
+                'current': to_pint_quantity(*source['Current']),
             },
         },
     }
