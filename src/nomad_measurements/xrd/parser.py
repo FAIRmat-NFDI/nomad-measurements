@@ -67,4 +67,4 @@ class XRDParser(MatchingParser):
         entry.data_file = data_file
         file_name = f'{"".join(data_file.split(".")[:-1])}.archive.json'
         archive.data = XRDDataFile(measurement=create_archive(entry,archive,file_name))
-        archive.metadata.entry_name = "".join(data_file.split(".")[:-1]) + ' data file'
+        archive.metadata.entry_name = f'{data_file} data file'
