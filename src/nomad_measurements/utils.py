@@ -17,7 +17,10 @@
 #
 from typing import (
     TYPE_CHECKING,
+    Any,
 )
+from nomad.units import ureg
+
 if TYPE_CHECKING:
     from nomad.datamodel.data import (
         ArchiveSection,
@@ -106,3 +109,19 @@ def merge_sections(
                 logger.warning(warning)
             else:
                 print(warning)
+
+
+def set_quantity(value: Any=None, unit: str=None) -> Any:
+    '''
+    Sets the quantity based on whether value or/and unit are available.
+
+    Args:
+        value (Any): Value of the quantity.
+        unit (str): Unit of the quantity.
+
+    Returns:
+        Any: Processed quantity with datatype depending on the value.
+    '''
+    if not unit:
+        return value
+    return value * ureg(unit)

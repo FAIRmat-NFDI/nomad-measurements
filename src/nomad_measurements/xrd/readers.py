@@ -24,6 +24,7 @@ from typing import (
 import numpy as np
 from nomad.units import ureg
 # from pynxtools.dataconverter.convert import transfer_data_into_template
+from nomad_measurements.utils import set_quantity
 from nomad_measurements.xrd.IKZ import RASXfile, BRMLfile
 
 if TYPE_CHECKING:
@@ -201,22 +202,6 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
 
         scan_axis = scan_info.get('AxisName', None)
 
-
-    def set_quantity(value: Any=None, unit: str=None) -> Any:
-        '''
-        Sets the quantity based on whether value or/and unit are available.
-
-        Args:
-            value (Any): Value of the quantity.
-            unit (str): Unit of the quantity.
-
-        Returns:
-            Any: Processed quantity with datatype depending on the value.
-        '''
-        if not unit:
-            return value
-        return value * ureg(unit)
-
     output = {
         'detector': set_quantity(*p_data['intensity']),
         '2Theta': set_quantity(*p_data['two_theta']),
@@ -257,21 +242,6 @@ def read_bruker_brml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
     data = reader.get_1d_scan(logger)
     scan_info = reader.get_scan_info()
     source = reader.get_source_info()
-
-    def set_quantity(value: Any=None, unit: str=None) -> Any:
-        '''
-        Sets the quantity based on whether value or/and unit are available.
-
-        Args:
-            value (Any): Value of the quantity.
-            unit (str): Unit of the quantity.
-
-        Returns:
-            Any: Processed quantity with datatype depending on the value.
-        '''
-        if not unit:
-            return value
-        return value * ureg(unit)
 
     output = {
         'detector': set_quantity(*data['intensity']),
