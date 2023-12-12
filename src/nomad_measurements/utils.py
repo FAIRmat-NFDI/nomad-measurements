@@ -111,9 +111,9 @@ def merge_sections(
                 print(warning)
 
 
-def set_quantity(value: Any=None, unit: str=None) -> Any:
+def to_pint_quantity(value: Any=None, unit: str=None) -> Any:
     '''
-    Sets the quantity based on whether value or/and unit are available.
+    Attempts to generate a pint quantity based on whether value or/and unit are available.
 
     Args:
         value (Any): Value of the quantity.
