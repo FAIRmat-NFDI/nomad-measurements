@@ -360,12 +360,12 @@ class XRayDiffraction(Measurement):
     diffraction_method_name = Quantity(
         type=MEnum(
             [
-                'Powder X-ray Diffraction (PXRD)',
-                'Single Crystal X-ray Diffraction (SCXRD)',
-                'High-Resolution X-ray Diffraction (HRXRD)',
-                'Small-Angle X-ray Scattering (SAXS)',
-                'X-ray Reflectivity (XRR)',
-                'Grazing Incidence X-ray Diffraction (GIXRD)',
+                'Powder X-Ray Diffraction (PXRD)',
+                'Single Crystal X-Ray Diffraction (SCXRD)',
+                'High-Resolution X-Ray Diffraction (HRXRD)',
+                'Small-Angle X-Ray Scattering (SAXS)',
+                'X-Ray Reflectivity (XRR)',
+                'Grazing Incidence X-Ray Diffraction (GIXRD)',
             ]
         ),
         description='''
