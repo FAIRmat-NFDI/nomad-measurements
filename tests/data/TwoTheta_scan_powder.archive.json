@@ -1,0 +1,7 @@
+{
+    "data": {
+        "m_def": "nomad_measurements.xrd.schema.ELNXRayDiffraction",
+        "data_file": "TwoTheta_scan_powder.rasx",
+        "measurement_identifiers": {}
+    }
+}

@@ -1,0 +1,7 @@
+{
+    "data": {
+        "m_def": "nomad_measurements.xrd.schema.ELNXRayDiffraction",
+        "data_file": "RSM_111_sdd=350.rasx",
+        "measurement_identifiers": {}
+    }
+}

@@ -1,0 +1,7 @@
+{
+    "data": {
+        "m_def": "nomad_measurements.xrd.schema.ELNXRayDiffraction",
+        "data_file": "Omega-2Theta_scan_high_temperature.rasx",
+        "measurement_identifiers": {}
+    }
+}
