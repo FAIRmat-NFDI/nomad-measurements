@@ -8,9 +8,11 @@ This is a plugin for [NOMAD](https://nomad-lab.eu) which contains base sections 
 materials science measurements.
 
 ## Getting started
-`nomad-measurements` can be installed from PyPI using `pip`:
+`nomad-measurements` can be installed from PyPI using `pip`.
+Currently we require features in `nomad-lab` which are not published to PyPI.
+In order to install these a `--index-url` needs to be provided:
 ```sh
-pip install nomad-measurements
+pip install nomad-measurements --index-url https://gitlab.mpcdf.mpg.de/api/v4/projects/2187/packages/pypi/simple
 ```
 ### Setting up your OASIS
 Read the [NOMAD plugin documentation](https://nomad-lab.eu/prod/v1/staging/docs/plugins/plugins.html#add-a-plugin-to-your-nomad) for all details on how to deploy the plugin on your NOMAD instance.
