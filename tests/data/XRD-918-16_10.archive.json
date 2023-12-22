@@ -1,7 +1,0 @@
-{
-    "data": {
-        "m_def": "nomad_measurements.xrd.schema.ELNXRayDiffraction",
-        "data_file": "XRD-918-16_10.xrdml",
-        "measurement_identifiers": {}
-    }
-}

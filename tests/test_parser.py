@@ -15,13 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import os.path
-
+import os
 import pytest
 
 from nomad.client import parse, normalize_all
 
-@pytest.mark.parametrize('file', [
+@pytest.fixture(params=[
     'XRD-918-16_10.xrdml',
     'm54313_om2th_10.xrdml',
     '23-012-AG_2thomegascan_long.brml',
@@ -29,11 +28,26 @@ from nomad.client import parse, normalize_all
     'RSM_111_sdd=350.rasx',
     'TwoTheta_scan_powder.rasx',
 ])
-def test_parser(file):
-    rel_file = os.path.join('tests', 'data', file)
+def parsed_archive(request):
+    '''
+    Sets up data for testing and cleans up after the test.
+    '''
+    rel_file = os.path.join('tests', 'data', request.param)
     file_archive = parse(rel_file)[0]
-    measurement = os.path.join('tests', 'data', '.'.join(file.split('.')[:-1]) + '.archive.json')
+    measurement = os.path.join(
+        'tests', 'data', '.'.join(request.param.split('.')[:-1]) + '.archive.json'
+    )
     assert file_archive.data.measurement.m_proxy_value == os.path.abspath(measurement)
     measurement_archive = parse(measurement)[0]
-    normalize_all(measurement_archive)
-    assert measurement_archive.data.xrd_settings.source.xray_tube_material == 'Cu'
+
+    yield measurement_archive
+
+    if os.path.exists(measurement):
+        os.remove(measurement)
+
+def test_normalize_all(parsed_archive):
+    normalize_all(parsed_archive)
+    print(parsed_archive.data)
+    assert parsed_archive.data.xrd_settings.source.xray_tube_material == 'Cu'
+    assert parsed_archive.data.results[0].source_peak_wavelength.magnitude \
+        == pytest.approx(1.540598, 1e-2)
