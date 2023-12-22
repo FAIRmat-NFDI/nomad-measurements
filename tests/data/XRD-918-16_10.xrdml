@@ -9,7 +9,7 @@
 		<entry>Batch program=C:\PANalytical\Data Collector\Programs\BBHD-FASS_4-70_step01_40s_Omar_6 samples.xrdmp, Identifier={D0DF481D-C866-435E-BCBB-469939A807AC}</entry>
 	</comment>
 	<sample type="To be analyzed">
-		<id>918-16</id>
+		<id></id>
 		<name></name>
 		<preparedBy></preparedBy>
 	</sample>

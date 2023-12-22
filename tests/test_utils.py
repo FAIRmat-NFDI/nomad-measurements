@@ -1,10 +1,16 @@
+import numpy as np
+
 from nomad.datamodel.metainfo.basesections import (
     Component,
     CompositeSystem,
     PureSubstanceComponent,
     PureSubstanceSection,
 )
-from nomad_measurements.utils import merge_sections
+from nomad.units import ureg
+from nomad_measurements.utils import(
+    merge_sections,
+    to_pint_quantity,
+)
 
 def test_merge_sections():
     component_1 = Component(
@@ -48,6 +54,14 @@ def test_merge_sections():
     assert system_1.components[2].name == 'Fe'
     merge_sections(system_3, system_2)
     assert system_3.components[0].name == 'Cu'
+
+def test_to_pint_quantity():
+    assert to_pint_quantity(1, 'mA') == 1 * ureg.mA
+    assert str(to_pint_quantity(np.asarray([1., 2.]), 'm')) \
+        == str(np.asarray([1., 2.]) * ureg.m)
+    assert str(to_pint_quantity(np.asarray([1., 2.]), '')) \
+        == str(np.asarray([1., 2.]))
+    assert to_pint_quantity('Copper', '') == 'Copper'
 
 if __name__ == '__main__':
     test_merge_sections()
