@@ -113,7 +113,8 @@ def merge_sections(
 
 def to_pint_quantity(value: Any=None, unit: str=None) -> Any:
     '''
-    Attempts to generate a pint quantity based on whether value or/and unit are available.
+    Attempts to generate a pint quantity.
+    In case the value is a string, it is returned as is.
 
     Args:
         value (Any): Value of the quantity.
@@ -122,6 +123,6 @@ def to_pint_quantity(value: Any=None, unit: str=None) -> Any:
     Returns:
         Any: Processed quantity with datatype depending on the value.
     '''
-    if not unit:
+    if isinstance(value, str):
         return value
     return value * ureg(unit)
