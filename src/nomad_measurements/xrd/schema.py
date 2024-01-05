@@ -142,6 +142,27 @@ def calculate_two_theta_or_q(
         return (4 * np.pi / wavelength) * np.sin(two_theta.to('radian') / 2), two_theta
     return q, two_theta
 
+def calculate_q_vectors_RSM(
+        wavelength: 'pint.Quantity',
+        two_theta: 'pint.Quantity',
+        omega: 'pint.Quantity',
+):
+    '''
+    Calculate the q-vectors for a reciprocal space map.
+
+    Returns:
+        tuple[pint.Quantity, pint.Quantity]: Tuple of q-vectors in the x and y directions.
+    '''
+    qx = (
+        2 * np.pi / wavelength *
+        (np.cos(two_theta.to('radian')) - np.cos(omega.to('radian')))
+    )
+    qz = (
+        2 * np.pi / wavelength *
+        (np.sin(two_theta.to('radian')) + np.sin(omega.to('radian')))
+    )
+
+    return qx, qz
 
 def estimate_kalpha_wavelengths(source_material):
     '''
@@ -282,6 +303,16 @@ class XRDResult(MeasurementResult):
         unit='meter**(-1)',
         description='The scattering vector *Q* of the diffractogram',
     )
+    q_2d_x = Quantity(
+        type=np.dtype(np.float64), shape=['*','*'],
+        unit='meter**(-1)',
+        description='The scattering vector *Qx* of the diffractogram',
+    )
+    q_2d_z = Quantity(
+        type=np.dtype(np.float64), shape=['*','*'],
+        unit='meter**(-1)',
+        description='The scattering vector *Qz* of the diffractogram',
+    )
     intensity = Quantity(
         type=np.dtype(np.float64), shape=['*','*'],
         description='The count at each 2-theta value, dimensionless',
@@ -329,6 +360,16 @@ class XRDResult(MeasurementResult):
         '''
         super().normalize(archive, logger)
         if self.source_peak_wavelength is not None:
+            # check if the scan in 2D based on variation in axis
+            for k in ['omega','chi','phi']:
+                if self[k] is not None and \
+                len(np.unique(self[k].magnitude)) > 1:
+                    self.q_2d_x, self.q_2d_z = calculate_q_vectors_RSM(
+                        wavelength = self.source_peak_wavelength,
+                        two_theta = self.two_theta,
+                        omega = self[k],
+                    )
+                    return
             self.q_vector, self.two_theta = calculate_two_theta_or_q(
                 wavelength=self.source_peak_wavelength,
                 two_theta=self.two_theta,
