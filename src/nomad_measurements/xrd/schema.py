@@ -23,6 +23,7 @@ from typing import (
 )
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 
 from nomad.datamodel.metainfo.basesections import (
     Measurement,
@@ -676,6 +677,103 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             logger,
         )
 
+    def plot_1d(self):
+        '''
+        Plot the 1D diffractogram.
+        '''
+        line_linear = px.line(
+            x=self.results[0].two_theta.squeeze(),
+            y=self.results[0].intensity.squeeze(),
+            labels={
+                'x': '2θ (°)',
+                'y': 'Intensity',
+            },
+            title='Intensity (linear scale)',
+        )
+        line_log = px.line(
+            x=self.results[0].two_theta.squeeze(),
+            y=self.results[0].intensity.squeeze(),
+            log_y=True,
+            labels={
+                'x': '2θ (°)',
+                'y': 'Intensity',
+            },
+            title='Intensity (log scale)',
+        )
+        self.figures = [
+            PlotlyFigure(
+                label='Log Plot',
+                index=1,
+                figure=line_log.to_plotly_json(),
+            ),
+            PlotlyFigure(
+                label='Linear Plot',
+                index=2,
+                figure=line_linear.to_plotly_json(),
+            ),
+        ]
+
+    def plot_2d_rsm(self):
+        '''
+        Plot the 2D RSM diffractogram.
+        '''
+        # Plot for 2theta-omega RSM
+        # find the axis that changes along with 2theta
+        for var_axis in ['omega','chi','phi']:
+            if len(np.unique(self.results[0][var_axis].magnitude)) > 1:
+                break
+        fig_2theta_omega = go.Figure(
+            data = go.Scattergl(
+                x = self.results[0][var_axis].magnitude.flatten()/10**10,
+                y = self.results[0].two_theta.magnitude.flatten()/10**10,
+                mode = 'markers',
+                marker = dict(
+                    color = np.log10(self.results[0].intensity).flatten(),
+                    colorscale = 'inferno',
+                    line_width = 0,
+                    showscale = True,
+                )
+            ),
+        )
+        fig_2theta_omega.update_layout(
+            title = '2Theta-Omega RSM log plot',
+            xaxis_title = f'{var_axis} (°)',
+            yaxis_title = '2θ (°)',
+        )
+
+        # Plot for q-vectors RSM
+        fig_q_vector = go.Figure(
+            data = go.Scattergl(
+                x = self.results[0].q_2d_x.magnitude.flatten()/10**10,
+                y = self.results[0].q_2d_z.magnitude.flatten()/10**10,
+                mode = 'markers',
+                marker = dict(
+                    color = np.log10(self.results[0].intensity).flatten(),
+                    colorscale = 'inferno',
+                    line_width = 0,
+                    showscale = True,
+                )
+            ),
+        )
+        fig_q_vector.update_layout(
+            title = 'Q-vector RSM log plot',
+            xaxis_title = 'Qx (1/Å)',
+            yaxis_title = 'Qz (1/Å)',
+        )
+
+        self.figures = [
+            PlotlyFigure(
+                label = 'RSM (2Theta-Omega)',
+                index = 1,
+                figure = fig_2theta_omega.to_plotly_json()
+            ),
+            PlotlyFigure(
+                label = 'RSM (Q-vectors)',
+                index = 2,
+                figure = fig_q_vector.to_plotly_json()
+            )
+        ]
+
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         '''
         The normalize function of the `ELNXRayDiffraction` section.
@@ -700,36 +798,10 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         if not self.results:
             return
 
-        line_linear = px.line(
-            x=self.results[0].two_theta,
-            y=self.results[0].intensity,
-            labels={
-                'x': '2θ (°)',
-                'y': 'Intensity',
-            },
-            title='Intensity (linear scale)',
-        )
-        line_log = px.line(
-            x=self.results[0].two_theta,
-            y=self.results[0].intensity,
-            log_y=True,
-            labels={
-                'x': '2θ (°)',
-                'y': 'Intensity',
-            },
-            title='Intensity (log scale)',
-        )
-        self.figures.extend([
-            PlotlyFigure(
-                label='Log Plot',
-                index=1,
-                figure=line_log.to_plotly_json(),
-            ),
-            PlotlyFigure(
-                label='Linear Plot',
-                index=2,
-                figure=line_linear.to_plotly_json(),
-            ),
-        ])
+        scan_type = xrd_dict['metadata'].get('scan_type', None)
+        if scan_type in [None,'1D']:
+            self.plot_1d()
+        elif scan_type == '2D':
+            self.plot_2d_rsm()
 
 m_package.__init_metainfo__()
