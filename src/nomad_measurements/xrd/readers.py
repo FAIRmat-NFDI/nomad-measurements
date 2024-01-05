@@ -171,8 +171,6 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
     '''
     Reads .rasx files from Rigaku instruments
         - reader is based on IKZ module
-        - currently supports one scan per file
-        - in case of multiple scans per file, only the first scan is read
 
     Args:
         file_path (string): absolute path of the file.
@@ -183,11 +181,15 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
     '''
     reader = RASXfile(file_path, verbose=False)
     scan_info = reader.get_scan_info()
-    p_data = reader.get_1d_scan(logger)
+    p_data = reader.get_scan_data(logger)
     source = reader.get_source_info()
 
     count_time = None
     scan_axis = None
+
+    scan_type = '1D'
+    if p_data['intensity'][0].shape[0] > 1:
+        scan_type = '2D'
 
     if scan_info:
         required_keys = ['Mode','SpeedUnit','PositionUnit','Step', 'Speed']
@@ -212,6 +214,7 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
         'metadata': {
             'sample_id': None,
             'scan_axis': scan_axis,
+            'scan_type': scan_type,
             'source': {
                 'anode_material': to_pint_quantity(*source['TargetName']),
                 'kAlpha1': to_pint_quantity(*source['WavelengthKalpha1']),
