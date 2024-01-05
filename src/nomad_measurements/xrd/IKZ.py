@@ -226,10 +226,11 @@ class RASXfile(object):
 
         return output
 
-    def get_1d_scan(self, logger: 'BoundLogger'=None):
+    def get_scan_data(self, logger: 'BoundLogger'=None):
         '''
-        Collect the values and units of intensity, two_theta, and axis positions. Adapts 
-        the output if collected data has multiple/2d scans.
+        Collect the values and units of intensity, two_theta, and axis positions. Values
+        returned are always transformed into a 2D array. In case the axis position is
+        constant, the axis position is duplicated to match the dimensions of intensity.
 
         Returns:
             Dict[str, Any]: Each dict item contains a list with numerical value
@@ -249,6 +250,10 @@ class RASXfile(object):
             self.units.get(scan_axis, 'deg'),
         ]
 
+        for k in output:
+            if np.ndim(output[k][0]) == 1:
+                output[k][0] = np.array([output[k][0]])
+
         for axis in ['Omega', 'Chi', 'Phi']:
             if axis not in self.positions.keys():
                 continue
@@ -261,20 +266,6 @@ class RASXfile(object):
                 ax_data,
                 self.units.get(axis, 'deg'),
             ]
-
-        if not self.data.shape[0] == 1:
-            if logger is not None:
-                logger.warning(
-                    'Multiple/2D/RSM scan currently not supported. '
-                    'Taking the data from the first line scan.'
-                )
-            for key, data in output.items():
-                if isinstance(data[0], np.ndarray) and data[0].ndim == 2:
-                    output[key][0] = data[0][0,:].squeeze()
-                    if len(np.unique(output[key][0])) == 1:
-                        # shrinking duplicate data populated by self.__init__()
-                        first_val = output[key][0][0]
-                        output[key][0] = np.array([first_val])
 
         return output
 

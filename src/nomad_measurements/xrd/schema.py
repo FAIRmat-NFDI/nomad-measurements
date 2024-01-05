@@ -273,40 +273,31 @@ class XRDResult(MeasurementResult):
         derived=derive_n_values,
     )
     two_theta = Quantity(
-        type=np.dtype(np.float64), shape=['n_values'],
+        type=np.dtype(np.float64), shape=['*','*'],
         unit='deg',
         description='The 2-theta range of the diffractogram',
-        a_plot={
-            'x': 'two_theta', 'y': 'intensity'
-        },
     )
     q_vector = Quantity(
-        type=np.dtype(np.float64), shape=['*'],
+        type=np.dtype(np.float64), shape=['*','*'],
         unit='meter**(-1)',
         description='The scattering vector *Q* of the diffractogram',
-        a_plot={
-            'x': 'q_vector', 'y': 'intensity'
-        },
     )
     intensity = Quantity(
-        type=np.dtype(np.float64), shape=['*'],
+        type=np.dtype(np.float64), shape=['*','*'],
         description='The count at each 2-theta value, dimensionless',
-        a_plot={
-            'x': 'two_theta', 'y': 'intensity'
-        },
     )
     omega = Quantity(
-        type=np.dtype(np.float64), shape=['*'],
+        type=np.dtype(np.float64), shape=['*','*'],
         unit='deg',
         description='The omega range of the diffractogram',
     )
     phi = Quantity(
-        type=np.dtype(np.float64), shape=['*'],
+        type=np.dtype(np.float64), shape=['*','*'],
         unit='deg',
         description='The phi range of the diffractogram',
     )
     chi = Quantity(
-        type=np.dtype(np.float64), shape=['*'],
+        type=np.dtype(np.float64), shape=['*','*'],
         unit='deg',
         description='The chi range of the diffractogram',
     )
