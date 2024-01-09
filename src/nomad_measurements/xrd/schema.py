@@ -147,12 +147,17 @@ def calculate_q_vectors_RSM(
         wavelength: 'pint.Quantity',
         two_theta: 'pint.Quantity',
         omega: 'pint.Quantity',
-):
+    ):
     '''
-    Calculate the q-vectors for a reciprocal space map.
+    Calculate the q-vectors for RSM scans in coplanar configuration.
+
+    Args:
+        wavelength (pint.Quantity): Wavelength of the X-ray source.
+        two_theta (pint.Quantity): Array of 2theta or detector angles.
+        omega (pint.Quantity): Array of omega or rocking/incidence angles.
 
     Returns:
-        tuple[pint.Quantity, pint.Quantity]: Tuple of q-vectors in the x and y directions.
+        tuple[pint.Quantity, pint.Quantity]: Tuple of q-vectors.
     '''
     qx = (
         2 * np.pi / wavelength *
@@ -163,7 +168,10 @@ def calculate_q_vectors_RSM(
         (np.sin(two_theta.to('radian')) + np.sin(omega.to('radian')))
     )
 
-    return qx, qz
+    q_parallel = qx
+    q_perpendicular = qz
+
+    return q_parallel, q_perpendicular
 
 def estimate_kalpha_wavelengths(source_material):
     '''
@@ -304,15 +312,15 @@ class XRDResult(MeasurementResult):
         unit='meter**(-1)',
         description='The scattering vector *Q* of the diffractogram',
     )
-    q_2d_x = Quantity(
+    q_parallel = Quantity(
         type=np.dtype(np.float64), shape=['*','*'],
         unit='meter**(-1)',
-        description='The scattering vector *Qx* of the diffractogram',
+        description='The scattering vector *Q_parallel* of the diffractogram',
     )
-    q_2d_z = Quantity(
+    q_perpendicular = Quantity(
         type=np.dtype(np.float64), shape=['*','*'],
         unit='meter**(-1)',
-        description='The scattering vector *Qz* of the diffractogram',
+        description='The scattering vector *Q_perpendicular* of the diffractogram',
     )
     intensity = Quantity(
         type=np.dtype(np.float64), shape=['*','*'],
@@ -365,7 +373,7 @@ class XRDResult(MeasurementResult):
             for k in ['omega','chi','phi']:
                 if self[k] is not None and \
                 len(np.unique(self[k].magnitude)) > 1:
-                    self.q_2d_x, self.q_2d_z = calculate_q_vectors_RSM(
+                    self.q_parallel, self.q_perpendicular = calculate_q_vectors_RSM(
                         wavelength = self.source_peak_wavelength,
                         two_theta = self.two_theta,
                         omega = self[k],
@@ -399,6 +407,7 @@ class XRayDiffraction(Measurement):
                 'Small-Angle X-Ray Scattering (SAXS)',
                 'X-Ray Reflectivity (XRR)',
                 'Grazing Incidence X-Ray Diffraction (GIXRD)',
+                # 'Reciprocal Space Mapping (RSM)',
             ]
         ),
         description='''
@@ -412,6 +421,7 @@ class XRayDiffraction(Measurement):
         | **X-ray Reflectivity (XRR)**                               | Used to study thin film layers, interfaces, and multilayers. Provides info on film thickness, density, and roughness.                                                                                       |
         | **Grazing Incidence X-ray Diffraction (GIXRD)**            | Primarily used for the analysis of thin films with the incident beam at a fixed shallow angle.                                                                                                              |
         ''',
+        # | **Reciprocal Space Mapping (RSM)**                         | High-resolution XRD method to measure a reciprocal space map. Provides additional information used to aid the interpretation of peak displacement, peak broadening or peak overlap.                                                                                                                                                             |
     )
     results = Measurement.results.m_copy()
     results.section_def = XRDResult
@@ -732,46 +742,52 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
                     colorscale = 'inferno',
                     line_width = 0,
                     showscale = True,
-                )
+                ),
             ),
         )
         fig_2theta_omega.update_layout(
-            title = '2Theta-Omega RSM log plot',
+            title = 'RSM plot: Intensity (log-scale) vs Axis position',
             xaxis_title = f'{var_axis} (°)',
             yaxis_title = '2θ (°)',
+            xaxis = dict(
+                fixedrange = False,
+            ),
         )
 
         # Plot for q-vectors RSM
         fig_q_vector = go.Figure(
             data = go.Scattergl(
-                x = self.results[0].q_2d_x.magnitude.flatten()/10**10,
-                y = self.results[0].q_2d_z.magnitude.flatten()/10**10,
+                x = self.results[0].q_parallel.magnitude.flatten()/10**10,
+                y = self.results[0].q_perpendicular.magnitude.flatten()/10**10,
                 mode = 'markers',
                 marker = dict(
                     color = np.log10(self.results[0].intensity).flatten(),
                     colorscale = 'inferno',
                     line_width = 0,
                     showscale = True,
-                )
+                ),
             ),
         )
         fig_q_vector.update_layout(
-            title = 'Q-vector RSM log plot',
-            xaxis_title = 'Qx (1/Å)',
-            yaxis_title = 'Qz (1/Å)',
+            title = 'RSM plot: Intensity (log-scale) vs Q-vectors',
+            xaxis_title = 'Q_parallel (1/Å)',
+            yaxis_title = 'Q_perpendicular (1/Å)',
+            xaxis = dict(
+                fixedrange = False,
+            ),
         )
 
         self.figures = [
             PlotlyFigure(
-                label = 'RSM (2Theta-Omega)',
+                label = 'RSM (Q-vectors)',
                 index = 1,
-                figure = fig_2theta_omega.to_plotly_json()
+                figure = fig_q_vector.to_plotly_json(),
             ),
             PlotlyFigure(
-                label = 'RSM (Q-vectors)',
+                label = 'RSM (2Theta-Omega)',
                 index = 2,
-                figure = fig_q_vector.to_plotly_json()
-            )
+                figure = fig_2theta_omega.to_plotly_json(),
+            ),
         ]
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
