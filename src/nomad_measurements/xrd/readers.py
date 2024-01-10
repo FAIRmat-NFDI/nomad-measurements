@@ -187,10 +187,6 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
     count_time = None
     scan_axis = None
 
-    scan_type = '1D'
-    if p_data['intensity'][0].shape[0] > 1:
-        scan_type = '2D'
-
     if scan_info:
         required_keys = ['Mode','SpeedUnit','PositionUnit','Step', 'Speed']
         if all(key in scan_info and scan_info[key] for key in required_keys):
@@ -214,7 +210,7 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
         'metadata': {
             'sample_id': None,
             'scan_axis': scan_axis,
-            'scan_type': scan_type,
+            'scan_type': to_pint_quantity(*p_data['ScanType']),
             'source': {
                 'anode_material': to_pint_quantity(*source['TargetName']),
                 'kAlpha1': to_pint_quantity(*source['WavelengthKalpha1']),
@@ -242,7 +238,7 @@ def read_bruker_brml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
         Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
     '''
     reader = BRMLfile(file_path, verbose=False)
-    data = reader.get_1d_scan(logger)
+    data = reader.get_scan_data(logger)
     scan_info = reader.get_scan_info()
     source = reader.get_source_info()
 
@@ -256,6 +252,7 @@ def read_bruker_brml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
         'metadata': {
             'sample_id': None,
             'scan_axis': to_pint_quantity(*scan_info['ScanName']),
+            'scan_type': to_pint_quantity(*data['ScanType']),
             'source': {
                 'anode_material': to_pint_quantity(*source['TubeMaterial']),
                 'kAlpha1': to_pint_quantity(*source['WaveLengthAlpha1']),

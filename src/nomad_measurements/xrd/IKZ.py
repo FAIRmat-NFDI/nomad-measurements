@@ -267,6 +267,18 @@ class RASXfile(object):
                 self.units.get(axis, 'deg'),
             ]
 
+        if output['intensity'][0].shape[0] == 1:
+            output['ScanType'] = ['1D', '']
+        elif output['intensity'][0].shape[0] > 1:
+            output['ScanType'] = ['2D', '']
+
+        for key in ['intensity', 'two_theta', 'Omega', 'Chi', 'Phi']:
+            # checking if the processed data has the expected shape before returning
+            if key in output:
+                if not np.ndim(output[key][0]) == 2:
+                    raise ValueError(f'Unexpected shape of the {key} data: \
+                                     {output[key][0].shape}')
+
         return output
 
     def get_scan_info(self):
@@ -390,7 +402,12 @@ class BRMLfile(object):
                     astep = float(axis["Increment"])
                     nint = int(round(abs(astop-astart)/astep))
                     adata = {} # not originally part of Carsten's code
-                    adata["Value"] = np.linspace(astart, astop, nint+1)
+                    if nsteps == 1:
+                        # true for rsm scans tested so far
+                        adata["Value"] = np.linspace(astart, astop, nint)
+                    if nsteps > 1:
+                        # true for 1d scans tested so far
+                        adata["Value"] = np.linspace(astart, astop, nsteps)
                     adata["Unit"] = aunit.lower()
                     self.data[aname].append(adata)
 
@@ -425,10 +442,9 @@ class BRMLfile(object):
                 if not self.motors[key].shape:
                     self.motors[key] = self.motors[key].item()
 
-    def get_1d_scan(self, logger: 'BoundLogger'=None):
+    def get_scan_data(self, logger: 'BoundLogger'=None):
         '''
-        Collect the values and units of intensity, two_theta, and axis positions. Adapts
-        the output if collected data has multiple/2d scans.
+        Collect the values and units of intensity, two_theta, and axis positions.
 
         Returns:
             Dict[str, Any]: Each dict item contains a list with numerical value
@@ -443,33 +459,60 @@ class BRMLfile(object):
             if 'counter' in key.lower():
                 counter_key.append(key)
         if len(counter_key) > 1:
-            raise ValueError("More than one intensity counters found.")
-
-        if not self.data.get(counter_key[0]).ndim == 1:
-            if logger is not None:
-                logger.warning(
-                    'Multiple/2D/RSM scan currently not supported. '
-                    'Taking the data from the first line scan.'
-                )
-            for key in [counter_key[0], 'TwoTheta', 'Theta', 'Chi', 'Phi']:
-                val = self.data.get(key, None)
-                if val is not None:
-                    self.data[key] = val[0]
+            raise ValueError('More than one intensity counters found.')
 
         if counter_key:
             output['intensity'] = [self.data.get(counter_key[0]), '']
+        if np.ndim(output['intensity'][0]) == 1:
+            # to match dimensions of schema
+            output['intensity'][0] = np.array([output['intensity'][0]])
 
-        for key in ['TwoTheta', 'Theta', 'Chi', 'Phi']:
-            data = self.data.get(key)
-            if data is not None:
-                val = data.get('Value')
+        if output['intensity'][0].shape[0] == 1:
+            output['ScanType'] = ['1D', '']
+            for key in ['TwoTheta', 'Theta', 'Chi', 'Phi']:
+                axis_data = self.data.get(key, None)
+                if axis_data is None:
+                    continue
+                if not isinstance(axis_data, dict):
+                    raise ValueError(f'Unexpected data input for axis {key}.')
+                # collect the numpy array from the dict (single scan)
+                val = axis_data.get('Value')
                 if val is not None:
-                    if not isinstance(val, np.ndarray):
+                    if np.ndim(val) == 0:
                         val = np.array([val])
+                    val = val[None, :] * np.ones_like(output['intensity'][0])
                     output[key] = [
                         val,
-                        data.get('Unit', 'deg'),
+                        axis_data.get('Unit', 'deg'),
                     ]
+        elif output['intensity'][0].shape[0] > 1:
+            output['ScanType'] = ['2D', '']
+            for key in ['TwoTheta', 'Theta', 'Chi', 'Phi']:
+                axis_data = self.data.get(key, None)
+                if axis_data is None:
+                    continue
+                if not isinstance(axis_data, np.ndarray):
+                    raise ValueError(f'Unexpected data input for axis {key}.')
+                # collect the numpy arrays from the list of dicts (multiple scans)
+                val = []
+                for ad in axis_data:
+                    if not isinstance(ad['Value'], np.ndarray):
+                        val.append(np.array([ad['Value']]) *
+                                   np.ones_like(output['intensity'][0][0]))
+                    else:
+                        val.append(ad['Value'])
+                val = np.array(val)
+                if val is not None:
+                    output[key] = [
+                        val,
+                        axis_data[0].get('Unit', 'deg'),
+                    ]
+        for key in ['intensity', 'TwoTheta', 'Omega', 'Chi', 'Phi']:
+            # checking if the processed data has the expected shape before returning
+            if key in output:
+                if not np.ndim(output[key][0]) == 2:
+                    raise ValueError(f'Unexpected shape of the {key} data: \
+                                     {output[key][0].shape}')
 
         return output
 
