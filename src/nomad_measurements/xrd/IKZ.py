@@ -246,7 +246,7 @@ class RASXfile(object):
         if scan_info:
             scan_axis = scan_info.get('AxisName', None)
         output['two_theta'] = [
-            two_theta,
+            two_theta.flatten(),
             self.units.get(scan_axis, 'deg'),
         ]
 
@@ -263,7 +263,7 @@ class RASXfile(object):
             if np.ndim(ax_data):
                 ax_data = ax_data[:, None] * np.ones_like(intensity)
             output[axis + '_position'] = [
-                ax_data,
+                ax_data.flatten(),
                 self.units.get(axis, 'deg'),
             ]
 
@@ -272,10 +272,12 @@ class RASXfile(object):
         elif output['intensity'][0].shape[0] > 1:
             output['ScanType'] = ['2D', '']
 
+        output['intensity'][0] = output['intensity'][0].flatten()
+
         for key in ['intensity', 'two_theta', 'Omega', 'Chi', 'Phi']:
             # checking if the processed data has the expected shape before returning
             if key in output:
-                if not np.ndim(output[key][0]) == 2:
+                if not np.ndim(output[key][0]) == 1:
                     raise ValueError(f'Unexpected shape of the {key} data: \
                                      {output[key][0].shape}')
 
@@ -482,7 +484,7 @@ class BRMLfile(object):
                         val = np.array([val])
                     val = val[None, :] * np.ones_like(output['intensity'][0])
                     output[key] = [
-                        val,
+                        val.flatten(),
                         axis_data.get('Unit', 'deg'),
                     ]
         elif output['intensity'][0].shape[0] > 1:
@@ -504,15 +506,15 @@ class BRMLfile(object):
                 val = np.array(val)
                 if val is not None:
                     output[key] = [
-                        val,
+                        val.flatten(),
                         axis_data[0].get('Unit', 'deg'),
                     ]
+        output['intensity'][0] = output['intensity'][0].flatten()
         for key in ['intensity', 'TwoTheta', 'Omega', 'Chi', 'Phi']:
             # checking if the processed data has the expected shape before returning
             if key in output:
-                if not np.ndim(output[key][0]) == 2:
-                    raise ValueError(f'Unexpected shape of the {key} data: \
-                                     {output[key][0].shape}')
+                if not np.ndim(output[key][0]) == 1:
+                    raise ValueError(f'Unexpected shape of the {key} data: {output[key][0].shape}')
 
         return output
 

@@ -303,41 +303,41 @@ class XRDResult(MeasurementResult):
         derived=derive_n_values,
     )
     two_theta = Quantity(
-        type=np.dtype(np.float64), shape=['*','*'],
+        type=np.dtype(np.float64), shape=['*'],
         unit='deg',
         description='The 2-theta range of the diffractogram',
     )
     q_vector = Quantity(
-        type=np.dtype(np.float64), shape=['*','*'],
+        type=np.dtype(np.float64), shape=['*'],
         unit='meter**(-1)',
         description='The scattering vector *Q* of the diffractogram',
     )
     q_parallel = Quantity(
-        type=np.dtype(np.float64), shape=['*','*'],
+        type=np.dtype(np.float64), shape=['*'],
         unit='meter**(-1)',
         description='The scattering vector *Q_parallel* of the diffractogram',
     )
     q_perpendicular = Quantity(
-        type=np.dtype(np.float64), shape=['*','*'],
+        type=np.dtype(np.float64), shape=['*'],
         unit='meter**(-1)',
         description='The scattering vector *Q_perpendicular* of the diffractogram',
     )
     intensity = Quantity(
-        type=np.dtype(np.float64), shape=['*','*'],
+        type=np.dtype(np.float64), shape=['*'],
         description='The count at each 2-theta value, dimensionless',
     )
     omega = Quantity(
-        type=np.dtype(np.float64), shape=['*','*'],
+        type=np.dtype(np.float64), shape=['*'],
         unit='deg',
         description='The omega range of the diffractogram',
     )
     phi = Quantity(
-        type=np.dtype(np.float64), shape=['*','*'],
+        type=np.dtype(np.float64), shape=['*'],
         unit='deg',
         description='The phi range of the diffractogram',
     )
     chi = Quantity(
-        type=np.dtype(np.float64), shape=['*','*'],
+        type=np.dtype(np.float64), shape=['*'],
         unit='deg',
         description='The chi range of the diffractogram',
     )
@@ -350,6 +350,10 @@ class XRDResult(MeasurementResult):
     scan_axis = Quantity(
         type=str,
         description='Axis scanned',
+    )
+    scan_type = Quantity(
+        type=str,
+        description='Type of scan (1D or 2D)',
     )
     integration_time = Quantity(
         type=np.dtype(np.float64),
@@ -369,21 +373,22 @@ class XRDResult(MeasurementResult):
         '''
         super().normalize(archive, logger)
         if self.source_peak_wavelength is not None:
-            # check if the scan in 2D based on variation in axis
-            for k in ['omega','chi','phi']:
-                if self[k] is not None and \
-                len(np.unique(self[k].magnitude)) > 1:
-                    self.q_parallel, self.q_perpendicular = calculate_q_vectors_RSM(
-                        wavelength = self.source_peak_wavelength,
-                        two_theta = self.two_theta,
-                        omega = self[k],
-                    )
-                    return
-            self.q_vector, self.two_theta = calculate_two_theta_or_q(
-                wavelength=self.source_peak_wavelength,
-                two_theta=self.two_theta,
-                q=self.q_vector,
-            )
+            if self.scan_type == '2D':
+                for k in ['omega','chi','phi']:
+                    if self[k] is not None and \
+                    len(np.unique(self[k].magnitude)) > 1:
+                        self.q_parallel, self.q_perpendicular = calculate_q_vectors_RSM(
+                            wavelength = self.source_peak_wavelength,
+                            two_theta = self.two_theta,
+                            omega = self[k],
+                        )
+                        return
+            if self.scan_type == '1D' or self.scan_type is None:
+                self.q_vector, self.two_theta = calculate_two_theta_or_q(
+                    wavelength=self.source_peak_wavelength,
+                    two_theta=self.two_theta,
+                    q=self.q_vector,
+                )
 
 
 class XRayDiffraction(Measurement):
@@ -548,6 +553,7 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             phi=xrd_dict.get('Phi', None),
             scan_axis=metadata_dict.get('scan_axis', None),
             integration_time=xrd_dict.get('countTime',None),
+            scan_type=metadata_dict.get('scan_type', None),
         )
         result.normalize(archive, logger)
 
@@ -692,8 +698,8 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         Plot the 1D diffractogram.
         '''
         line_linear = px.line(
-            x=self.results[0].two_theta.squeeze(),
-            y=self.results[0].intensity.squeeze(),
+            x=self.results[0].two_theta,
+            y=self.results[0].intensity,
             labels={
                 'x': '2θ (°)',
                 'y': 'Intensity',
@@ -701,8 +707,8 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             title='Intensity (linear scale)',
         )
         line_log = px.line(
-            x=self.results[0].two_theta.squeeze(),
-            y=self.results[0].intensity.squeeze(),
+            x=self.results[0].two_theta,
+            y=self.results[0].intensity,
             log_y=True,
             labels={
                 'x': '2θ (°)',
@@ -734,11 +740,11 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
                 break
         fig_2theta_omega = go.Figure(
             data = go.Scattergl(
-                x = self.results[0][var_axis].magnitude.flatten()/10**10,
-                y = self.results[0].two_theta.magnitude.flatten()/10**10,
+                x = self.results[0][var_axis].magnitude/10**10,
+                y = self.results[0].two_theta.magnitude/10**10,
                 mode = 'markers',
                 marker = dict(
-                    color = np.log10(self.results[0].intensity).flatten(),
+                    color = np.log10(self.results[0].intensity),
                     colorscale = 'inferno',
                     line_width = 0,
                     showscale = True,
@@ -757,11 +763,11 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         # Plot for q-vectors RSM
         fig_q_vector = go.Figure(
             data = go.Scattergl(
-                x = self.results[0].q_parallel.magnitude.flatten()/10**10,
-                y = self.results[0].q_perpendicular.magnitude.flatten()/10**10,
+                x = self.results[0].q_parallel.magnitude/10**10,
+                y = self.results[0].q_perpendicular.magnitude/10**10,
                 mode = 'markers',
                 marker = dict(
-                    color = np.log10(self.results[0].intensity).flatten(),
+                    color = np.log10(self.results[0].intensity),
                     colorscale = 'inferno',
                     line_width = 0,
                     showscale = True,
@@ -815,9 +821,9 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             return
 
         scan_type = xrd_dict['metadata'].get('scan_type', None)
-        # if scan_type in [None,'1D']:
-        #     self.plot_1d()
-        # elif scan_type == '2D':
-        #     self.plot_2d_rsm()
+        if scan_type in [None,'1D']:
+            self.plot_1d()
+        elif scan_type == '2D':
+            self.plot_2d_rsm()
 
 m_package.__init_metainfo__()
