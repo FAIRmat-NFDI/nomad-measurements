@@ -280,6 +280,8 @@ class RASXfile(object):
                 if not np.ndim(output[key][0]) == 1:
                     raise ValueError(f'Unexpected shape of the {key} data: \
                                      {output[key][0].shape}')
+                if len(np.unique(output[key][0])) == 1:
+                    output[key][0] = np.array([output[key][0][0]])
 
         return output
 
@@ -515,6 +517,8 @@ class BRMLfile(object):
             if key in output:
                 if not np.ndim(output[key][0]) == 1:
                     raise ValueError(f'Unexpected shape of the {key} data: {output[key][0].shape}')
+                if len(np.unique(output[key][0])) == 1:
+                    output[key][0] = np.array([output[key][0][0]])
 
         return output
 

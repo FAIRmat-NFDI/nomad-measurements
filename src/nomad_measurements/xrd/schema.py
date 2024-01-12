@@ -823,7 +823,8 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         scan_type = xrd_dict['metadata'].get('scan_type', None)
         if scan_type in [None,'1D']:
             self.plot_1d()
-        elif scan_type == '2D':
-            self.plot_2d_rsm()
+        # TODO: implement efficient plots for RSM
+        # elif scan_type == '2D':
+            # self.plot_2d_rsm()
 
 m_package.__init_metainfo__()
