@@ -5,6 +5,9 @@ normalize:
 plugins:
   include: 
     - nomad_measurements.xrd
+    - nomad_measurements.uvir
   options:
     parsers/nomad_measurements/xrd:
       python_package: nomad_measurements.xrd
+    schemas/nomad_measurements/uvir:
+      python_package: nomad_measurements.uvir
