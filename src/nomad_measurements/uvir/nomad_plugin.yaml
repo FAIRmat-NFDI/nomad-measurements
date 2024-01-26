@@ -1,0 +1,5 @@
+name: nomad_measurements/uvir
+plugin_type: schema
+schema_class_name: nomad_measurements.uvir.UVIRSpectroscopy
+description: This is a plugin schema generated from a yaml schema.
+
