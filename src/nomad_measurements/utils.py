@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os.path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -49,10 +50,12 @@ def create_archive(
     ) -> str:
     import json
     from nomad.datamodel.context import ClientContext
+    entity_entry = entity.m_to_dict(with_root_def=True)
     if isinstance(archive.m_context, ClientContext):
-        return None
+        with open(file_name, 'w') as outfile:
+            json.dump({"data": entity_entry}, outfile, indent=4)
+        return os.path.abspath(file_name)
     if not archive.m_context.raw_path_exists(file_name):
-        entity_entry = entity.m_to_dict(with_root_def=True)
         with archive.m_context.raw_file(file_name, 'w') as outfile:
             json.dump({"data": entity_entry}, outfile)
         archive.m_context.process_updated_raw_file(file_name)
