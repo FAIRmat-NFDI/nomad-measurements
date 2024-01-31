@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     )
 
 
-class TransmissionDataFile(EntryData):
+class RawFileTransmissionData(EntryData):
     measurement = Quantity(
         type=ELNTransmission,
         a_eln=ELNAnnotation(
@@ -59,5 +59,5 @@ class TransmissionParser(MatchingParser):
         entry = ELNTransmission.m_from_dict(ELNTransmission.m_def.a_template)
         entry.data_file = data_file
         file_name = f'{data_file[:-6]}.archive.json'
-        archive.data = TransmissionDataFile(measurement=create_archive(entry,archive,file_name))
+        archive.data = RawFileTransmissionData(measurement=create_archive(entry,archive,file_name))
         archive.metadata.entry_name = data_file[:-4] + ' data file'
