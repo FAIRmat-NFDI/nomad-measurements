@@ -159,13 +159,14 @@ def calculate_q_vectors_RSM(
     Returns:
         tuple[pint.Quantity, pint.Quantity]: Tuple of q-vectors.
     '''
+    omega = omega[:,None] * np.ones_like(two_theta.magnitude)
     qx = (
         2 * np.pi / wavelength *
-        (np.cos(two_theta.to('radian')) - np.cos(omega.to('radian')))
+        (np.cos(two_theta.to('radian')-omega.to('radian')) - np.cos(omega.to('radian')))
     )
     qz = (
         2 * np.pi / wavelength *
-        (np.sin(two_theta.to('radian')) + np.sin(omega.to('radian')))
+        (np.sin(two_theta.to('radian')-omega.to('radian')) + np.sin(omega.to('radian')))
     )
 
     q_parallel = qx
