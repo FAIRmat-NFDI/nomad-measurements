@@ -64,6 +64,7 @@ from nomad_measurements import (
     NOMADMeasurementsCategory,
 )
 from nomad_measurements.xrd import readers
+from nomad_measurements.xrd import plotting
 from nomad_measurements.utils import merge_sections
 
 if TYPE_CHECKING:
@@ -348,7 +349,7 @@ class XRDResult(MeasurementResult):
         description='Integration time per channel',
     )
 
-class XRDResult1D(XRDResult):
+class XRDResult1D(XRDResult, PlotSection):
     '''
     Section containing the result of a 1D X-ray diffraction scan.
     '''
@@ -379,7 +380,24 @@ class XRDResult1D(XRDResult):
                 q=self.q_vector,
             )
 
-class XRDResultRSM(XRDResult):
+        json_line_linear, json_line_log = plotting.plot_1d(
+            self.two_theta,
+            self.intensity,
+        )
+        self.figures = [
+            PlotlyFigure(
+                label = 'Log Plot',
+                index = 1,
+                figure = json_line_log,
+            ),
+            PlotlyFigure(
+                label = 'Linear Plot',
+                index = 2,
+                figure = json_line_linear,
+            ),
+        ]
+
+class XRDResultRSM(XRDResult, PlotSection):
     '''
     Section containing the result of a Reciprocal Space Map (RSM) scan.
     '''
@@ -404,6 +422,7 @@ class XRDResultRSM(XRDResult):
 
     def normalize(self, archive: 'EntryArchive', logger: BoundLogger):
         super().normalize(archive, logger)
+        var_axis = 'omega'
         if self.source_peak_wavelength is not None:
             for var_axis in ['omega','chi','phi']:
                 if self[var_axis] is not None and \
@@ -414,6 +433,29 @@ class XRDResultRSM(XRDResult):
                         omega = self[var_axis],
                     )
                     break
+
+        json_2theta_omega, json_q_vector = plotting.plot_2d_rsm(
+            self.two_theta,
+            self[var_axis],
+            self.q_parallel,
+            self.q_perpendicular,
+            self.intensity,
+        )
+        self.figures = [
+            PlotlyFigure(
+                label = 'RSM (2Theta-Omega)',
+                index = 2,
+                figure = json_2theta_omega,
+            ),
+        ]
+        if json_2theta_omega:
+            self.figures.append(
+                PlotlyFigure(
+                    label = 'RSM (Q-vectors)',
+                    index = 1,
+                    figure = json_q_vector,
+                ),
+            )
 
 class XRayDiffraction(Measurement):
     '''
@@ -498,7 +540,7 @@ class XRayDiffraction(Measurement):
             )
 
 
-class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
+class ELNXRayDiffraction(XRayDiffraction, EntryData):
     '''
     Example section for how XRayDiffraction can be implemented with a general reader for
     common XRD file types.
@@ -729,171 +771,6 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
             logger,
         )
 
-    def plot_1d(self):
-        '''
-        Plot the 1D diffractogram.
-        '''
-        line_linear = px.line(
-            x=self.results[0].two_theta,
-            y=self.results[0].intensity,
-            labels={
-                'x': '2θ (°)',
-                'y': 'Intensity',
-            },
-            title='Intensity (linear scale)',
-        )
-        line_log = px.line(
-            x=self.results[0].two_theta,
-            y=self.results[0].intensity,
-            log_y=True,
-            labels={
-                'x': '2θ (°)',
-                'y': 'Intensity',
-            },
-            title='Intensity (log scale)',
-        )
-        self.figures = [
-            PlotlyFigure(
-                label='Log Plot',
-                index=1,
-                figure=line_log.to_plotly_json(),
-            ),
-            PlotlyFigure(
-                label='Linear Plot',
-                index=2,
-                figure=line_linear.to_plotly_json(),
-            ),
-        ]
-
-    def plot_2d_range(self, x,y):
-        '''
-        Calculate the range of the 2D plot for generation of regular grid.
-        Finds the smallest box that can contain the data.
-
-        Args:
-            x (np.ndarray): array of x values
-            y (np.ndarray): array of y values
-
-        Returns:
-            (list[float, float], list[float, float]): x_range, y_range
-        '''
-        x_range_length = np.max(x) - np.min(x)
-        y_range_length = np.max(y) - np.min(y)
-
-        if x_range_length > y_range_length:
-            x_range = [np.min(x),np.max(x)]
-            y_mid = np.min(y) + y_range_length/2
-            y_range = [
-                y_mid-x_range_length/2,
-                y_mid+x_range_length/2,
-            ]
-        else:
-            y_range = [np.min(y),np.max(y)]
-            x_mid = np.min(x) + x_range_length/2
-            x_range = [
-                x_mid-y_range_length/2,
-                x_mid+y_range_length/2,
-            ]
-
-        return x_range, y_range
-
-    def plot_2d_rsm(self):
-        '''
-        Plot the 2D RSM diffractogram.
-        '''
-        # Plot for 2theta-omega RSM
-        y = self.results[0].two_theta.magnitude
-        z = self.results[0].intensity
-        log_z = np.log10(z)
-        # find the axis that changes along with 2theta
-        for var_axis in ['omega','chi','phi']:
-            if len(np.unique(self.results[0][var_axis].magnitude)) > 1:
-                break
-        x = self.results[0][var_axis].magnitude
-        x_range, y_range = self.plot_2d_range(x,y)
-
-        fig_2theta_omega = px.imshow(
-            img = np.around(log_z,3).T,
-            x = np.around(x,3),
-            y = np.around(y,3),
-            color_continuous_scale = 'inferno',
-        )
-        fig_2theta_omega.update_layout(
-            title = 'RSM plot: Intensity (log-scale) vs Axis position',
-            xaxis_title = f'{var_axis} (°)',
-            yaxis_title = '2θ (°)',
-            xaxis = dict(
-                autorange = False,
-                fixedrange = False,
-                range = x_range,
-            ),
-            yaxis = dict(
-                autorange = False,
-                fixedrange = False,
-                range = y_range,
-            ),
-            width = 600,
-            height = 600,
-        )
-        json_2theta_omega = fig_2theta_omega.to_plotly_json()
-
-        # Plot for RSM in Q-vectors
-        x = self.results[0].q_parallel.magnitude.flatten()/10**10
-        y = self.results[0].q_perpendicular.magnitude.flatten()/10**10
-        # q_vectors lead to irregular grid
-        # generate a regular grid using interpolation
-        x_regular = np.linspace(x.min(),x.max(),z.shape[0])
-        y_regular = np.linspace(y.min(),y.max(),z.shape[1])
-        x_grid, y_grid = np.meshgrid(x_regular,y_regular)
-        z_interpolated = griddata(
-            points = (x,y),
-            values = z.flatten(),
-            xi = (x_grid,y_grid),
-            method = 'linear',
-            fill_value = z.min(),
-        )
-        log_z_interpolated = np.log10(z_interpolated)
-        x_range, y_range = self.plot_2d_range(x_regular,y_regular)
-
-        fig_q_vector = px.imshow(
-            img = np.around(log_z_interpolated,3),
-            x = np.around(x_regular,3),
-            y = np.around(y_regular,3),
-            color_continuous_scale = 'inferno',
-            range_color = [np.nanmin(log_z[log_z != -np.inf]), log_z_interpolated.max()],
-        )
-        fig_q_vector.update_layout(
-            title = 'RSM plot: Intensity (log-scale) vs Q-vectors',
-            xaxis_title = 'Q_parallel (1/Å)',
-            yaxis_title = 'Q_perpendicular (1/Å)',
-            xaxis = dict(
-                autorange = False,
-                fixedrange = False,
-                range = x_range,
-            ),
-            yaxis = dict(
-                autorange = False,
-                fixedrange = False,
-                range = y_range,
-            ),
-            width = 600,
-            height = 600,
-        )
-        json_q_vector = fig_q_vector.to_plotly_json()
-
-        self.figures = [
-            PlotlyFigure(
-                label = 'RSM (Q-vectors)',
-                index = 1,
-                figure = json_q_vector,
-            ),
-            PlotlyFigure(
-                label = 'RSM (2Theta-Omega)',
-                index = 2,
-                figure = json_2theta_omega,
-            ),
-        ]
-
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         '''
         The normalize function of the `ELNXRayDiffraction` section.
@@ -917,11 +794,5 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
 
         if not self.results:
             return
-
-        scan_type = xrd_dict['metadata'].get('scan_type', None)
-        if scan_type in [None,'1D']:
-            self.plot_1d()
-        elif scan_type == '2D':
-            self.plot_2d_rsm()
 
 m_package.__init_metainfo__()
