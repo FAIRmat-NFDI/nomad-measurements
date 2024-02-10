@@ -299,6 +299,10 @@ class XRDResult(MeasurementResult):
             return len(self.two_theta)
         return 0
 
+    scan_type = Quantity(
+        type=str,
+        description='Type of scan (1D, 2D, RSM)',
+    )
     n_values = Quantity(
         type=int,
         derived=derive_n_values,
@@ -308,23 +312,8 @@ class XRDResult(MeasurementResult):
         unit='deg',
         description='The 2-theta range of the diffractogram',
     )
-    q_vector = Quantity(
-        type=np.dtype(np.float64), shape=['*'],
-        unit='meter**(-1)',
-        description='The scattering vector *Q* of the diffractogram',
-    )
-    q_parallel = Quantity(
-        type=np.dtype(np.float64), shape=['*','*'],
-        unit='meter**(-1)',
-        description='The scattering vector *Q_parallel* of the diffractogram',
-    )
-    q_perpendicular = Quantity(
-        type=np.dtype(np.float64), shape=['*','*'],
-        unit='meter**(-1)',
-        description='The scattering vector *Q_perpendicular* of the diffractogram',
-    )
     intensity = Quantity(
-        type=np.dtype(np.float64), shape=['*','*'],
+        type=np.dtype(np.float64), shape=['*'],
         description='The count at each 2-theta value, dimensionless',
     )
     omega = Quantity(
@@ -352,15 +341,25 @@ class XRDResult(MeasurementResult):
         type=str,
         description='Axis scanned',
     )
-    scan_type = Quantity(
-        type=str,
-        description='Type of scan (1D or 2D)',
-    )
     integration_time = Quantity(
         type=np.dtype(np.float64),
         unit='s',
         shape=['*'],
         description='Integration time per channel',
+    )
+
+class XRDResult1D(XRDResult):
+    '''
+    Section containing the result of a 1D X-ray diffraction scan.
+    '''
+    m_def = Section()
+    scan_type = Quantity(
+        default='1D',
+    )
+    q_vector = Quantity(
+        type=np.dtype(np.float64), shape=['*'],
+        unit='meter**(-1)',
+        description='The scattering vector *Q* of the diffractogram',
     )
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
@@ -374,23 +373,47 @@ class XRDResult(MeasurementResult):
         '''
         super().normalize(archive, logger)
         if self.source_peak_wavelength is not None:
-            if self.scan_type == '2D':
-                for k in ['omega','chi','phi']:
-                    if self[k] is not None and \
-                    len(np.unique(self[k].magnitude)) > 1:
-                        self.q_parallel, self.q_perpendicular = calculate_q_vectors_RSM(
-                            wavelength = self.source_peak_wavelength,
-                            two_theta = self.two_theta * np.ones_like(self.intensity),
-                            omega = self[k],
-                        )
-                        return
-            if self.scan_type == '1D' or self.scan_type is None:
-                self.q_vector, self.two_theta = calculate_two_theta_or_q(
-                    wavelength=self.source_peak_wavelength,
-                    two_theta=self.two_theta,
-                    q=self.q_vector,
-                )
+            self.q_vector, self.two_theta = calculate_two_theta_or_q(
+                wavelength=self.source_peak_wavelength,
+                two_theta=self.two_theta,
+                q=self.q_vector,
+            )
 
+class XRDResultRSM(XRDResult):
+    '''
+    Section containing the result of a Reciprocal Space Map (RSM) scan.
+    '''
+    m_def = Section()
+    scan_type = Quantity(
+        default='RSM',
+    )
+    q_parallel = Quantity(
+        type=np.dtype(np.float64), shape=['*','*'],
+        unit='meter**(-1)',
+        description='The scattering vector *Q_parallel* of the diffractogram',
+    )
+    q_perpendicular = Quantity(
+        type=np.dtype(np.float64), shape=['*','*'],
+        unit='meter**(-1)',
+        description='The scattering vector *Q_perpendicular* of the diffractogram',
+    )
+    intensity = Quantity(
+        type=np.dtype(np.float64), shape=['*','*'],
+        description='The count at each position, dimensionless',
+    )
+
+    def normalize(self, archive: 'EntryArchive', logger: BoundLogger):
+        super().normalize(archive, logger)
+        if self.source_peak_wavelength is not None:
+            for var_axis in ['omega','chi','phi']:
+                if self[var_axis] is not None and \
+                len(np.unique(self[var_axis].magnitude)) > 1:
+                    self.q_parallel, self.q_perpendicular = calculate_q_vectors_RSM(
+                        wavelength = self.source_peak_wavelength,
+                        two_theta = self.two_theta * np.ones_like(self.intensity),
+                        omega = self[var_axis],
+                    )
+                    break
 
 class XRayDiffraction(Measurement):
     '''
@@ -429,8 +452,8 @@ class XRayDiffraction(Measurement):
         ''',
         # | **Reciprocal Space Mapping (RSM)**                         | High-resolution XRD method to measure a reciprocal space map. Provides additional information used to aid the interpretation of peak displacement, peak broadening or peak overlap.                                                                                                                                                             |
     )
-    results = Measurement.results.m_copy()
-    results.section_def = XRDResult
+    # results = Measurement.results.m_copy()
+    # results.section_def = XRDResult
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         '''
@@ -461,7 +484,7 @@ class XRayDiffraction(Measurement):
                     incident_beam_wavelength=result.source_peak_wavelength,
                     two_theta_angles=result.two_theta,
                     intensity=result.intensity,
-                    q_vector=result.q_vector,
+                    # q_vector=result.q_vector,
                 ) for result in self.results]
             )
         if not archive.results.method:
@@ -546,17 +569,29 @@ class ELNXRayDiffraction(XRayDiffraction, PlotSection, EntryData):
         metadata_dict: dict = xrd_dict.get('metadata', {})
         source_dict: dict = metadata_dict.get('source', {})
 
-        result = XRDResult(
-            intensity=xrd_dict.get('detector', None),
-            two_theta=xrd_dict.get('2Theta', None),
-            omega=xrd_dict.get('Omega',None),
-            chi=xrd_dict.get('Chi', None),
-            phi=xrd_dict.get('Phi', None),
-            scan_axis=metadata_dict.get('scan_axis', None),
-            integration_time=xrd_dict.get('countTime',None),
-            scan_type=metadata_dict.get('scan_type', None),
-        )
-        result.normalize(archive, logger)
+        scan_type = metadata_dict.get('scan_type', None)
+        if  scan_type == '1D' or scan_type is None:
+            result = XRDResult1D(
+                intensity=xrd_dict.get('detector', None),
+                two_theta=xrd_dict.get('2Theta', None),
+                omega=xrd_dict.get('Omega',None),
+                chi=xrd_dict.get('Chi', None),
+                phi=xrd_dict.get('Phi', None),
+                scan_axis=metadata_dict.get('scan_axis', None),
+                integration_time=xrd_dict.get('countTime',None),
+            )
+            result.normalize(archive, logger)
+        elif scan_type == 'RSM' or scan_type == '2D':
+            result = XRDResultRSM(
+                intensity=xrd_dict.get('detector', None),
+                two_theta=xrd_dict.get('2Theta', None),
+                omega=xrd_dict.get('Omega',None),
+                chi=xrd_dict.get('Chi', None),
+                phi=xrd_dict.get('Phi', None),
+                scan_axis=metadata_dict.get('scan_axis', None),
+                integration_time=xrd_dict.get('countTime',None),
+            )
+            result.normalize(archive, logger)
 
         source = XRayTubeSource(
             xray_tube_material=source_dict.get('anode_material', None),
