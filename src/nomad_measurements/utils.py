@@ -126,6 +126,12 @@ def to_pint_quantity(value: Any=None, unit: str=None) -> Any:
     Returns:
         Any: Processed quantity with datatype depending on the value.
     '''
-    if isinstance(value, str):
+    if isinstance(value, str) or value is None:
         return value
+    if unit is None:
+        if isinstance(value, ureg.Quantity):
+            return value
+        return value * ureg.dimensionless
+    if isinstance(value, ureg.Quantity):
+        return value.to(unit)
     return value * ureg(unit)
