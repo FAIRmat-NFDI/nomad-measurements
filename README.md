@@ -26,7 +26,7 @@ plugins:
   - 'parsers/nomad_measurements/xrd'
   options:
     parsers/nomad_measurements/xrd:
-      python_package: nomad_measurements.xrd
+      python_package: nomad_measurements.xrd.parser
  ```
 
 ### Development
