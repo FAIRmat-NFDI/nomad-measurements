@@ -57,10 +57,10 @@ def test_merge_sections():
 
 def test_to_pint_quantity():
     assert to_pint_quantity(1, 'mA') == 1 * ureg.mA
-    assert str(to_pint_quantity(np.asarray([1., 2.]), 'm')) \
-        == str(np.asarray([1., 2.]) * ureg.m)
-    assert str(to_pint_quantity(np.asarray([1., 2.]), '')) \
-        == str(np.asarray([1., 2.]))
+    assert (to_pint_quantity(np.asarray([1., 2.]), 'm') \
+        == np.asarray([1., 2.]) * ureg.m).all()
+    assert (to_pint_quantity(np.asarray([1., 2.]), '') \
+        == np.asarray([1., 2.])).all()
     assert to_pint_quantity('Copper', '') == 'Copper'
 
 if __name__ == '__main__':
