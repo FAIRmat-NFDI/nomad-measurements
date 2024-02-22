@@ -1,7 +1,3 @@
 description: This is a plugin schema generated from a yaml schema.
-name: parsers/xrd
-plugin_type: parser
-mainfile_mime_re: text/.*|application/zip
-mainfile_name_re: ^.*\.xrdml$|^.*\.rasx$|^.*\.brml$
-parser_class_name: nomad_measurements.xrd.XRDParser
-code_name: XRD Parser
+name: schemas/xrd
+plugin_type: schema
