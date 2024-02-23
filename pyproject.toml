@@ -24,7 +24,7 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = [
-    "nomad-lab>=1.2.2.dev",
+    "nomad-lab>=1.2.2.dev399",
     "xmltodict==0.13.0",
 ]
 [project.optional-dependencies]
