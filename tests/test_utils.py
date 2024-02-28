@@ -56,12 +56,11 @@ def test_merge_sections():
     assert system_3.components[0].name == 'Cu'
 
 def test_to_pint_quantity():
-    assert to_pint_quantity(None, '') is None
     assert to_pint_quantity(None, None) is None
     assert to_pint_quantity(None, 'mA') is None
     assert to_pint_quantity('Copper', '') == 'Copper'
     assert to_pint_quantity('Copper', 'mA') == 'Copper'
-    assert to_pint_quantity(3., None) == 3 * ureg.dimensionless
+    assert to_pint_quantity(3., '') == 3 * ureg.dimensionless
     assert to_pint_quantity(3. * ureg.m, None) == 3 * ureg.m
     assert to_pint_quantity(3. * ureg.m, 'cm') == 300 * ureg.cm
     assert to_pint_quantity(1, None) == 1

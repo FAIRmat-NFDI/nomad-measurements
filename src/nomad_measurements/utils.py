@@ -118,6 +118,7 @@ def to_pint_quantity(value: Any=None, unit: str=None) -> Any:
     '''
     Attempts to generate a pint quantity.
     In case the value is a string, it is returned as is.
+    If the value is a pint quantity, it is converted to the given unit.
 
     Args:
         value (Any): Value of the quantity.
