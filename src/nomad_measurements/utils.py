@@ -118,6 +118,7 @@ def to_pint_quantity(value: Any=None, unit: str=None) -> Any:
     '''
     Attempts to generate a pint quantity.
     In case the value is a string, it is returned as is.
+    If the value is a pint quantity, it is converted to the given unit.
 
     Args:
         value (Any): Value of the quantity.
@@ -126,6 +127,10 @@ def to_pint_quantity(value: Any=None, unit: str=None) -> Any:
     Returns:
         Any: Processed quantity with datatype depending on the value.
     '''
-    if isinstance(value, str):
+    if isinstance(value, str) or value is None:
         return value
+    if isinstance(value, ureg.Quantity):
+        if unit is None:
+            return value
+        return value.to(unit)
     return value * ureg(unit)
