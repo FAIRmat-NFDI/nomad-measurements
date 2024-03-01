@@ -196,8 +196,11 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
     '''
     reader = RASXfile(file_path, verbose=False)
     scan_info = reader.get_scan_info()
-    p_data = reader.get_scan_data(logger)
+    scan_data = reader.get_scan_data(logger)
     source = reader.get_source_info()
+
+    scan_type = detect_scan_type(scan_data)
+    modified_scan_data = modify_scan_data(scan_data, scan_type)
 
     count_time = None
     scan_axis = None
@@ -212,27 +215,26 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
                     np.array([scan_info['Step'] / scan_info['Speed']])
                     * count_time_unit
                 )
-
         scan_axis = scan_info.get('AxisName', None)
 
     output = {
-        'detector': to_pint_quantity(*p_data['intensity']),
-        '2Theta': to_pint_quantity(*p_data['two_theta']),
-        'Omega': to_pint_quantity(*p_data['Omega_position']),
-        'Chi': to_pint_quantity(*p_data['Chi_position']),
-        'Phi': to_pint_quantity(*p_data['Phi_position']),
+        'intensity': modified_scan_data['intensity'],
+        '2Theta': modified_scan_data['2Theta'],
+        'Omega': modified_scan_data['Omega'],
+        'Chi': modified_scan_data['Chi'],
+        'Phi': modified_scan_data['Phi'],
         'countTime': count_time,
         'metadata': {
             'sample_id': None,
             'scan_axis': scan_axis,
-            'scan_type': to_pint_quantity(*p_data['ScanType']),
+            'scan_type': scan_type,
             'source': {
-                'anode_material': to_pint_quantity(*source['TargetName']),
-                'kAlpha1': to_pint_quantity(*source['WavelengthKalpha1']),
-                'kAlpha2': to_pint_quantity(*source['WavelengthKalpha2']),
-                'kBeta': to_pint_quantity(*source['WavelengthKbeta']),
-                'voltage': to_pint_quantity(*source['Voltage']),
-                'current': to_pint_quantity(*source['Current']),
+                'anode_material': source['TargetName'],
+                'kAlpha1': source['WavelengthKalpha1'],
+                'kAlpha2': source['WavelengthKalpha2'],
+                'kBeta': source['WavelengthKbeta'],
+                'voltage': source['Voltage'],
+                'current': source['Current'],
                 'ratioKAlpha2KAlpha1': None,
             },
         },
@@ -253,29 +255,31 @@ def read_bruker_brml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
         Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
     '''
     reader = BRMLfile(file_path, verbose=False)
-    data = reader.get_scan_data(logger)
     scan_info = reader.get_scan_info()
     source = reader.get_source_info()
+    scan_data = reader.get_scan_data(logger)
+    scan_type = detect_scan_type(scan_data)
+    modified_scan_data = modify_scan_data(scan_data, scan_type)
 
     output = {
-        'detector': to_pint_quantity(*data['intensity']),
-        '2Theta': to_pint_quantity(*data['TwoTheta']),
-        'Omega': to_pint_quantity(*data['Theta']), # theta and omega are synonymous in .brml
-        'Chi': to_pint_quantity(*data['Chi']),
-        'Phi': to_pint_quantity(*data['Phi']),
+        'intensity': modified_scan_data['intensity'],
+        '2Theta': modified_scan_data['2Theta'],
+        'Omega': modified_scan_data['Theta'], # theta and omega are synonymous in .brml
+        'Chi': modified_scan_data['Chi'],
+        'Phi': modified_scan_data['Phi'],
         'countTime': None,
         'metadata': {
             'sample_id': None,
-            'scan_axis': to_pint_quantity(*scan_info['ScanName']),
-            'scan_type': to_pint_quantity(*data['ScanType']),
+            'scan_axis': scan_info.get('ScanName', None),
+            'scan_type': scan_type,
             'source': {
-                'anode_material': to_pint_quantity(*source['TubeMaterial']),
-                'kAlpha1': to_pint_quantity(*source['WaveLengthAlpha1']),
-                'kAlpha2': to_pint_quantity(*source['WaveLengthAlpha2']),
-                'kBeta': to_pint_quantity(*source['WaveLengthBeta']),
-                'ratioKAlpha2KAlpha1': to_pint_quantity(*source['WaveLengthRatio']),
-                'voltage': to_pint_quantity(*source['Voltage']),
-                'current': to_pint_quantity(*source['Current']),
+                'anode_material': source['TubeMaterial'],
+                'kAlpha1': source['WaveLengthAlpha1'],
+                'kAlpha2': source['WaveLengthAlpha2'],
+                'kBeta': source['WaveLengthBeta'],
+                'ratioKAlpha2KAlpha1': source['WaveLengthRatio'],
+                'voltage': source['Voltage'],
+                'current': source['Current'],
             },
         },
     }

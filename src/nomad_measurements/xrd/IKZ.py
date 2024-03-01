@@ -22,6 +22,7 @@ if TYPE_CHECKING:
         BoundLogger,
     )
 
+from nomad_measurements.utils import to_pint_quantity
 
 def try_scalar(val):
     try:
@@ -186,12 +187,10 @@ class RASXfile(object):
             if verbose:
                 print()
 
-        self._ndscan = len(np.unique(list(map(len, data))))==1
-        if self._ndscan:
-            data = np.array(data)    
-        else:  # not originally part of Carsten's code 
-            raise NotImplementedError("Unequal lengths of multiple scans in a file not supported.")
-        imgdata = np.array(imgdata)
+        # self._ndscan = len(np.unique(list(map(len, data))))==1
+        # if self._ndscan:
+        #     data = np.array(data)
+        # imgdata = np.array(imgdata)
 
         self.data = data
         self.images = imgdata
@@ -210,7 +209,8 @@ class RASXfile(object):
                 self.positions[axis] = np.array(self.positions[axis])
 
     def get_RSM(self):
-        pos, I, _ = self.data.transpose(2,0,1).squeeze()
+        data = np.array(self.data)
+        pos, I, _ = data.transpose(2,0,1).squeeze()
         output = dict(Intensity=I)
         mot = self.meta[0]["ScanInformation"]["AxisName"]
         output[mot] = pos
@@ -228,60 +228,42 @@ class RASXfile(object):
 
     def get_scan_data(self, logger: 'BoundLogger'=None):
         '''
-        Collect the values and units of intensity, two_theta, and axis positions. Values
-        returned are always transformed into a 2D array. In case the axis position is
-        constant, the axis position is duplicated to match the dimensions of intensity.
+        Collect intensity, two_theta, and axis positions. If units are not available for
+        two_theta or axis positions, they will default to 'deg'.
 
         Returns:
-            Dict[str, Any]: Each dict item contains a list with numerical value
-                (numpy.ndarray) at index 0 and unit (str) at index 1. If quantity 
-                is not available, the dict item will default to []. If units are not 
-                available for two_theta or axis positions, they will default to 'deg'.
+            Dict[str, Any]: Each element contains a list of ureg.Quantity objects.
         '''
-        two_theta, intensity, _ = self.data.transpose(2, 0, 1).squeeze()
         output = collections.defaultdict(list)
-        output['intensity'] = [intensity, '']
+
         scan_axis = None
-        scan_info = self.meta[0].get('ScanInformation', None)
+        scan_info = self.get_scan_info()
         if scan_info:
             scan_axis = scan_info.get('AxisName', None)
-        output['two_theta'] = [
-            two_theta.flatten(),
-            self.units.get(scan_axis, 'deg'),
-        ]
 
-        for k in output:
-            if np.ndim(output[k][0]) == 1:
-                output[k][0] = np.array([output[k][0]])
+        for scan in self.data:
+            # get intensity and two_theta
+            two_theta, intensity, _ = scan.transpose(1,0)
+            output['intensity'].append(to_pint_quantity(intensity, None))
+            output['2Theta'].append(
+                to_pint_quantity(
+                    two_theta,
+                    self.units.get(scan_axis, 'deg'),
+                )
+            )
 
         for axis in ['Omega', 'Chi', 'Phi']:
-            if axis not in self.positions.keys():
+            # get axis positions
+            if axis not in self.positions:
+                output[axis] = None
                 continue
-            ax_data = self.positions[axis]
-            if not isinstance(ax_data, np.ndarray):
-                ax_data = np.array([ax_data])
-            if np.ndim(ax_data):
-                ax_data = ax_data[:, None] * np.ones_like(intensity)
-            output[axis + '_position'] = [
-                ax_data.flatten(),
-                self.units.get(axis, 'deg'),
-            ]
-
-        if output['intensity'][0].shape[0] == 1:
-            output['ScanType'] = ['1D', '']
-        elif output['intensity'][0].shape[0] > 1:
-            output['ScanType'] = ['2D', '']
-
-        output['intensity'][0] = output['intensity'][0].flatten()
-
-        for key in ['intensity', 'two_theta', 'Omega', 'Chi', 'Phi']:
-            # checking if the processed data has the expected shape before returning
-            if key in output:
-                if not np.ndim(output[key][0]) == 1:
-                    raise ValueError(f'Unexpected shape of the {key} data: \
-                                     {output[key][0].shape}')
-                if len(np.unique(output[key][0])) == 1:
-                    output[key][0] = np.array([output[key][0][0]])
+            if not isinstance(self.positions[axis], np.ndarray):
+                self.positions[axis] = np.array([self.positions[axis]])
+            for ax_data_per_scan in self.positions[axis]:
+                ax_data_per_scan = ax_data_per_scan.reshape(-1)
+                output[axis].append(
+                    to_pint_quantity(ax_data_per_scan, self.units.get(axis, 'deg'))
+                )
 
         return output
 
@@ -292,7 +274,7 @@ class RASXfile(object):
         Returns:
             Dict[str, Any]: contains information about the scan
         '''
-        return self.meta[0].get('ScanInformation',None)
+        return self.meta[0].get('ScanInformation', {})
 
     def get_source_info(self):
         '''
@@ -309,26 +291,23 @@ class RASXfile(object):
             self.meta[0]['HardwareConfig']['xraygenerator'])
 
         if source['TargetName']:
-            output['TargetName'] = [
-                source['TargetName'],
-                '',
-            ]
+            output['TargetName'] = source['TargetName']
         if source['Voltage']:
-            output['Voltage'] = [
+            output['Voltage'] = to_pint_quantity(
                 source['Voltage'],
                 source.get('VoltageUnit','kV'),
-            ]
+            )
         if source['Current']:
-            output['Current'] = [
+            output['Current'] = to_pint_quantity(
                 source['Current'],
                 source.get('CurrentUnit','mA'),
-            ]
+            )
         for wavelength in ['WavelengthKalpha1', 'WavelengthKalpha2', 'WavelengthKbeta']:
             if source[wavelength]:
-                output[wavelength] = [
+                output[wavelength] = to_pint_quantity(
                     source[wavelength],
                     source.get(wavelength + 'Unit', 'angstrom'),
-                ]
+                )
 
         return output
 
@@ -356,7 +335,7 @@ class BRMLfile(object):
                 rawlist = [rawlist]
 
             self.data = collections.defaultdict(list)
-            self.motors = self.data # collections.defaultdict(list)
+            self.motors = collections.defaultdict(list)
             for i, rawpath in enumerate(rawlist):
                 if verbose:
                     if not i:
@@ -437,24 +416,22 @@ class BRMLfile(object):
                 self.mounted_optics_info = []
             # (block end) not originally part of Carsten's code
 
-            for key in self.data:
-                self.data[key] = np.array(self.data[key]).squeeze()
-                if not self.data[key].shape:
-                    self.data[key] = self.data[key].item()
-            for key in self.motors:
-                self.motors[key] = np.array(self.motors[key]).squeeze()
-                if not self.motors[key].shape:
-                    self.motors[key] = self.motors[key].item()
+            # for key in self.data:
+            #     self.data[key] = np.array(self.data[key]).squeeze()
+            #     if not self.data[key].shape:
+            #         self.data[key] = self.data[key].item()
+            # for key in self.motors:
+            #     self.motors[key] = np.array(self.motors[key]).squeeze()
+            #     if not self.motors[key].shape:
+            #         self.motors[key] = self.motors[key].item()
 
     def get_scan_data(self, logger: 'BoundLogger'=None):
         '''
-        Collect the values and units of intensity, two_theta, and axis positions.
+        Collect intensity, two_theta, and axis positions. If units are not available for
+        two_theta or axis positions, they will default to 'deg'.
 
         Returns:
-            Dict[str, Any]: Each dict item contains a list with numerical value
-                (numpy.ndarray) at index 0 and unit (str) at index 1. If quantity
-                is not available, the dict item will default to []. If units are not
-                available for two_theta or axis positions, they will default to 'deg'.
+            Dict[str, Any]: Each element contains a list of ureg.Quantity objects..
         '''
         output = collections.defaultdict(list)
 
@@ -465,60 +442,42 @@ class BRMLfile(object):
         if len(counter_key) > 1:
             raise ValueError('More than one intensity counters found.')
 
-        if counter_key:
-            output['intensity'] = [self.data.get(counter_key[0]), '']
-        if np.ndim(output['intensity'][0]) == 1:
-            # to match dimensions of schema
-            output['intensity'][0] = np.array([output['intensity'][0]])
+        for scan_intensity in self.data[counter_key[0]]:
+            scan_intensity = scan_intensity.reshape(-1)
+            output['intensity'].append(to_pint_quantity(scan_intensity, None))
+        # TwoTheta is list of dicts
+        if 'TwoTheta' not in self.data:
+            output['2Theta'] = None
+        else:
+            for scan_two_theta in self.data['TwoTheta']:
+                scan_two_theta_value = scan_two_theta.get('Value', np.array([]))
+                if not isinstance(scan_two_theta_value, np.ndarray):
+                    scan_two_theta_value = np.array([scan_two_theta_value])
+                scan_two_theta_value = scan_two_theta_value.reshape(-1)
+                output['2Theta'].append(
+                    to_pint_quantity(
+                        scan_two_theta.get('Value',np.array([])),
+                        scan_two_theta.get('Unit', 'deg'),
+                    )
+                )
 
-        if output['intensity'][0].shape[0] == 1:
-            output['ScanType'] = ['1D', '']
-            for key in ['TwoTheta', 'Theta', 'Chi', 'Phi']:
-                axis_data = self.data.get(key, None)
-                if axis_data is None:
-                    continue
-                if not isinstance(axis_data, dict):
-                    raise ValueError(f'Unexpected data input for axis {key}.')
-                # collect the numpy array from the dict (single scan)
-                val = axis_data.get('Value')
-                if val is not None:
-                    if np.ndim(val) == 0:
-                        val = np.array([val])
-                    val = val[None, :] * np.ones_like(output['intensity'][0])
-                    output[key] = [
-                        val.flatten(),
-                        axis_data.get('Unit', 'deg'),
-                    ]
-        elif output['intensity'][0].shape[0] > 1:
-            output['ScanType'] = ['2D', '']
-            for key in ['TwoTheta', 'Theta', 'Chi', 'Phi']:
-                axis_data = self.data.get(key, None)
-                if axis_data is None:
-                    continue
-                if not isinstance(axis_data, np.ndarray):
-                    raise ValueError(f'Unexpected data input for axis {key}.')
-                # collect the numpy arrays from the list of dicts (multiple scans)
-                val = []
-                for ad in axis_data:
-                    if not isinstance(ad['Value'], np.ndarray):
-                        val.append(np.array([ad['Value']]) *
-                                   np.ones_like(output['intensity'][0][0]))
-                    else:
-                        val.append(ad['Value'])
-                val = np.array(val)
-                if val is not None:
-                    output[key] = [
-                        val.flatten(),
-                        axis_data[0].get('Unit', 'deg'),
-                    ]
-        output['intensity'][0] = output['intensity'][0].flatten()
-        for key in ['intensity', 'TwoTheta', 'Omega', 'Chi', 'Phi']:
-            # checking if the processed data has the expected shape before returning
-            if key in output:
-                if not np.ndim(output[key][0]) == 1:
-                    raise ValueError(f'Unexpected shape of the {key} data: {output[key][0].shape}')
-                if len(np.unique(output[key][0])) == 1:
-                    output[key][0] = np.array([output[key][0][0]])
+        # Theta is used in place of Omega in the BRML file
+        for axis in ['Theta', 'Chi', 'Phi']:
+            if axis not in self.motors:
+                output[axis] = None
+                continue
+            # each axis is list of dicts
+            for ax_data_per_scan in self.motors[axis]:
+                ax_data_value = ax_data_per_scan.get('Value', np.array([]))
+                if not isinstance(ax_data_value, np.ndarray):
+                    ax_data_value = np.array([ax_data_value])
+                ax_data_value = ax_data_value.reshape(-1)
+                output[axis].append(
+                    to_pint_quantity(
+                        ax_data_value,
+                        ax_data_per_scan.get('Unit', 'deg'),
+                    )
+                )
 
         return output
 
@@ -532,10 +491,7 @@ class BRMLfile(object):
         output = collections.defaultdict(list)
         for key in ['ScanName']:
             if self.data.get(key) is not None:
-                output[key] = [
-                    self.data.get(key)[0],
-                    '',
-                ]
+                output[key] = self.data.get(key)[0]
 
         return output
 
@@ -559,26 +515,23 @@ class BRMLfile(object):
             return output
 
         if source.get('TubeMaterial'):
-            output['TubeMaterial'] = [
-                source['TubeMaterial'],
-                '',
-            ]
+            output['TubeMaterial'] = source['TubeMaterial']
         if source.get('Generator', {}).get('Voltage'):
             val = source['Generator']['Voltage'].get('@Value')
             if val is not None:
                 val = float(val)
-                output['Voltage'] = [
+                output['Voltage'] = to_pint_quantity(
                     val,
                     source['Generator']['Voltage'].get('@Unit', 'kV'),
-                ]
+                )
         if source.get('Generator', {}).get('Current'):
             val = source['Generator']['Current'].get('@Value')
             if val is not None:
                 val = float(val)
-                output['Current'] = [
+                output['Current'] = to_pint_quantity(
                     val,
                     source['Generator']['Current'].get('@Unit', 'mA'),
-                ]
+                )
         for wavelength in [
             'WaveLengthAlpha1', 'WaveLengthAlpha2',
             'WaveLengthBeta', 'WaveLengthRatio',
@@ -587,9 +540,9 @@ class BRMLfile(object):
                 val = source[wavelength].get('@Value')
                 if val is not None:
                     val = float(val)
-                    output[wavelength] = [
+                    output[wavelength] = to_pint_quantity(
                         val,
                         source[wavelength].get('@Unit', 'angstrom'),
-                    ]
+                    )
 
         return output
