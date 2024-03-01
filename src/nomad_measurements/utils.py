@@ -261,3 +261,35 @@ def modify_scan_data(scan_data: dict, scan_type: str):
                 data = data[0].reshape(-1)
             output[key] = data * value[0].units
         return output
+
+def get_bounding_range_2d(ax1, ax2):
+    '''
+    Calculates the range of the smallest rectangular grid that can contain arbitrarily
+    distributed 2D data.
+
+    Args:
+        ax1 (np.ndarray): array of first axis values
+        ax2 (np.ndarray): array of second axis values
+
+    Returns:
+        (list, list): ax1_range, ax2_range
+    '''
+    ax1_range_length = np.max(ax1) - np.min(ax1)
+    ax2_range_length = np.max(ax2) - np.min(ax2)
+
+    if ax1_range_length > ax2_range_length:
+        ax1_range = [np.min(ax1),np.max(ax1)]
+        ax2_mid = np.min(ax2) + ax2_range_length/2
+        ax2_range = [
+            ax2_mid-ax1_range_length/2,
+            ax2_mid+ax1_range_length/2,
+        ]
+    else:
+        ax2_range = [np.min(ax2),np.max(ax2)]
+        ax1_mid = np.min(ax1) + ax1_range_length/2
+        ax1_range = [
+            ax1_mid-ax2_range_length/2,
+            ax1_mid+ax2_range_length/2,
+        ]
+
+    return ax1_range, ax2_range

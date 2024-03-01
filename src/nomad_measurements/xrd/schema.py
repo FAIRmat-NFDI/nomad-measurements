@@ -64,8 +64,7 @@ from nomad_measurements import (
     NOMADMeasurementsCategory,
 )
 from nomad_measurements.xrd import readers
-from nomad_measurements.xrd import plotting
-from nomad_measurements.utils import merge_sections
+from nomad_measurements.utils import merge_sections, get_bounding_range_2d
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -362,7 +361,7 @@ class XRDResult(MeasurementResult):
         description='Integration time per channel',
     )
 
-class XRDResult1D(XRDResult, PlotSection):
+class XRDResult1D(XRDResult):
     '''
     Section containing the result of a 1D X-ray diffraction scan.
     '''
@@ -378,6 +377,60 @@ class XRDResult1D(XRDResult, PlotSection):
             'x': 'n_values_arr', 'y': 'q_vector',
         },
     )
+
+    def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+        '''
+        Plot the 1D diffractogram.
+
+        Args:
+            archive (EntryArchive): The archive containing the section that is being
+            normalized.
+            logger (BoundLogger): A structlog logger.
+
+        Returns:
+            (dict, dict): line_linear, line_log
+        '''
+        plots = []
+
+        x = self.two_theta.to('degree').magnitude
+        y = self.intensity.magnitude
+
+        fig_line_linear = px.line(
+            x = x,
+            y = y,
+            labels = {
+                'x': '2θ (°)',
+                'y': 'Intensity',
+            },
+            title = 'Intensity (linear scale)',
+        )
+        plots.append(
+            PlotlyFigure(
+                label = 'Intensity vs 2Theta (Linear)',
+                index = 1,
+                figure = fig_line_linear.to_plotly_json(),
+            )
+        )
+
+        fig_line_log = px.line(
+            x = x,
+            y = y,
+            log_y = True,
+            labels = {
+                'x': '2θ (°)',
+                'y': 'Intensity',
+            },
+            title = 'Intensity (log scale)',
+        )
+        plots.append(
+            PlotlyFigure(
+                label = 'Intensity vs 2Theta (Log)',
+                index = 0,
+                figure = fig_line_log.to_plotly_json(),
+            )
+        )
+
+        return plots
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         '''
@@ -396,24 +449,7 @@ class XRDResult1D(XRDResult, PlotSection):
                 q=self.q_vector,
             )
 
-        json_line_linear, json_line_log = plotting.plot_1d(
-            self.two_theta,
-            self.intensity,
-        )
-        self.figures = [
-            PlotlyFigure(
-                label = 'Log Plot',
-                index = 1,
-                figure = json_line_log,
-            ),
-            PlotlyFigure(
-                label = 'Linear Plot',
-                index = 2,
-                figure = json_line_linear,
-            ),
-        ]
-
-class XRDResultRSM(XRDResult, PlotSection):
+class XRDResultRSM(XRDResult):
     '''
     Section containing the result of a Reciprocal Space Map (RSM) scan.
     '''
@@ -437,7 +473,117 @@ class XRDResultRSM(XRDResult, PlotSection):
         description='The count at each position, dimensionless',
     )
 
-    def normalize(self, archive: 'EntryArchive', logger: BoundLogger):
+    def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+        '''
+        Plot the 2D RSM diffractogram.
+
+        Args:
+            archive (EntryArchive): The archive containing the section that is being
+            normalized.
+            logger (BoundLogger): A structlog logger.
+
+        Returns:
+            (dict, dict): json_2theta_omega, json_q_vector
+        '''
+        plots = []
+
+        # Plot for 2theta-omega RSM
+        x = self.omega.to('degree').magnitude
+        y = self.two_theta.to('degree').magnitude
+        z = self.intensity.magnitude
+        log_z = np.log10(z)
+        x_range, y_range = get_bounding_range_2d(x, y)
+
+        fig_2theta_omega = px.imshow(
+            img = np.around(log_z,3).T,
+            x = np.around(x,3),
+            y = np.around(y,3),
+            color_continuous_scale = 'inferno',
+        )
+        fig_2theta_omega.update_layout(
+            title = 'RSM plot: Intensity (log-scale) vs Axis position',
+            xaxis_title = 'ω (°)',
+            yaxis_title = '2θ (°)',
+            xaxis = dict(
+                autorange = False,
+                fixedrange = False,
+                range = x_range,
+            ),
+            yaxis = dict(
+                autorange = False,
+                fixedrange = False,
+                range = y_range,
+            ),
+            width = 600,
+            height = 600,
+        )
+        plots.append(
+            PlotlyFigure(
+                label = 'RSM 2Theta-Omega',
+                index = 1,
+                figure = fig_2theta_omega.to_plotly_json(),
+            ),
+        )
+
+        # Plot for RSM in Q-vectors
+        print(self.q_parallel)
+        print(self.q_perpendicular)
+        print("-here----------------- ")
+
+        if self.q_parallel is not None and self.q_perpendicular is not None:
+            print("-----------------here- ")
+            x = self.q_parallel.to('1/angstrom').magnitude.flatten()
+            y = self.q_perpendicular.to('1/angstrom').magnitude.flatten()
+            # q_vectors lead to irregular grid
+            # generate a regular grid using interpolation
+            x_regular = np.linspace(x.min(),x.max(),z.shape[0])
+            y_regular = np.linspace(y.min(),y.max(),z.shape[1])
+            x_grid, y_grid = np.meshgrid(x_regular,y_regular)
+            z_interpolated = griddata(
+                points = (x,y),
+                values = z.flatten(),
+                xi = (x_grid,y_grid),
+                method = 'linear',
+                fill_value = z.min(),
+            )
+            log_z_interpolated = np.log10(z_interpolated)
+            x_range, y_range = get_bounding_range_2d(x_regular,y_regular)
+
+            fig_q_vector = px.imshow(
+                img = np.around(log_z_interpolated,3),
+                x = np.around(x_regular,3),
+                y = np.around(y_regular,3),
+                color_continuous_scale = 'inferno',
+                range_color = [np.nanmin(log_z[log_z != -np.inf]), log_z_interpolated.max()],
+            )
+            fig_q_vector.update_layout(
+                title = 'RSM plot: Intensity (log-scale) vs Q-vectors',
+                xaxis_title = 'Q_parallel (1/Å)',
+                yaxis_title = 'Q_perpendicular (1/Å)',
+                xaxis = dict(
+                    autorange = False,
+                    fixedrange = False,
+                    range = x_range,
+                ),
+                yaxis = dict(
+                    autorange = False,
+                    fixedrange = False,
+                    range = y_range,
+                ),
+                width = 600,
+                height = 600,
+            )
+            plots.append(
+                PlotlyFigure(
+                    label = 'RSM Q-Vectors',
+                    index = 0,
+                    figure = fig_q_vector.to_plotly_json(),
+                ),
+            )
+        
+        return plots
+
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         super().normalize(archive, logger)
         var_axis = 'omega'
         if self.source_peak_wavelength is not None:
@@ -450,29 +596,6 @@ class XRDResultRSM(XRDResult, PlotSection):
                         omega = self[var_axis],
                     )
                     break
-
-        json_2theta_omega, json_q_vector = plotting.plot_2d_rsm(
-            self.two_theta,
-            self[var_axis],
-            self.q_parallel,
-            self.q_perpendicular,
-            self.intensity,
-        )
-        self.figures = [
-            PlotlyFigure(
-                label = 'RSM (2Theta-Omega)',
-                index = 2,
-                figure = json_2theta_omega,
-            ),
-        ]
-        if json_2theta_omega:
-            self.figures.append(
-                PlotlyFigure(
-                    label = 'RSM (Q-vectors)',
-                    index = 1,
-                    figure = json_q_vector,
-                ),
-            )
 
 class XRayDiffraction(Measurement):
     '''
@@ -557,7 +680,7 @@ class XRayDiffraction(Measurement):
             )
 
 
-class ELNXRayDiffraction(XRayDiffraction, EntryData):
+class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     '''
     Example section for how XRayDiffraction can be implemented with a general reader for
     common XRD file types.
@@ -811,6 +934,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                     xrd_dict = read_function(file.name, logger)
                 write_function(xrd_dict, archive, logger)
         super().normalize(archive, logger)
+        self.figures = self.results[0].generate_plots(archive, logger)
 
         if not self.results:
             return
