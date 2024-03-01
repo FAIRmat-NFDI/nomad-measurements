@@ -302,20 +302,33 @@ class XRDResult(MeasurementResult):
 
     scan_type = Quantity(
         type=str,
-        description='Type of scan (1D, 2D, RSM)',
+        description='Type of scan (line, multiline, rsm)',
     )
     n_values = Quantity(
         type=int,
         derived=derive_n_values,
     )
+    n_values_arr = Quantity(
+        type=np.dtype(np.int64),
+        shape=['*'],
+        derived=lambda self: np.arange(self.n_values),
+        description='Array of integers from 0 to n_values-1',
+    )
     two_theta = Quantity(
         type=np.dtype(np.float64), shape=['*'],
         unit='deg',
         description='The 2-theta range of the diffractogram',
+        a_plot={
+            'x': 'n_values_arr', 'y': 'two_theta',
+        },
     )
     intensity = Quantity(
         type=np.dtype(np.float64), shape=['*'],
+        unit='dimensionless',
         description='The count at each 2-theta value, dimensionless',
+        a_plot={
+            'x': 'n_values_arr', 'y': 'intensity',
+        },
     )
     omega = Quantity(
         type=np.dtype(np.float64), shape=['*'],
@@ -355,12 +368,15 @@ class XRDResult1D(XRDResult, PlotSection):
     '''
     m_def = Section()
     scan_type = Quantity(
-        default='1D',
+        default='1D Line Scan',
     )
     q_vector = Quantity(
         type=np.dtype(np.float64), shape=['*'],
         unit='meter**(-1)',
         description='The scattering vector *Q* of the diffractogram',
+        a_plot={
+            'x': 'n_values_arr', 'y': 'q_vector',
+        },
     )
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
@@ -403,7 +419,7 @@ class XRDResultRSM(XRDResult, PlotSection):
     '''
     m_def = Section()
     scan_type = Quantity(
-        default='RSM',
+        default='Reciprocal Space Map (RSM) Scan',
     )
     q_parallel = Quantity(
         type=np.dtype(np.float64), shape=['*','*'],
@@ -417,6 +433,7 @@ class XRDResultRSM(XRDResult, PlotSection):
     )
     intensity = Quantity(
         type=np.dtype(np.float64), shape=['*','*'],
+        unit='dimensionless',
         description='The count at each position, dimensionless',
     )
 
@@ -612,9 +629,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         source_dict: dict = metadata_dict.get('source', {})
 
         scan_type = metadata_dict.get('scan_type', None)
-        if  scan_type == '1D' or scan_type is None:
+        if  scan_type == 'line':
             result = XRDResult1D(
-                intensity=xrd_dict.get('detector', None),
+                intensity=xrd_dict.get('intensity', None),
                 two_theta=xrd_dict.get('2Theta', None),
                 omega=xrd_dict.get('Omega',None),
                 chi=xrd_dict.get('Chi', None),
@@ -623,9 +640,10 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                 integration_time=xrd_dict.get('countTime',None),
             )
             result.normalize(archive, logger)
-        elif scan_type == 'RSM' or scan_type == '2D':
+
+        elif scan_type == 'rsm':
             result = XRDResultRSM(
-                intensity=xrd_dict.get('detector', None),
+                intensity=xrd_dict.get('intensity', None),
                 two_theta=xrd_dict.get('2Theta', None),
                 omega=xrd_dict.get('Omega',None),
                 chi=xrd_dict.get('Chi', None),
@@ -634,6 +652,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                 integration_time=xrd_dict.get('countTime',None),
             )
             result.normalize(archive, logger)
+        else:
+            raise NotImplementedError(f'Scan type `{scan_type}` is not supported.')
 
         source = XRayTubeSource(
             xray_tube_material=source_dict.get('anode_material', None),
