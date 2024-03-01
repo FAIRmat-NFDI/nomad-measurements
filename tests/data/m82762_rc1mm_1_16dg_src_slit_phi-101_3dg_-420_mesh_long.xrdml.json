@@ -1,0 +1,30 @@
+{
+    "2Theta": "(255,)",
+    "Omega": "(101,)",
+    "Phi": "(1,)",
+    "Chi": "(1,)",
+    "X": "(1,)",
+    "Y": "(1,)",
+    "Z": "(1,)",
+    "intensity": "(101, 255)",
+    "counts": "(101, 255)",
+    "countTime": "(1,)",
+    "scanmotname": "2Theta",
+    "metadata": {
+        "sample_id": null,
+        "measurement_type": "Area measurement",
+        "sample_mode": "Reflection",
+        "source": {
+            "current": "40.0",
+            "voltage": "40.0",
+            "kAlpha1": "1.540598",
+            "kAlpha2": "1.544426",
+            "kBeta": "1.39225",
+            "ratioKAlpha2KAlpha1": "0.5",
+            "anode_material": "Cu"
+        },
+        "scan_mode": "Continuous",
+        "scan_axis": "2Theta",
+        "scan_type": "rsm"
+    }
+}

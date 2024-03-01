@@ -1,0 +1,22 @@
+{
+    "intensity": "(401, 301)",
+    "2Theta": "(301,)",
+    "Omega": "(401,)",
+    "Chi": "(1,)",
+    "Phi": "(1,)",
+    "countTime": null,
+    "metadata": {
+        "sample_id": null,
+        "scan_axis": "TwoTheta",
+        "scan_type": "rsm",
+        "source": {
+            "anode_material": "Cu",
+            "kAlpha1": "1.540593",
+            "kAlpha2": "1.544414",
+            "kBeta": "1.392246",
+            "voltage": "45",
+            "current": "200",
+            "ratioKAlpha2KAlpha1": null
+        }
+    }
+}

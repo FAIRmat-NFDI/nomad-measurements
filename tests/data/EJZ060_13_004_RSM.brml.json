@@ -1,0 +1,22 @@
+{
+    "intensity": "(801, 1280)",
+    "2Theta": "(1280,)",
+    "Omega": "(801,)",
+    "Chi": "(1,)",
+    "Phi": "(1,)",
+    "countTime": null,
+    "metadata": {
+        "sample_id": null,
+        "scan_axis": "PsdFixed",
+        "scan_type": "rsm",
+        "source": {
+            "anode_material": "Cu",
+            "kAlpha1": "1.5406",
+            "kAlpha2": "1.54439",
+            "kBeta": "1.39222",
+            "ratioKAlpha2KAlpha1": "0.5",
+            "voltage": "40.0",
+            "current": "40.0"
+        }
+    }
+}

@@ -23,7 +23,9 @@ from nomad.client import parse, normalize_all
 @pytest.fixture(params=[
     'XRD-918-16_10.xrdml',
     'm54313_om2th_10.xrdml',
+    'm82762_rc1mm_1_16dg_src_slit_phi-101_3dg_-420_mesh_long.xrdml',
     '23-012-AG_2thomegascan_long.brml',
+    'EJZ060_13_004_RSM.brml',
     'Omega-2Theta_scan_high_temperature.rasx',
     'RSM_111_sdd=350.rasx',
     'TwoTheta_scan_powder.rasx',
