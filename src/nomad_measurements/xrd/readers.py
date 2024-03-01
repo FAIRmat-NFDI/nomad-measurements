@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 import xml.etree.ElementTree as ET
+import collections
 from typing import (
     Dict,
     Any,
@@ -24,7 +25,11 @@ from typing import (
 import numpy as np
 from nomad.units import ureg
 # from pynxtools.dataconverter.convert import transfer_data_into_template
-from nomad_measurements.utils import to_pint_quantity
+from nomad_measurements.utils import (
+    to_pint_quantity,
+    detect_scan_type,
+    modify_scan_data,
+)
 from nomad_measurements.xrd.IKZ import RASXfile, BRMLfile
 
 if TYPE_CHECKING:
@@ -70,66 +75,75 @@ def read_panalytical_xrdml(file_path: str, logger: 'BoundLogger'=None) -> Dict[s
 
     xrd_measurement = root.find('xrdml:xrdMeasurement', ns)
     scans = xrd_measurement.findall('xrdml:scan', ns)
-    if len(scans) > 1 and logger is not None:
-        logger.warning(
-            'Multi scan xrdml files are currently not supported. Only reading first scan.'
-        )
-    scan = scans[0]  # TODO: Implement multi-scan
 
-    data_points = scan.find('xrdml:dataPoints', ns)
-    intensities = data_points.find('xrdml:intensities', ns)
-    counting_time = data_points.find('xrdml:commonCountingTime', ns)
-    attenuation = data_points.find('xrdml:beamAttenuationFactors', ns)
+    axes = collections.defaultdict(list)
+    counting_time_value = []
+    attenuation_values = []
+    intensities_array = []
+    counts_array = []
 
-    counting_time_value = (
-        np.fromstring(counting_time.text, sep=' ') * ureg(counting_time.get('unit'))
-    )
-    if attenuation is not None:
-        attenuation_values = np.fromstring(attenuation.text, sep=' ')
-        scaling_factor = attenuation_values
-    else:
-        attenuation_values = None
-        scaling_factor = 1
-    if intensities is not None:
-        intensities_array = (
-            np.fromstring(intensities.text, sep=' ')
-        )
-        counts_array = None
-    else:
-        counts = data_points.find('xrdml:counts', ns)
-        counts_array = np.fromstring(counts.text, sep=' ')
-        intensities_array = (
-            counts_array * scaling_factor
-        )
-    n_points = len(intensities_array)
+    for scan in scans:
+        data_points = scan.find('xrdml:dataPoints', ns)
+        intensities = data_points.find('xrdml:intensities', ns)
+        counting_time = data_points.find('xrdml:commonCountingTime', ns)
+        attenuation = data_points.find('xrdml:beamAttenuationFactors', ns)
 
-    axes = {}
-    for axis in data_points.findall('xrdml:positions', ns):
-        name = axis.get('axis')
-        unit = axis.get('unit')
-        listed = axis.find('xrdml:listPositions', ns)
-        start = axis.find('xrdml:startPosition', ns)
-        end = axis.find('xrdml:endPosition', ns)
-        common = axis.find('xrdml:commonPosition', ns)
-        if listed is not None:
-            axes[name] = np.fromstring(listed.text, sep=' ') * ureg(unit)
-        elif start is not None and end is not None:
-            axes[name] = np.linspace(
-                float(start.text), float(end.text), n_points
-            ) * ureg(unit)
-        elif common is not None:
-            axes[name] = np.array([float(common.text)]) * ureg(unit)
+        counting_time_value.append(
+            np.fromstring(counting_time.text, sep=' ') * ureg(counting_time.get('unit'))
+        )
+        if attenuation is not None:
+            attenuation_values.append(np.fromstring(attenuation.text, sep=' '))
+            scaling_factor = attenuation_values[-1]
         else:
-            if logger is not None:
-                logger.warning('Unknown data for {name} axis.')
-            axes[name] = None
+            attenuation_values = None
+            scaling_factor = 1
+        if intensities is not None:
+            intensities_array.append(
+                np.fromstring(intensities.text, sep=' ') * ureg.dimensionless
+            )
+            counts_array = None
+        else:
+            counts = data_points.find('xrdml:counts', ns)
+            counts_array.append(np.fromstring(counts.text, sep=' ') * ureg.dimensionless)
+            intensities_array.append(
+                counts_array[-1] * scaling_factor * ureg.dimensionless
+            )
+        n_points = len(intensities_array[-1])
+
+        for axis in data_points.findall('xrdml:positions', ns):
+            name = axis.get('axis')
+            unit = axis.get('unit')
+            listed = axis.find('xrdml:listPositions', ns)
+            start = axis.find('xrdml:startPosition', ns)
+            end = axis.find('xrdml:endPosition', ns)
+            common = axis.find('xrdml:commonPosition', ns)
+            if listed is not None:
+                axes[name].append(np.fromstring(listed.text, sep=' ') * ureg(unit))
+            elif start is not None and end is not None:
+                axes[name].append(
+                    np.linspace(
+                        float(start.text), float(end.text), n_points
+                    ) * ureg(unit)
+                )
+            elif common is not None:
+                axes[name].append(np.array([float(common.text)]) * ureg(unit))
+            else:
+                if logger is not None:
+                    logger.warning('Unknown data for {name} axis.')
+                axes[name].append(None)
+
+    scan_data = collections.defaultdict(list)
+    scan_data.update(axes)
+    scan_data['intensity'] = intensities_array
+    scan_data['counts'] = counts_array
+    scan_data['countTime'] = counting_time_value
+    scan_data['beamAttenuationFactors'] = attenuation_values
+
+    scan_type = detect_scan_type(scan_data)
+    modified_scan_data = modify_scan_data(scan_data, scan_type)
 
     return {
-        'countTime': counting_time_value,
-        'detector': intensities_array,
-        'counts': counts_array,
-        'beamAttenuationFactors': attenuation_values,
-        **axes,
+        **modified_scan_data,
         'scanmotname': scan.get('scanAxis', None),
         'metadata': {
             'sample_id': find_string('xrdml:sample/xrdml:id'),
@@ -163,6 +177,7 @@ def read_panalytical_xrdml(file_path: str, logger: 'BoundLogger'=None) -> Dict[s
             },
             'scan_mode': scan.get('mode', None),
             'scan_axis': scan.get('scanAxis', None),
+            'scan_type': scan_type,
         },
     }
 
