@@ -526,12 +526,7 @@ class XRDResultRSM(XRDResult):
         )
 
         # Plot for RSM in Q-vectors
-        print(self.q_parallel)
-        print(self.q_perpendicular)
-        print("-here----------------- ")
-
         if self.q_parallel is not None and self.q_perpendicular is not None:
-            print("-----------------here- ")
             x = self.q_parallel.to('1/angstrom').magnitude.flatten()
             y = self.q_perpendicular.to('1/angstrom').magnitude.flatten()
             # q_vectors lead to irregular grid
@@ -820,6 +815,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             archive (EntryArchive): The archive containing the section.
             logger (BoundLogger): A structlog logger.
         '''
+        # TODO add the result section based on the scan_type
         result = XRDResult(
             intensity=xrd_dict.get(
                 '/ENTRY[entry]/2theta_plot/intensity',

@@ -229,7 +229,7 @@ def modify_scan_data(scan_data: dict, scan_type: str):
             a list of pint.Quantity.
         scan_type (str): The type of scan.
     '''
-    output = collections.defaultdict(list)
+    output = collections.defaultdict(lambda: None)
 
     if scan_type not in ['line', 'rsm', 'multiline']:
         raise ValueError(f'Invalid scan type: {scan_type}')

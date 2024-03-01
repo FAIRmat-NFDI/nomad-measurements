@@ -92,7 +92,9 @@ def read_panalytical_xrdml(file_path: str, logger: 'BoundLogger'=None) -> Dict[s
             np.fromstring(counting_time.text, sep=' ') * ureg(counting_time.get('unit'))
         )
         if attenuation is not None:
-            attenuation_values.append(np.fromstring(attenuation.text, sep=' '))
+            attenuation_values.append(
+                np.fromstring(attenuation.text, sep=' ') * ureg.dimensionless
+            )
             scaling_factor = attenuation_values[-1]
         else:
             attenuation_values = None
