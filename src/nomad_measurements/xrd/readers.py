@@ -17,19 +17,16 @@
 #
 import xml.etree.ElementTree as ET
 import collections
-from typing import (
-    Dict,
-    Any,
-    TYPE_CHECKING
-)
+from typing import Dict, Any, TYPE_CHECKING
 import numpy as np
 from nomad.units import ureg
+
 # from pynxtools.dataconverter.convert import transfer_data_into_template
 from nomad_measurements.utils import (
     detect_scan_type,
     modify_scan_data,
 )
-from nomad_measurements.xrd.IKZ import RASXfile, BRMLfile
+from nomad_measurements.xrd.ikz import RASXfile, BRMLfile
 
 if TYPE_CHECKING:
     from structlog.stdlib import (
@@ -40,8 +37,11 @@ if TYPE_CHECKING:
 def transfer_data_into_template(**kwargs):
     raise NotImplementedError
 
-def read_panalytical_xrdml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
-    '''
+
+def read_panalytical_xrdml(
+    file_path: str, logger: 'BoundLogger' = None
+) -> Dict[str, Any]:
+    """
     Function for reading the X-ray diffraction data in a Panalytical `.xrdml` file.
 
     Args:
@@ -50,7 +50,7 @@ def read_panalytical_xrdml(file_path: str, logger: 'BoundLogger'=None) -> Dict[s
 
     Returns:
         Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
-    '''
+    """
     with open(file_path, 'r', encoding='utf-8') as file:
         element_tree = ET.parse(file)
     root = element_tree.getroot()
@@ -105,7 +105,9 @@ def read_panalytical_xrdml(file_path: str, logger: 'BoundLogger'=None) -> Dict[s
             counts_array = None
         else:
             counts = data_points.find('xrdml:counts', ns)
-            counts_array.append(np.fromstring(counts.text, sep=' ') * ureg.dimensionless)
+            counts_array.append(
+                np.fromstring(counts.text, sep=' ') * ureg.dimensionless
+            )
             intensities_array.append(
                 counts_array[-1] * scaling_factor * ureg.dimensionless
             )
@@ -122,9 +124,8 @@ def read_panalytical_xrdml(file_path: str, logger: 'BoundLogger'=None) -> Dict[s
                 axes[name].append(np.fromstring(listed.text, sep=' ') * ureg(unit))
             elif start is not None and end is not None:
                 axes[name].append(
-                    np.linspace(
-                        float(start.text), float(end.text), n_points
-                    ) * ureg(unit)
+                    np.linspace(float(start.text), float(end.text), n_points)
+                    * ureg(unit)
                 )
             elif common is not None:
                 axes[name].append(np.array([float(common.text)]) * ureg(unit))
@@ -183,8 +184,8 @@ def read_panalytical_xrdml(file_path: str, logger: 'BoundLogger'=None) -> Dict[s
     }
 
 
-def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
-    '''
+def read_rigaku_rasx(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any]:
+    """
     Reads .rasx files from Rigaku instruments
         - reader is based on IKZ module
 
@@ -194,7 +195,7 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
 
     Returns:
         Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
-    '''
+    """
     reader = RASXfile(file_path, verbose=False)
     scan_info = reader.get_scan_info()
     scan_data = reader.get_scan_data(logger)
@@ -207,14 +208,13 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
     scan_axis = None
 
     if scan_info:
-        required_keys = ['Mode','SpeedUnit','PositionUnit','Step', 'Speed']
+        required_keys = ['Mode', 'SpeedUnit', 'PositionUnit', 'Step', 'Speed']
         if all(key in scan_info and scan_info[key] for key in required_keys):
             if scan_info['Mode'].lower() == 'continuous':
-                speed_unit = ureg(scan_info['SpeedUnit'].replace('min','minute'))
+                speed_unit = ureg(scan_info['SpeedUnit'].replace('min', 'minute'))
                 count_time_unit = ureg(scan_info['PositionUnit']) / speed_unit
                 count_time = (
-                    np.array([scan_info['Step'] / scan_info['Speed']])
-                    * count_time_unit
+                    np.array([scan_info['Step'] / scan_info['Speed']]) * count_time_unit
                 )
         scan_axis = scan_info.get('AxisName', None)
 
@@ -243,8 +243,9 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
 
     return output
 
-def read_bruker_brml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
-    '''
+
+def read_bruker_brml(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any]:
+    """
     Reads .brml files from Bruker instruments
         - reader is based on IKZ module
 
@@ -254,7 +255,7 @@ def read_bruker_brml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
 
     Returns:
         Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
-    '''
+    """
     reader = BRMLfile(file_path, verbose=False)
     scan_info = reader.get_scan_info()
     source = reader.get_source_info()
@@ -265,7 +266,7 @@ def read_bruker_brml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
     output = {
         'intensity': modified_scan_data['intensity'],
         '2Theta': modified_scan_data['2Theta'],
-        'Omega': modified_scan_data['Theta'], # theta and omega are synonymous in .brml
+        'Omega': modified_scan_data['Theta'],  # theta and omega are synonymous in .brml
         'Chi': modified_scan_data['Chi'],
         'Phi': modified_scan_data['Phi'],
         'countTime': None,
@@ -287,8 +288,9 @@ def read_bruker_brml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
 
     return output
 
-def read_nexus_xrd(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
-    '''
+
+def read_nexus_xrd(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any]:
+    """
     Function for reading the X-ray diffraction data in a Nexus file.
 
     Args:
@@ -297,7 +299,7 @@ def read_nexus_xrd(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]
 
     Returns:
         Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
-    '''
+    """
     nxdl_name = 'NXxrd_pan'
     xrd_template = transfer_data_into_template(
         nxdl_name=nxdl_name,

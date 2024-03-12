@@ -143,12 +143,13 @@ def calculate_two_theta_or_q(
         return (4 * np.pi / wavelength) * np.sin(two_theta.to('radian') / 2), two_theta
     return q, two_theta
 
+
 def calculate_q_vectors_RSM(
-        wavelength: 'pint.Quantity',
-        two_theta: 'pint.Quantity',
-        omega: 'pint.Quantity',
-    ):
-    '''
+    wavelength: 'pint.Quantity',
+    two_theta: 'pint.Quantity',
+    omega: 'pint.Quantity',
+):
+    """
     Calculate the q-vectors for RSM scans in coplanar configuration.
 
     Args:
@@ -158,21 +159,32 @@ def calculate_q_vectors_RSM(
 
     Returns:
         tuple[pint.Quantity, pint.Quantity]: Tuple of q-vectors.
-    '''
-    omega = omega[:,None] * np.ones_like(two_theta.magnitude)
+    """
+    omega = omega[:, None] * np.ones_like(two_theta.magnitude)
     qx = (
-        2 * np.pi / wavelength *
-        (np.cos(two_theta.to('radian')-omega.to('radian')) - np.cos(omega.to('radian')))
+        2
+        * np.pi
+        / wavelength
+        * (
+            np.cos(two_theta.to('radian') - omega.to('radian'))
+            - np.cos(omega.to('radian'))
+        )
     )
     qz = (
-        2 * np.pi / wavelength *
-        (np.sin(two_theta.to('radian')-omega.to('radian')) + np.sin(omega.to('radian')))
+        2
+        * np.pi
+        / wavelength
+        * (
+            np.sin(two_theta.to('radian') - omega.to('radian'))
+            + np.sin(omega.to('radian'))
+        )
     )
 
     q_parallel = qx
     q_perpendicular = qz
 
     return q_parallel, q_perpendicular
+
 
 def estimate_kalpha_wavelengths(source_material):
     '''
@@ -281,46 +293,53 @@ class XRDSettings(ArchiveSection):
 
 
 class XRDResult(MeasurementResult):
-    '''
+    """
     Section containing the result of an X-ray diffraction scan.
-    '''
+    """
+
     m_def = Section()
 
     intensity = Quantity(
-        type=np.dtype(np.float64), shape=['*'],
+        type=np.dtype(np.float64),
+        shape=['*'],
         unit='dimensionless',
         description='The count at each 2-theta value, dimensionless',
     )
     two_theta = Quantity(
-        type=np.dtype(np.float64), shape=['*'],
+        type=np.dtype(np.float64),
+        shape=['*'],
         unit='deg',
         description='The 2-theta range of the diffractogram',
     )
     q_norm = Quantity(
-        type=np.dtype(np.float64), shape=['*'],
+        type=np.dtype(np.float64),
+        shape=['*'],
         unit='meter**(-1)',
         description='The norm of scattering vector *Q* of the diffractogram',
     )
     omega = Quantity(
-        type=np.dtype(np.float64), shape=['*'],
+        type=np.dtype(np.float64),
+        shape=['*'],
         unit='deg',
         description='The omega range of the diffractogram',
     )
     phi = Quantity(
-        type=np.dtype(np.float64), shape=['*'],
+        type=np.dtype(np.float64),
+        shape=['*'],
         unit='deg',
         description='The phi range of the diffractogram',
     )
     chi = Quantity(
-        type=np.dtype(np.float64), shape=['*'],
+        type=np.dtype(np.float64),
+        shape=['*'],
         unit='deg',
         description='The chi range of the diffractogram',
     )
     source_peak_wavelength = Quantity(
         type=np.dtype(np.float64),
         unit='angstrom',
-        description='''Wavelength of the X-ray source. Used to convert from 2-theta to Q
-        and vice-versa.''',
+        description='Wavelength of the X-ray source. Used to convert from 2-theta to Q\
+        and vice-versa.',
     )
     scan_axis = Quantity(
         type=str,
@@ -333,14 +352,16 @@ class XRDResult(MeasurementResult):
         description='Integration time per channel',
     )
 
+
 class XRDResult1D(XRDResult):
-    '''
+    """
     Section containing the result of a 1D X-ray diffraction scan.
-    '''
+    """
+
     m_def = Section()
 
     def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-        '''
+        """
         Plot the 1D diffractogram.
 
         Args:
@@ -350,58 +371,58 @@ class XRDResult1D(XRDResult):
 
         Returns:
             (dict, dict): line_linear, line_log
-        '''
+        """
         plots = []
 
         x = self.two_theta.to('degree').magnitude
         y = self.intensity.magnitude
 
         fig_line_linear = px.line(
-            x = x,
-            y = y,
-            labels = {
+            x=x,
+            y=y,
+            labels={
                 'x': '2θ (°)',
                 'y': 'Intensity',
             },
-            title = 'Intensity (linear scale)',
+            title='Intensity (linear scale)',
         )
         plots.append(
             PlotlyFigure(
-                label = 'Intensity vs 2Theta (Linear)',
-                index = 1,
-                figure = fig_line_linear.to_plotly_json(),
+                label='Intensity vs 2Theta (Linear)',
+                index=1,
+                figure=fig_line_linear.to_plotly_json(),
             )
         )
 
         fig_line_log = px.line(
-            x = x,
-            y = y,
-            log_y = True,
-            labels = {
+            x=x,
+            y=y,
+            log_y=True,
+            labels={
                 'x': '2θ (°)',
                 'y': 'Intensity',
             },
-            title = 'Intensity (log scale)',
+            title='Intensity (log scale)',
         )
         plots.append(
             PlotlyFigure(
-                label = 'Intensity vs 2Theta (Log)',
-                index = 0,
-                figure = fig_line_log.to_plotly_json(),
+                label='Intensity vs 2Theta (Log)',
+                index=0,
+                figure=fig_line_log.to_plotly_json(),
             )
         )
 
         return plots
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-        '''
+        """
         The normalize function of the `XRDResult` section.
 
         Args:
             archive (EntryArchive): The archive containing the section that is being
             normalized.
             logger (BoundLogger): A structlog logger.
-        '''
+        """
         super().normalize(archive, logger)
         if self.source_peak_wavelength is not None:
             self.q_norm, self.two_theta = calculate_two_theta_or_q(
@@ -410,29 +431,34 @@ class XRDResult1D(XRDResult):
                 q=self.q_norm,
             )
 
+
 class XRDResultRSM(XRDResult):
-    '''
+    """
     Section containing the result of a Reciprocal Space Map (RSM) scan.
-    '''
+    """
+
     m_def = Section()
     q_parallel = Quantity(
-        type=np.dtype(np.float64), shape=['*','*'],
+        type=np.dtype(np.float64),
+        shape=['*', '*'],
         unit='meter**(-1)',
         description='The scattering vector *Q_parallel* of the diffractogram',
     )
     q_perpendicular = Quantity(
-        type=np.dtype(np.float64), shape=['*','*'],
+        type=np.dtype(np.float64),
+        shape=['*', '*'],
         unit='meter**(-1)',
         description='The scattering vector *Q_perpendicular* of the diffractogram',
     )
     intensity = Quantity(
-        type=np.dtype(np.float64), shape=['*','*'],
+        type=np.dtype(np.float64),
+        shape=['*', '*'],
         unit='dimensionless',
         description='The count at each position, dimensionless',
     )
 
     def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-        '''
+        """
         Plot the 2D RSM diffractogram.
 
         Args:
@@ -442,7 +468,7 @@ class XRDResultRSM(XRDResult):
 
         Returns:
             (dict, dict): json_2theta_omega, json_q_vector
-        '''
+        """
         plots = []
 
         # Plot for 2theta-omega RSM
@@ -453,33 +479,33 @@ class XRDResultRSM(XRDResult):
         x_range, y_range = get_bounding_range_2d(x, y)
 
         fig_2theta_omega = px.imshow(
-            img = np.around(log_z,3).T,
-            x = np.around(x,3),
-            y = np.around(y,3),
-            color_continuous_scale = 'inferno',
+            img=np.around(log_z, 3).T,
+            x=np.around(x, 3),
+            y=np.around(y, 3),
+            color_continuous_scale='inferno',
         )
         fig_2theta_omega.update_layout(
-            title = 'RSM plot: Intensity (log-scale) vs Axis position',
-            xaxis_title = 'ω (°)',
-            yaxis_title = '2θ (°)',
-            xaxis = dict(
-                autorange = False,
-                fixedrange = False,
-                range = x_range,
+            title='RSM plot: Intensity (log-scale) vs Axis position',
+            xaxis_title='ω (°)',
+            yaxis_title='2θ (°)',
+            xaxis=dict(
+                autorange=False,
+                fixedrange=False,
+                range=x_range,
             ),
-            yaxis = dict(
-                autorange = False,
-                fixedrange = False,
-                range = y_range,
+            yaxis=dict(
+                autorange=False,
+                fixedrange=False,
+                range=y_range,
             ),
-            width = 600,
-            height = 600,
+            width=600,
+            height=600,
         )
         plots.append(
             PlotlyFigure(
-                label = 'RSM 2Theta-Omega',
-                index = 1,
-                figure = fig_2theta_omega.to_plotly_json(),
+                label='RSM 2Theta-Omega',
+                index=1,
+                figure=fig_2theta_omega.to_plotly_json(),
             ),
         )
 
@@ -489,48 +515,51 @@ class XRDResultRSM(XRDResult):
             y = self.q_perpendicular.to('1/angstrom').magnitude.flatten()
             # q_vectors lead to irregular grid
             # generate a regular grid using interpolation
-            x_regular = np.linspace(x.min(),x.max(),z.shape[0])
-            y_regular = np.linspace(y.min(),y.max(),z.shape[1])
-            x_grid, y_grid = np.meshgrid(x_regular,y_regular)
+            x_regular = np.linspace(x.min(), x.max(), z.shape[0])
+            y_regular = np.linspace(y.min(), y.max(), z.shape[1])
+            x_grid, y_grid = np.meshgrid(x_regular, y_regular)
             z_interpolated = griddata(
-                points = (x,y),
-                values = z.flatten(),
-                xi = (x_grid,y_grid),
-                method = 'linear',
-                fill_value = z.min(),
+                points=(x, y),
+                values=z.flatten(),
+                xi=(x_grid, y_grid),
+                method='linear',
+                fill_value=z.min(),
             )
             log_z_interpolated = np.log10(z_interpolated)
-            x_range, y_range = get_bounding_range_2d(x_regular,y_regular)
+            x_range, y_range = get_bounding_range_2d(x_regular, y_regular)
 
             fig_q_vector = px.imshow(
-                img = np.around(log_z_interpolated,3),
-                x = np.around(x_regular,3),
-                y = np.around(y_regular,3),
-                color_continuous_scale = 'inferno',
-                range_color = [np.nanmin(log_z[log_z != -np.inf]), log_z_interpolated.max()],
+                img=np.around(log_z_interpolated, 3),
+                x=np.around(x_regular, 3),
+                y=np.around(y_regular, 3),
+                color_continuous_scale='inferno',
+                range_color=[
+                    np.nanmin(log_z[log_z != -np.inf]),
+                    log_z_interpolated.max(),
+                ],
             )
             fig_q_vector.update_layout(
-                title = 'RSM plot: Intensity (log-scale) vs Q-vectors',
-                xaxis_title = 'Q_parallel (1/Å)',
-                yaxis_title = 'Q_perpendicular (1/Å)',
-                xaxis = dict(
-                    autorange = False,
-                    fixedrange = False,
-                    range = x_range,
+                title='RSM plot: Intensity (log-scale) vs Q-vectors',
+                xaxis_title='Q_parallel (1/Å)',
+                yaxis_title='Q_perpendicular (1/Å)',
+                xaxis=dict(
+                    autorange=False,
+                    fixedrange=False,
+                    range=x_range,
                 ),
-                yaxis = dict(
-                    autorange = False,
-                    fixedrange = False,
-                    range = y_range,
+                yaxis=dict(
+                    autorange=False,
+                    fixedrange=False,
+                    range=y_range,
                 ),
-                width = 600,
-                height = 600,
+                width=600,
+                height=600,
             )
             plots.append(
                 PlotlyFigure(
-                    label = 'RSM Q-Vectors',
-                    index = 0,
-                    figure = fig_q_vector.to_plotly_json(),
+                    label='RSM Q-Vectors',
+                    index=0,
+                    figure=fig_q_vector.to_plotly_json(),
                 ),
             )
 
@@ -540,13 +569,15 @@ class XRDResultRSM(XRDResult):
         super().normalize(archive, logger)
         var_axis = 'omega'
         if self.source_peak_wavelength is not None:
-            for var_axis in ['omega','chi','phi']:
-                if self[var_axis] is not None and \
-                len(np.unique(self[var_axis].magnitude)) > 1:
+            for var_axis in ['omega', 'chi', 'phi']:
+                if (
+                    self[var_axis] is not None
+                    and len(np.unique(self[var_axis].magnitude)) > 1
+                ):
                     self.q_parallel, self.q_perpendicular = calculate_q_vectors_RSM(
-                        wavelength = self.source_peak_wavelength,
-                        two_theta = self.two_theta * np.ones_like(self.intensity),
-                        omega = self[var_axis],
+                        wavelength=self.source_peak_wavelength,
+                        two_theta=self.two_theta * np.ones_like(self.intensity),
+                        omega=self[var_axis],
                     )
                     break
 
@@ -634,10 +665,11 @@ class XRayDiffraction(Measurement):
 
 
 class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
-    '''
+    """
     Example section for how XRayDiffraction can be implemented with a general reader for
     common XRD file types.
-    '''
+    """
+
     m_def = Section(
         categories=[NOMADMeasurementsCategory],
         label='X-Ray Diffraction (XRD)',
@@ -673,12 +705,12 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     )
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
-        '''
+        """
         Method for getting the correct read and write functions for the current data file.
 
         Returns:
             tuple[Callable, Callable]: The read, write functions.
-        '''
+        """
         if self.data_file.endswith('.rasx'):
             return readers.read_rigaku_rasx, self.write_xrd_data
         if self.data_file.endswith('.xrdml'):
@@ -705,15 +737,15 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         source_dict: dict = metadata_dict.get('source', {})
 
         scan_type = metadata_dict.get('scan_type', None)
-        if  scan_type == 'line':
+        if scan_type == 'line':
             result = XRDResult1D(
                 intensity=xrd_dict.get('intensity', None),
                 two_theta=xrd_dict.get('2Theta', None),
-                omega=xrd_dict.get('Omega',None),
+                omega=xrd_dict.get('Omega', None),
                 chi=xrd_dict.get('Chi', None),
                 phi=xrd_dict.get('Phi', None),
                 scan_axis=metadata_dict.get('scan_axis', None),
-                integration_time=xrd_dict.get('countTime',None),
+                integration_time=xrd_dict.get('countTime', None),
             )
             result.normalize(archive, logger)
 
@@ -721,11 +753,11 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             result = XRDResultRSM(
                 intensity=xrd_dict.get('intensity', None),
                 two_theta=xrd_dict.get('2Theta', None),
-                omega=xrd_dict.get('Omega',None),
+                omega=xrd_dict.get('Omega', None),
                 chi=xrd_dict.get('Chi', None),
                 phi=xrd_dict.get('Phi', None),
                 scan_axis=metadata_dict.get('scan_axis', None),
-                integration_time=xrd_dict.get('countTime',None),
+                integration_time=xrd_dict.get('countTime', None),
             )
             result.normalize(archive, logger)
         else:
@@ -869,14 +901,14 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         )
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-        '''
+        """
         The normalize function of the `ELNXRayDiffraction` section.
 
         Args:
             archive (EntryArchive): The archive containing the section that is being
             normalized.
             logger (BoundLogger): A structlog logger.
-        '''
+        """
         if self.data_file is not None:
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:
@@ -892,5 +924,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
 
         if not self.results:
             return
+
 
 m_package.__init_metainfo__()
