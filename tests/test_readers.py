@@ -25,13 +25,14 @@ from nomad_measurements.xrd.readers import (
     read_bruker_brml,
 )
 
+
 def convert_quantity_to_string(data_dict):
-    '''
+    """
     In a dict, recursively convert every pint.Quantity into str containing its shape.
 
     Args:
         data_dict (dict): A nested dictionary containing pint.Quantity and other data.
-    '''
+    """
     for k, v in data_dict.items():
         if isinstance(v, ureg.Quantity):
             if isinstance(v.magnitude, np.ndarray):
@@ -41,10 +42,11 @@ def convert_quantity_to_string(data_dict):
         if isinstance(v, dict):
             convert_quantity_to_string(v)
 
+
 def test_rasx_reader():
     file_path = [
-        "tests/data/RSM_111_sdd=350.rasx",
-        "tests/data/Omega-2Theta_scan_high_temperature.rasx",
+        'tests/data/RSM_111_sdd=350.rasx',
+        'tests/data/Omega-2Theta_scan_high_temperature.rasx',
     ]
     for path in file_path:
         output = read_rigaku_rasx(path)
@@ -53,10 +55,11 @@ def test_rasx_reader():
             reference = json.load(f)
         assert output == reference
 
+
 def test_xrdml_reader():
     file_path = [
-        "tests/data/XRD-918-16_10.xrdml",
-        "tests/data/m82762_rc1mm_1_16dg_src_slit_phi-101_3dg_-420_mesh_long.xrdml",
+        'tests/data/XRD-918-16_10.xrdml',
+        'tests/data/m82762_rc1mm_1_16dg_src_slit_phi-101_3dg_-420_mesh_long.xrdml',
     ]
     for path in file_path:
         output = read_panalytical_xrdml(path)
@@ -65,10 +68,11 @@ def test_xrdml_reader():
             reference = json.load(f)
         assert output == reference
 
+
 def test_brml_reader():
     file_path = [
-        "tests/data/23-012-AG_2thomegascan_long.brml",
-        "tests/data/EJZ060_13_004_RSM.brml",
+        'tests/data/23-012-AG_2thomegascan_long.brml',
+        'tests/data/EJZ060_13_004_RSM.brml',
     ]
     for path in file_path:
         output = read_bruker_brml(path)
