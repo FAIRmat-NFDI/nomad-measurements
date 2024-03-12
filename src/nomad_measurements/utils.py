@@ -199,7 +199,7 @@ def detect_scan_type(scan_data):
             two_theta = np.array(scan_data['2Theta'])
             omega = np.array(scan_data[var_axis[0]])
             if (
-                intensity_data.shape == two_theta.shape \
+                intensity_data.shape == two_theta.shape
                 and intensity_data.shape[0] == np.unique(omega).shape[0]
             ):
                 return 'rsm'
