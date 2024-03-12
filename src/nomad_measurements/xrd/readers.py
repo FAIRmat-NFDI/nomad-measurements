@@ -26,7 +26,6 @@ import numpy as np
 from nomad.units import ureg
 # from pynxtools.dataconverter.convert import transfer_data_into_template
 from nomad_measurements.utils import (
-    to_pint_quantity,
     detect_scan_type,
     modify_scan_data,
 )

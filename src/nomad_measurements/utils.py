@@ -168,7 +168,7 @@ def detect_scan_type(scan_data):
 
     Args:
         scan_data (dict): The X-ray diffraction data in a Python dictionary. Each key is
-            a list of pint.Quantity.
+            a list of scan data as pint.Quantity arrays.
 
     Returns:
         str: The type of scan.
@@ -182,31 +182,31 @@ def detect_scan_type(scan_data):
             return 'multiline'
 
     intensity_data = np.array(scan_data['intensity']).squeeze()
-    if intensity_data.ndim == 2:
-        if not are_all_identical(scan_data['2Theta']):
-            return 'multiline'
-        # find axis that updates from one scan to other
-        var_axis = []
-        for key in ['Omega', 'Chi', 'Phi', 'Theta']:
-            if key not in scan_data:
-                continue
-            data = scan_data[key]
-            if not are_all_identical(data):
-                var_axis.append(key)
-        # if only one var_axis
-        # and dimensions of 2theta, var_axis, and intensity are consistent, it is a rsm
-        if len(var_axis) == 1:
-            two_theta = np.array(scan_data['2Theta'])
-            omega = np.array(scan_data[var_axis[0]])
-            if (
-                intensity_data.shape == two_theta.shape
-                and intensity_data.shape[0] == np.unique(omega).shape[0]
-            ):
-                return 'rsm'
-        return 'multiline'
-    else:
+    if intensity_data.ndim > 2:
         raise AssertionError(f'Scan type not detected. `intensity.ndim` must be 1 or 2.\
                              Found: {intensity_data.ndim}')
+
+    if not are_all_identical(scan_data['2Theta']):
+        return 'multiline'
+    # find axis that updates from one scan to other
+    var_axis = []
+    for key in ['Omega', 'Chi', 'Phi', 'Theta']:
+        if key not in scan_data:
+            continue
+        data = scan_data[key]
+        if not are_all_identical(data):
+            var_axis.append(key)
+    # if only one var_axis
+    # and dimensions of 2theta, var_axis, and intensity are consistent, it is a rsm
+    if len(var_axis) == 1:
+        two_theta = np.array(scan_data['2Theta'])
+        var_axis_data = np.array(scan_data[var_axis[0]])
+        if (
+            intensity_data.shape == two_theta.shape
+            and intensity_data.shape[0] == np.unique(var_axis_data).shape[0]
+        ):
+            return 'rsm'
+    return 'multiline'
 
 def modify_scan_data(scan_data: dict, scan_type: str):
     '''
@@ -222,12 +222,15 @@ def modify_scan_data(scan_data: dict, scan_type: str):
     are identical, it is reduced to a point vector of size 1.
 
     If the scan type is `multiline`, the data is converted into a list of 1D arrays.
-    TODO: Add support for `multiline` scans.
+    Currently not implemented.
 
     Args:
         scan_data (dict): The X-ray diffraction data in a Python dictionary. Each key is
-            a list of pint.Quantity.
+            a list of scan data as pint.Quantity arrays.
         scan_type (str): The type of scan.
+
+    Returns:
+        dict: scan_data containing same keys but modified values.
     '''
     output = collections.defaultdict(lambda: None)
 

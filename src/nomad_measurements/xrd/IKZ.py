@@ -187,11 +187,6 @@ class RASXfile(object):
             if verbose:
                 print()
 
-        # self._ndscan = len(np.unique(list(map(len, data))))==1
-        # if self._ndscan:
-        #     data = np.array(data)
-        # imgdata = np.array(imgdata)
-
         self.data = data
         self.images = imgdata
         self.meta = meta
@@ -231,8 +226,12 @@ class RASXfile(object):
         Collect intensity, two_theta, and axis positions. If units are not available for
         two_theta or axis positions, they will default to 'deg'.
 
+        Args:
+            logger (BoundLogger): A structlog logger.
+
         Returns:
-            Dict[str, Any]: Each element contains a list of ureg.Quantity objects.
+            Dict[str, Any]: Each element contains a list of scan data as ureg.Quantity
+                arrays.
         '''
         output = collections.defaultdict(list)
 
@@ -416,22 +415,17 @@ class BRMLfile(object):
                 self.mounted_optics_info = []
             # (block end) not originally part of Carsten's code
 
-            # for key in self.data:
-            #     self.data[key] = np.array(self.data[key]).squeeze()
-            #     if not self.data[key].shape:
-            #         self.data[key] = self.data[key].item()
-            # for key in self.motors:
-            #     self.motors[key] = np.array(self.motors[key]).squeeze()
-            #     if not self.motors[key].shape:
-            #         self.motors[key] = self.motors[key].item()
-
     def get_scan_data(self, logger: 'BoundLogger'=None):
         '''
         Collect intensity, two_theta, and axis positions. If units are not available for
         two_theta or axis positions, they will default to 'deg'.
 
+        Args:
+            logger (BoundLogger): A structlog logger.
+
         Returns:
-            Dict[str, Any]: Each element contains a list of ureg.Quantity objects..
+            Dict[str, Any]: Each element contains a list of scan data as ureg.Quantity
+                arrays.
         '''
         output = collections.defaultdict(list)
 

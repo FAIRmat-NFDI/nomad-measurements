@@ -286,48 +286,20 @@ class XRDResult(MeasurementResult):
     '''
     m_def = Section()
 
-    def derive_n_values(self):
-        '''
-        Method for determining the length of the diffractogram array.
-
-        Returns:
-            int: The length of the diffractogram array.
-        '''
-        if self.intensity is not None:
-            return len(self.intensity)
-        if self.two_theta is not None:
-            return len(self.two_theta)
-        return 0
-
-    scan_type = Quantity(
-        type=str,
-        description='Type of scan (line, multiline, rsm)',
-    )
-    n_values = Quantity(
-        type=int,
-        derived=derive_n_values,
-    )
-    n_values_arr = Quantity(
-        type=np.dtype(np.int64),
-        shape=['*'],
-        derived=lambda self: np.arange(self.n_values),
-        description='Array of integers from 0 to n_values-1',
+    intensity = Quantity(
+        type=np.dtype(np.float64), shape=['*'],
+        unit='dimensionless',
+        description='The count at each 2-theta value, dimensionless',
     )
     two_theta = Quantity(
         type=np.dtype(np.float64), shape=['*'],
         unit='deg',
         description='The 2-theta range of the diffractogram',
-        a_plot={
-            'x': 'n_values_arr', 'y': 'two_theta',
-        },
     )
-    intensity = Quantity(
+    q_norm = Quantity(
         type=np.dtype(np.float64), shape=['*'],
-        unit='dimensionless',
-        description='The count at each 2-theta value, dimensionless',
-        a_plot={
-            'x': 'n_values_arr', 'y': 'intensity',
-        },
+        unit='meter**(-1)',
+        description='The norm of scattering vector *Q* of the diffractogram',
     )
     omega = Quantity(
         type=np.dtype(np.float64), shape=['*'],
@@ -366,17 +338,6 @@ class XRDResult1D(XRDResult):
     Section containing the result of a 1D X-ray diffraction scan.
     '''
     m_def = Section()
-    scan_type = Quantity(
-        default='1D Line Scan',
-    )
-    q_vector = Quantity(
-        type=np.dtype(np.float64), shape=['*'],
-        unit='meter**(-1)',
-        description='The scattering vector *Q* of the diffractogram',
-        a_plot={
-            'x': 'n_values_arr', 'y': 'q_vector',
-        },
-    )
 
     def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         '''
@@ -443,10 +404,10 @@ class XRDResult1D(XRDResult):
         '''
         super().normalize(archive, logger)
         if self.source_peak_wavelength is not None:
-            self.q_vector, self.two_theta = calculate_two_theta_or_q(
+            self.q_norm, self.two_theta = calculate_two_theta_or_q(
                 wavelength=self.source_peak_wavelength,
                 two_theta=self.two_theta,
-                q=self.q_vector,
+                q=self.q_norm,
             )
 
 class XRDResultRSM(XRDResult):
@@ -454,9 +415,6 @@ class XRDResultRSM(XRDResult):
     Section containing the result of a Reciprocal Space Map (RSM) scan.
     '''
     m_def = Section()
-    scan_type = Quantity(
-        default='Reciprocal Space Map (RSM) Scan',
-    )
     q_parallel = Quantity(
         type=np.dtype(np.float64), shape=['*','*'],
         unit='meter**(-1)',
@@ -575,7 +533,7 @@ class XRDResultRSM(XRDResult):
                     figure = fig_q_vector.to_plotly_json(),
                 ),
             )
-        
+
         return plots
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
@@ -629,8 +587,8 @@ class XRayDiffraction(Measurement):
         ''',
         # | **Reciprocal Space Mapping (RSM)**                         | High-resolution XRD method to measure a reciprocal space map. Provides additional information used to aid the interpretation of peak displacement, peak broadening or peak overlap.                                                                                                                                                             |
     )
-    # results = Measurement.results.m_copy()
-    # results.section_def = XRDResult
+    results = Measurement.results.m_copy()
+    results.section_def = XRDResult
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         '''
@@ -661,7 +619,7 @@ class XRayDiffraction(Measurement):
                     incident_beam_wavelength=result.source_peak_wavelength,
                     two_theta_angles=result.two_theta,
                     intensity=result.intensity,
-                    # q_vector=result.q_vector,
+                    q_vector=result.q_norm,
                 ) for result in self.results]
             )
         if not archive.results.method:
