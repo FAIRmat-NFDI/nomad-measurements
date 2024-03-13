@@ -16,16 +16,17 @@
 # limitations under the License.
 #
 import xml.etree.ElementTree as ET
-from typing import (
-    Dict,
-    Any,
-    TYPE_CHECKING
-)
+import collections
+from typing import Dict, Any, TYPE_CHECKING
 import numpy as np
 from nomad.units import ureg
+
 # from pynxtools.dataconverter.convert import transfer_data_into_template
-from nomad_measurements.utils import to_pint_quantity
-from nomad_measurements.xrd.IKZ import RASXfile, BRMLfile
+from nomad_measurements.utils import (
+    detect_scan_type,
+    modify_scan_data,
+)
+from nomad_measurements.xrd.ikz import RASXfile, BRMLfile
 
 if TYPE_CHECKING:
     from structlog.stdlib import (
@@ -36,8 +37,11 @@ if TYPE_CHECKING:
 def transfer_data_into_template(**kwargs):
     raise NotImplementedError
 
-def read_panalytical_xrdml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
-    '''
+
+def read_panalytical_xrdml(
+    file_path: str, logger: 'BoundLogger' = None
+) -> Dict[str, Any]:
+    """
     Function for reading the X-ray diffraction data in a Panalytical `.xrdml` file.
 
     Args:
@@ -46,7 +50,7 @@ def read_panalytical_xrdml(file_path: str, logger: 'BoundLogger'=None) -> Dict[s
 
     Returns:
         Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
-    '''
+    """
     with open(file_path, 'r', encoding='utf-8') as file:
         element_tree = ET.parse(file)
     root = element_tree.getroot()
@@ -70,66 +74,78 @@ def read_panalytical_xrdml(file_path: str, logger: 'BoundLogger'=None) -> Dict[s
 
     xrd_measurement = root.find('xrdml:xrdMeasurement', ns)
     scans = xrd_measurement.findall('xrdml:scan', ns)
-    if len(scans) > 1 and logger is not None:
-        logger.warning(
-            'Multi scan xrdml files are currently not supported. Only reading first scan.'
-        )
-    scan = scans[0]  # TODO: Implement multi-scan
 
-    data_points = scan.find('xrdml:dataPoints', ns)
-    intensities = data_points.find('xrdml:intensities', ns)
-    counting_time = data_points.find('xrdml:commonCountingTime', ns)
-    attenuation = data_points.find('xrdml:beamAttenuationFactors', ns)
+    axes = collections.defaultdict(list)
+    counting_time_value = []
+    attenuation_values = []
+    intensities_array = []
+    counts_array = []
 
-    counting_time_value = (
-        np.fromstring(counting_time.text, sep=' ') * ureg(counting_time.get('unit'))
-    )
-    if attenuation is not None:
-        attenuation_values = np.fromstring(attenuation.text, sep=' ')
-        scaling_factor = attenuation_values
-    else:
-        attenuation_values = None
-        scaling_factor = 1
-    if intensities is not None:
-        intensities_array = (
-            np.fromstring(intensities.text, sep=' ')
-        )
-        counts_array = None
-    else:
-        counts = data_points.find('xrdml:counts', ns)
-        counts_array = np.fromstring(counts.text, sep=' ')
-        intensities_array = (
-            counts_array * scaling_factor
-        )
-    n_points = len(intensities_array)
+    for scan in scans:
+        data_points = scan.find('xrdml:dataPoints', ns)
+        intensities = data_points.find('xrdml:intensities', ns)
+        counting_time = data_points.find('xrdml:commonCountingTime', ns)
+        attenuation = data_points.find('xrdml:beamAttenuationFactors', ns)
 
-    axes = {}
-    for axis in data_points.findall('xrdml:positions', ns):
-        name = axis.get('axis')
-        unit = axis.get('unit')
-        listed = axis.find('xrdml:listPositions', ns)
-        start = axis.find('xrdml:startPosition', ns)
-        end = axis.find('xrdml:endPosition', ns)
-        common = axis.find('xrdml:commonPosition', ns)
-        if listed is not None:
-            axes[name] = np.fromstring(listed.text, sep=' ') * ureg(unit)
-        elif start is not None and end is not None:
-            axes[name] = np.linspace(
-                float(start.text), float(end.text), n_points
-            ) * ureg(unit)
-        elif common is not None:
-            axes[name] = np.array([float(common.text)]) * ureg(unit)
+        counting_time_value.append(
+            np.fromstring(counting_time.text, sep=' ') * ureg(counting_time.get('unit'))
+        )
+        if attenuation is not None:
+            attenuation_values.append(
+                np.fromstring(attenuation.text, sep=' ') * ureg.dimensionless
+            )
+            scaling_factor = attenuation_values[-1]
         else:
-            if logger is not None:
-                logger.warning('Unknown data for {name} axis.')
-            axes[name] = None
+            attenuation_values = None
+            scaling_factor = 1
+        if intensities is not None:
+            intensities_array.append(
+                np.fromstring(intensities.text, sep=' ') * ureg.dimensionless
+            )
+            counts_array = None
+        else:
+            counts = data_points.find('xrdml:counts', ns)
+            counts_array.append(
+                np.fromstring(counts.text, sep=' ') * ureg.dimensionless
+            )
+            intensities_array.append(
+                counts_array[-1] * scaling_factor * ureg.dimensionless
+            )
+        n_points = len(intensities_array[-1])
+
+        for axis in data_points.findall('xrdml:positions', ns):
+            name = axis.get('axis')
+            unit = axis.get('unit')
+            listed = axis.find('xrdml:listPositions', ns)
+            start = axis.find('xrdml:startPosition', ns)
+            end = axis.find('xrdml:endPosition', ns)
+            common = axis.find('xrdml:commonPosition', ns)
+            if listed is not None:
+                axes[name].append(np.fromstring(listed.text, sep=' ') * ureg(unit))
+            elif start is not None and end is not None:
+                axes[name].append(
+                    np.linspace(float(start.text), float(end.text), n_points)
+                    * ureg(unit)
+                )
+            elif common is not None:
+                axes[name].append(np.array([float(common.text)]) * ureg(unit))
+            else:
+                if logger is not None:
+                    logger.warning('Unknown data for {name} axis.')
+                axes[name].append(None)
+
+    scan_data = collections.defaultdict(list)
+    scan_data.update(axes)
+    scan_data['intensity'] = intensities_array
+    scan_data['counts'] = counts_array
+    scan_data['countTime'] = counting_time_value
+    scan_data['beamAttenuationFactors'] = attenuation_values
+
+    scan_type = detect_scan_type(scan_data)
+    modified_scan_data = modify_scan_data(scan_data, scan_type)
 
     return {
-        'countTime': counting_time_value,
-        'detector': intensities_array,
-        'counts': counts_array,
-        'beamAttenuationFactors': attenuation_values,
-        **axes,
+        **modified_scan_data,
         'scanmotname': scan.get('scanAxis', None),
         'metadata': {
             'sample_id': find_string('xrdml:sample/xrdml:id'),
@@ -163,16 +179,15 @@ def read_panalytical_xrdml(file_path: str, logger: 'BoundLogger'=None) -> Dict[s
             },
             'scan_mode': scan.get('mode', None),
             'scan_axis': scan.get('scanAxis', None),
+            'scan_type': scan_type,
         },
     }
 
 
-def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
-    '''
+def read_rigaku_rasx(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any]:
+    """
     Reads .rasx files from Rigaku instruments
         - reader is based on IKZ module
-        - currently supports one scan per file
-        - in case of multiple scans per file, only the first scan is read
 
     Args:
         file_path (string): absolute path of the file.
@@ -180,45 +195,47 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
 
     Returns:
         Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
-    '''
+    """
     reader = RASXfile(file_path, verbose=False)
     scan_info = reader.get_scan_info()
-    p_data = reader.get_1d_scan(logger)
+    scan_data = reader.get_scan_data(logger)
     source = reader.get_source_info()
+
+    scan_type = detect_scan_type(scan_data)
+    modified_scan_data = modify_scan_data(scan_data, scan_type)
 
     count_time = None
     scan_axis = None
 
     if scan_info:
-        required_keys = ['Mode','SpeedUnit','PositionUnit','Step', 'Speed']
+        required_keys = ['Mode', 'SpeedUnit', 'PositionUnit', 'Step', 'Speed']
         if all(key in scan_info and scan_info[key] for key in required_keys):
             if scan_info['Mode'].lower() == 'continuous':
-                speed_unit = ureg(scan_info['SpeedUnit'].replace('min','minute'))
+                speed_unit = ureg(scan_info['SpeedUnit'].replace('min', 'minute'))
                 count_time_unit = ureg(scan_info['PositionUnit']) / speed_unit
                 count_time = (
-                    np.array([scan_info['Step'] / scan_info['Speed']])
-                    * count_time_unit
+                    np.array([scan_info['Step'] / scan_info['Speed']]) * count_time_unit
                 )
-
         scan_axis = scan_info.get('AxisName', None)
 
     output = {
-        'detector': to_pint_quantity(*p_data['intensity']),
-        '2Theta': to_pint_quantity(*p_data['two_theta']),
-        'Omega': to_pint_quantity(*p_data['Omega_position']),
-        'Chi': to_pint_quantity(*p_data['Chi_position']),
-        'Phi': to_pint_quantity(*p_data['Phi_position']),
+        'intensity': modified_scan_data['intensity'],
+        '2Theta': modified_scan_data['2Theta'],
+        'Omega': modified_scan_data['Omega'],
+        'Chi': modified_scan_data['Chi'],
+        'Phi': modified_scan_data['Phi'],
         'countTime': count_time,
         'metadata': {
             'sample_id': None,
             'scan_axis': scan_axis,
+            'scan_type': scan_type,
             'source': {
-                'anode_material': to_pint_quantity(*source['TargetName']),
-                'kAlpha1': to_pint_quantity(*source['WavelengthKalpha1']),
-                'kAlpha2': to_pint_quantity(*source['WavelengthKalpha2']),
-                'kBeta': to_pint_quantity(*source['WavelengthKbeta']),
-                'voltage': to_pint_quantity(*source['Voltage']),
-                'current': to_pint_quantity(*source['Current']),
+                'anode_material': source['TargetName'],
+                'kAlpha1': source['WavelengthKalpha1'],
+                'kAlpha2': source['WavelengthKalpha2'],
+                'kBeta': source['WavelengthKbeta'],
+                'voltage': source['Voltage'],
+                'current': source['Current'],
                 'ratioKAlpha2KAlpha1': None,
             },
         },
@@ -226,8 +243,9 @@ def read_rigaku_rasx(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
 
     return output
 
-def read_bruker_brml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
-    '''
+
+def read_bruker_brml(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any]:
+    """
     Reads .brml files from Bruker instruments
         - reader is based on IKZ module
 
@@ -237,38 +255,42 @@ def read_bruker_brml(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, An
 
     Returns:
         Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
-    '''
+    """
     reader = BRMLfile(file_path, verbose=False)
-    data = reader.get_1d_scan(logger)
     scan_info = reader.get_scan_info()
     source = reader.get_source_info()
+    scan_data = reader.get_scan_data(logger)
+    scan_type = detect_scan_type(scan_data)
+    modified_scan_data = modify_scan_data(scan_data, scan_type)
 
     output = {
-        'detector': to_pint_quantity(*data['intensity']),
-        '2Theta': to_pint_quantity(*data['TwoTheta']),
-        'Omega': to_pint_quantity(*data['Theta']), # theta and omega are synonymous in .brml
-        'Chi': to_pint_quantity(*data['Chi']),
-        'Phi': to_pint_quantity(*data['Phi']),
+        'intensity': modified_scan_data['intensity'],
+        '2Theta': modified_scan_data['2Theta'],
+        'Omega': modified_scan_data['Theta'],  # theta and omega are synonymous in .brml
+        'Chi': modified_scan_data['Chi'],
+        'Phi': modified_scan_data['Phi'],
         'countTime': None,
         'metadata': {
             'sample_id': None,
-            'scan_axis': to_pint_quantity(*scan_info['ScanName']),
+            'scan_axis': scan_info.get('ScanName', None),
+            'scan_type': scan_type,
             'source': {
-                'anode_material': to_pint_quantity(*source['TubeMaterial']),
-                'kAlpha1': to_pint_quantity(*source['WaveLengthAlpha1']),
-                'kAlpha2': to_pint_quantity(*source['WaveLengthAlpha2']),
-                'kBeta': to_pint_quantity(*source['WaveLengthBeta']),
-                'ratioKAlpha2KAlpha1': to_pint_quantity(*source['WaveLengthRatio']),
-                'voltage': to_pint_quantity(*source['Voltage']),
-                'current': to_pint_quantity(*source['Current']),
+                'anode_material': source['TubeMaterial'],
+                'kAlpha1': source['WaveLengthAlpha1'],
+                'kAlpha2': source['WaveLengthAlpha2'],
+                'kBeta': source['WaveLengthBeta'],
+                'ratioKAlpha2KAlpha1': source['WaveLengthRatio'],
+                'voltage': source['Voltage'],
+                'current': source['Current'],
             },
         },
     }
 
     return output
 
-def read_nexus_xrd(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]:
-    '''
+
+def read_nexus_xrd(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any]:
+    """
     Function for reading the X-ray diffraction data in a Nexus file.
 
     Args:
@@ -277,7 +299,7 @@ def read_nexus_xrd(file_path: str, logger: 'BoundLogger'=None) -> Dict[str, Any]
 
     Returns:
         Dict[str, Any]: The X-ray diffraction data in a Python dictionary.
-    '''
+    """
     nxdl_name = 'NXxrd_pan'
     xrd_template = transfer_data_into_template(
         nxdl_name=nxdl_name,
