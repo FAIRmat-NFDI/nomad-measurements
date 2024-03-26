@@ -59,7 +59,7 @@ from nomad.datamodel.metainfo.plot import (
     PlotSection,
     PlotlyFigure,
 )
-# from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
+from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
 from nomad_measurements import (
     NOMADMeasurementsCategory,
 )
@@ -79,8 +79,8 @@ if TYPE_CHECKING:
 m_package = Package(name='nomad_xrd')
 
 
-def populate_nexus_subsection(**kwargs):
-    raise NotImplementedError
+# def populate_nexus_subsection(**kwargs):
+#     raise NotImplementedError
 
 def handle_nexus_subsection(
         xrd_template: 'Template',
@@ -702,6 +702,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             component=ELNComponentEnum.BoolEditQuantity,
             label='Generate NeXus file',
         ),
+        default=True
     )
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
@@ -714,7 +715,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         if self.data_file.endswith('.rasx'):
             return readers.read_rigaku_rasx, self.write_xrd_data
         if self.data_file.endswith('.xrdml'):
-            return readers.read_panalytical_xrdml, self.write_xrd_data
+            return readers.read_nexus_xrd, self.write_nx_xrd
+            # return readers.read_panalytical_xrdml, self.write_xrd_data
         if self.data_file.endswith('.brml'):
             return readers.read_bruker_brml, self.write_xrd_data
         return None, None
