@@ -20,6 +20,7 @@ import collections
 from typing import Dict, Any, TYPE_CHECKING
 import numpy as np
 from nomad.units import ureg
+from pynxtools.dataconverter.convert import transfer_data_into_template
 
 # from pynxtools.dataconverter.convert import transfer_data_into_template
 from nomad_measurements.utils import (
@@ -34,8 +35,8 @@ if TYPE_CHECKING:
     )
 
 
-def transfer_data_into_template(**kwargs):
-    raise NotImplementedError
+# def transfer_data_into_template(**kwargs):
+#     raise NotImplementedError
 
 
 def read_panalytical_xrdml(
