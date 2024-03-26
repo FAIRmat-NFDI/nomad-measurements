@@ -44,7 +44,7 @@ from nomad.datamodel.results import (
     Results,
     Properties,
     CatalyticProperties,
-    Reactivity
+    Reaction
 )
 from nomad.datamodel.metainfo.plot import (
     PlotSection,
@@ -61,8 +61,8 @@ def add_activity(archive):
         archive.results.properties = Properties()
     if not archive.results.properties.catalytic:
         archive.results.properties.catalytic = CatalyticProperties()
-    if not archive.results.properties.catalytic.reactivity:
-        archive.results.properties.catalytic.reactivity = Reactivity()
+    if not archive.results.properties.catalytic.reaction:
+        archive.results.properties.catalytic.reaction = Reaction()
 
 # class CatalystSample(CompositeSystem, EntryData):
 #     '''Example section for a catalyst sample.'''
@@ -192,16 +192,16 @@ class CatalyticSectionConditions_static(ArchiveSection):
 
         add_activity(archive)
         if self.set_temperature is not None:
-            archive.results.properties.catalytic.reactivity.test_temperatures = self.set_temperature
+            archive.results.properties.catalytic.reaction.temperature = self.set_temperature
         if self.set_pressure is not None:
-            archive.results.properties.catalytic.reactivity.pressure = self.set_pressure
+            archive.results.properties.catalytic.reaction.pressure = self.set_pressure
         if self.set_total_flow_rate is not None:
-            archive.results.properties.catalytic.reactivity.flow_rate = self.set_total_flow_rate
+            archive.results.properties.catalytic.reaction.flow_rate = self.set_total_flow_rate
         if self.weight_hourly_space_velocity is not None:
-            archive.results.properties.catalytic.reactivity.weight_hourly_space_velocity = self.weight_hourly_space_velocity
+            archive.results.properties.catalytic.reaction.weight_hourly_space_velocity = self.weight_hourly_space_velocity
 
         if self.reagents is not None:
-            archive.results.properties.catalytic.reactivity.reactants = self.reagents
+            archive.results.properties.catalytic.reaction.reactants = self.reagents
 
 
 class CatalyticSectionConditions_dynamic(CatalyticSectionConditions_static):
