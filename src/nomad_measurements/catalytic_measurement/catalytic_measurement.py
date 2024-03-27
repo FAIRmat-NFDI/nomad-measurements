@@ -44,7 +44,8 @@ from nomad.datamodel.results import (
     Results,
     Properties,
     CatalyticProperties,
-    Reaction
+    Reaction,
+    Reactant
 )
 from nomad.datamodel.metainfo.plot import (
     PlotSection,
@@ -136,7 +137,7 @@ class CatalyticSectionConditions_static(ArchiveSection):
         type=np.float64, unit='bar', a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='bar'))
 
     set_total_flow_rate = Quantity(
-        type=np.float64, unit='mL/minute', a_eln=ELNAnnotation(component='NumberEditQuantity'))
+        type=np.float64, unit='mL/minute', a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='mL/minute'))
 
     duration = Quantity(
         type=np.float64, unit='hour', a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='hour'))
@@ -183,25 +184,18 @@ class CatalyticSectionConditions_static(ArchiveSection):
                 if reagent.flow_rate is None and reagent.gas_concentration_in is not None:
                     reagent.flow_rate = self.set_total_flow_rate * reagent.gas_concentration_in
 
-        if self.m_parent.catalyst is not None:
-            if self.m_parent.catalyst.catalyst_mass is not None:
+        if self.m_parent.catalyst is not None or self.m_root().data.reactor_filling is not None:
+            if self.m_parent.catalyst is not None:
+                if self.m_parent.catalyst.catalyst_mass is not None:
+                    if self.weight_hourly_space_velocity is None and self.set_total_flow_rate is not None:
+                        self.weight_hourly_space_velocity = self.set_total_flow_rate / self.m_parent.catalyst.catalyst_mass
+                    if self.contact_time is None and self.set_total_flow_rate is not None:
+                        self.contact_time = self.m_parent.catalyst.catalyst_mass / self.set_total_flow_rate
+            elif self.m_root().data.reactor_filling.catalyst_mass is not None:
                 if self.weight_hourly_space_velocity is None and self.set_total_flow_rate is not None:
-                    self.weight_hourly_space_velocity = self.set_total_flow_rate / self.m_parent.catalyst.catalyst_mass
+                    self.weight_hourly_space_velocity = self.set_total_flow_rate / self.m_root().data.reactor_filling.catalyst_mass
                 if self.contact_time is None and self.set_total_flow_rate is not None:
-                    self.contact_time = self.m_parent.catalyst.catalyst_mass / self.set_total_flow_rate
-
-        add_activity(archive)
-        if self.set_temperature is not None:
-            archive.results.properties.catalytic.reaction.temperature = self.set_temperature
-        if self.set_pressure is not None:
-            archive.results.properties.catalytic.reaction.pressure = self.set_pressure
-        if self.set_total_flow_rate is not None:
-            archive.results.properties.catalytic.reaction.flow_rate = self.set_total_flow_rate
-        if self.weight_hourly_space_velocity is not None:
-            archive.results.properties.catalytic.reaction.weight_hourly_space_velocity = self.weight_hourly_space_velocity
-
-        if self.reagents is not None:
-            archive.results.properties.catalytic.reaction.reactants = self.reagents
+                    self.contact_time = self.m_root().data.reactor_filling.catalyst_mass / self.set_total_flow_rate
 
 
 class CatalyticSectionConditions_dynamic(CatalyticSectionConditions_static):
@@ -218,7 +212,6 @@ class CatalyticSectionConditions_dynamic(CatalyticSectionConditions_static):
 
     set_pressure_section_stop = Quantity(
         type=np.float64, unit='bar', a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='bar'))
-
 
 
 class ReactorFilling(ArchiveSection):
@@ -270,7 +263,7 @@ class ReactorFilling(ArchiveSection):
         super(ReactorFilling, self).normalize(archive, logger)
 
         if self.sample_reference is None:
-            if self.m_root().data.samples is not None:
+            if self.m_root().data.samples != []:
                 self.sample_reference = self.m_root().data.samples[0].reference
         if self.sample_reference is not None:
             if self.m_root().data.samples == []:
@@ -286,9 +279,6 @@ class ReactorFilling(ArchiveSection):
         if self.apparent_catalyst_volume is None and self.catalyst_mass is not None and self.catalyst_density is not None:
             self.apparent_catalyst_volume = self.catalyst_mass / self.catalyst_density
 
-        if self.catalyst_sievefraction_upper_limit is not None and self.catalyst_sievefraction_lower_limit is not None and self.particle_size is None:
-            self.particle_size = (self.catalyst_sievefraction_upper_limit + self.catalyst_sievefraction_lower_limit) / 2
-
 
 class ReactionConditions(PlotSection, ArchiveSection):
     m_def = Section(description='A class containing reaction conditions for a generic reaction.')
@@ -302,7 +292,7 @@ class ReactionConditions(PlotSection, ArchiveSection):
         type=np.float64, unit='hour', a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='hour'))
 
     section_runs = SubSection(section_def=CatalyticSectionConditions_static, repeats=True)
-    catalyst = SubSection(section_def=ReactorFilling, repeats=False)
+    catalyst = SubSection(section_def=ReactorFilling, repeats=False)    # moved up in entry; if not used could be removed?
 
     def normalize(self, archive, logger):
         super(ReactionConditions, self).normalize(archive, logger)
@@ -349,6 +339,63 @@ class ReactionConditions(PlotSection, ArchiveSection):
         add_activity(archive)
         for run in self.section_runs:
             run.normalize(archive, logger)
+
+        #convert single value in run quantity to list
+        if self.section_runs is not None:
+            temperature_list = np.array([])
+            pressure_list = np.array([])
+            total_flow_rate_list = np.array([])
+            weight_hourly_space_velocity_list = np.array([])
+            gas_hourly_space_velocity_list = np.array([])
+            time_on_stream_list = np.array([])
+
+            for n,run in enumerate(self.section_runs):
+                if run.set_temperature is not None:
+                    temperature_list=np.append(temperature_list, run.set_temperature)
+                if run.set_pressure is not None:
+                    pressure_list=np.append(pressure_list, run.set_pressure)
+                if run.set_total_flow_rate is not None:
+                    total_flow_rate_list=np.append(total_flow_rate_list, run.set_total_flow_rate)
+                if run.weight_hourly_space_velocity is not None:
+                    weight_hourly_space_velocity_list=np.append(weight_hourly_space_velocity_list, run.weight_hourly_space_velocity)
+                if run.gas_hourly_space_velocity is not None:
+                    gas_hourly_space_velocity_list=np.append(gas_hourly_space_velocity_list, run.gas_hourly_space_velocity)
+                if run.time_on_stream is not None:
+                    time_on_stream_list = np.append(time_on_stream_list, run.time_on_stream)
+
+            if temperature_list.any():
+                archive.results.properties.catalytic.reaction.temperature = temperature_list
+            if pressure_list.any():
+                archive.results.properties.catalytic.reaction.pressure = pressure_list
+            if total_flow_rate_list.any():
+                archive.results.properties.catalytic.reaction.flow_rate = total_flow_rate_list
+            if weight_hourly_space_velocity_list.any():
+                archive.results.properties.catalytic.reaction.weight_hourly_space_velocity = weight_hourly_space_velocity_list
+            if gas_hourly_space_velocity_list.any():
+                archive.results.properties.catalytic.reaction.gas_hourly_space_velocity = gas_hourly_space_velocity_list
+            if time_on_stream_list.any():
+                archive.results.properties.catalytic.reaction.time_on_stream = time_on_stream_list
+            if self.total_time_on_stream is not None:
+                archive.results.properties.catalytic.reaction.total_time_on_stream = self.total_time_on_stream
+
+            if self.section_runs[0].reagents is not None:
+                reactants=[]
+                for r in self.section_runs[0].reagents:
+                    print(r.name)
+                    gas_concentration_in = np.array([])
+                    for run in self.section_runs:
+                        if run.reagents is not None:
+                            for reagent in run.reagents:
+                                if reagent.name == r.name:
+                                    if reagent.pure_reagent is not None:
+                                        if reagent.pure_reagent.iupac_name is not None:
+                                            name = reagent.pure_reagent.iupac_name
+                                        else:
+                                            name = reagent.name
+                                    gas_concentration_in = np.append(gas_concentration_in, reagent.gas_concentration_in)
+                    reactant = Reactant(name=name, gas_concentration_in=gas_concentration_in)
+                    reactants.append(reactant)
+                archive.results.properties.catalytic.reaction.reactants = reactants
 
         #Figures definitions:
         self.figures = []

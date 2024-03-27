@@ -35,7 +35,7 @@ from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
 )
 from nomad_measurements import NOMADMeasurementsCategory
-from nomad_measurements.catalytic_measurement.catalytic_measurement import ReactionConditions
+from nomad_measurements.catalytic_measurement.catalytic_measurement import ReactionConditions, ReactorFilling, add_activity
 
 m_package = Package(name='nomad_catalysis')
 
@@ -47,7 +47,40 @@ class SimpleCatalyticReaction(Measurement, EntryData):
         categories=[NOMADMeasurementsCategory],
         label='Simple Catalytic Measurement')
 
+
+    reaction_class = Quantity(
+        type=str,
+        description="""
+        A highlevel classification of the studied reaction.
+        """,
+        a_eln=dict(component='EnumEditQuantity', props=dict(suggestions=[
+            'Oxidation', 'Hydrogenation', 'Dehydrogenation', 'Cracking', 'Isomerisation', 'Coupling']
+        )),
+        iris=['https://w3id.org/nfdi4cat/voc4cat_0007010'])
+
+    reaction_name = Quantity(
+        type=str,
+        description="""
+        The name of the studied reaction.
+        """,
+        a_eln=dict(
+            component='EnumEditQuantity', props=dict(suggestions=[
+                'Oxidation of Ethane', 'Oxidation of Propane',
+                'Oxidation of Butane', 'CO hydrogenation', 'Methanol Synthesis', 'Fischer-Tropsch',
+                'Water gas shift reaction', 'Ammonia Synthesis', 'Ammonia decomposition'])),
+        iris=['https://w3id.org/nfdi4cat/voc4cat_0007009'])
+
     reaction_condition = SubSection(section_def=ReactionConditions, a_eln=ELNAnnotation(label='Reaction Conditions'))
+    reactor_filling = SubSection(section_def=ReactorFilling, a_eln=ELNAnnotation(label='Reactor Filling'))
+
+    def normalize(self, archive, logger):
+        super(SimpleCatalyticReaction, self).normalize(archive, logger)
+
+        add_activity(archive)
+        if self.reaction_name is not None:
+            archive.results.properties.catalytic.reaction.name = self.reaction_name
+        if self.reaction_class is not None:
+            archive.results.properties.catalytic.reaction.type = self.reaction_class
 
 
 m_package.__init_metainfo__()
