@@ -112,13 +112,13 @@ class Reagent(ArchiveSection):
                 self.pure_reagent.iupac_name = 'carbon dioxide'
 
         if self.name == "CO" or self.name == "carbon monoxide":
-            self.pure_component.iupac_name = 'carbon monoxide'
-            self.pure_component.molecular_formula = 'CO'
-            self.pure_component.molecular_mass = 28.01
-            self.pure_component.smile = 'C#O'
-            self.pure_component.inchi = 'InChI=1S/CO/c1-2'
-            self.pure_component.inchi_key = 'UGFAIRIUMAVXCW-UHFFFAOYSA-N'
-            self.pure_component.cas_number = '630-08-0'
+            self.pure_reagent.iupac_name = 'carbon monoxide'
+            self.pure_reagent.molecular_formula = 'CO'
+            self.pure_reagent.molecular_mass = 28.01
+            self.pure_reagent.smile = 'C#O'
+            self.pure_reagent.inchi = 'InChI=1S/CO/c1-2'
+            self.pure_reagent.inchi_key = 'UGFAIRIUMAVXCW-UHFFFAOYSA-N'
+            self.pure_reagent.cas_number = '630-08-0'
 
         if self.name is None and self.pure_reagent is not None:
             self.name = self.pure_reagent.molecular_formula
