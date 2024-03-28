@@ -1,0 +1,3 @@
+description: This is a plugin schema generated for a simple catalytic measurement.
+name: schema/catalytic_measurement
+plugin_type: schema
