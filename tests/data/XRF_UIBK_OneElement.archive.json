@@ -1,0 +1,6 @@
+{
+  "data": {
+    "mdef": "nomad-measurements.xrf.schema.XRayFluorescence",
+    "data_file": "XRF_UIBK_OneElement.txt"
+  }
+}
