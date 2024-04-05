@@ -5,6 +5,9 @@ normalize:
 plugins:
   include: 
     - parsers/nomad_measurements/xrd
+    - parsers/nomad_measurements/xrf
   options:
     parsers/nomad_measurements/xrd:
       python_package: nomad_measurements.xrd.parser
+    parsers/nomad_measurements/xrf:
+      python_package: nomad_measurements.xrf.parser

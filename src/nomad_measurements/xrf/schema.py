@@ -52,7 +52,6 @@ from nomad.datamodel.results import (
     DiffractionPattern,
     Method,
     MeasurementMethod,
-    XRDMethod,
 )
 from nomad_measurements import (
     NOMADMeasurementsCategory,
@@ -72,6 +71,34 @@ class XRFResult(MeasurementResult, System):
         unit=('nm'),
         a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='nm'))
 
+class XRFSettings(ArchiveSection):
+    '''
+    Section containing the settings for an XRF measurement.
+    '''
+
+    xray_energy = Quantity(
+        type=np.dtype(np.float64),
+        unit=('eV'),
+        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='eV'))
+
+    current = Quantity(
+        type=np.dtype(np.float64),
+        unit=('uA'),
+        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='uA'))
+
+    spot_size = Quantity(
+        type=np.dtype(np.float64),
+        unit=('mm'),
+        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='mm'))
+
+    integration_time = Quantity(
+        type=np.dtype(np.float64),
+        unit=('s'),
+        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='s'))
+
+    element_line = Quantity(
+        type=str,
+        a_eln=dict(component='StringEditQuantity'))
 
 class XRayFluorescence(Measurement):
     '''
@@ -125,39 +152,6 @@ class XRayFluorescence(Measurement):
             else:
                 with archive.m_context.raw_file(self.data_file) as file:
                     xrf_dict = read_function(file.name, logger)
-                    results = XRFResult(
-                        thickness = xrf_dict.get('thickness', None)
-                    )
-                    self.results.thickness = xrf_dict.get('thickness', None)
-
-class XRFSettings(ArchiveSection):
-    '''
-    Section containing the settings for an XRF measurement.
-    '''
-
-    xray_energy = Quantity(
-        type=np.dtype(np.float64),
-        unit=('eV'),
-        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='eV'))
-
-    current = Quantity(
-        type=np.dtype(np.float64),
-        unit=('uA'),
-        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='uA'))
-
-    spot_size = Quantity(
-        type=np.dtype(np.float64),
-        unit=('mm'),
-        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='mm'))
-
-    integration_time = Quantity(
-        type=np.dtype(np.float64),
-        unit=('s'),
-        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='s'))
-
-    element_line = Quantity(
-        type=str,
-        a_eln=dict(component='StringEditQuantity'))
-
+                    self.results.thickness = xrf_dict.get('film_thickness', None)
 
 m_package.__init_metainfo__()

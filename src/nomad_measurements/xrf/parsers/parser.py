@@ -49,17 +49,14 @@ class RawFileXRFData(EntryData):
         )
     )
 
-
 class XRFParser(MatchingParser):
     '''
     Parser for matching XRF files and creating instances of XRayFlourescence.
     '''
     def __init__(self):
-        print(1)
         super().__init__(
             code_name='XRF Parser',
         )
-        print(2)
 
     def parse(
             self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None

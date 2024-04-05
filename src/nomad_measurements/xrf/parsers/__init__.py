@@ -1,2 +1,2 @@
-from nomad_measurements.xfd import *
+from nomad_measurements.xrf import *
 from .parser import *
