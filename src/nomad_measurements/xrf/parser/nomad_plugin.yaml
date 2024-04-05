@@ -3,6 +3,6 @@ name: parsers/xrf
 plugin_type: parser
 mainfile_mime_re: text/.*
 mainfile_name_re: ^.*\.txt$
-mainfile_contents_re: ^PositionType.*|.*\nPositionType.*
+# mainfile_contents_re: ^PositionType.*|.*\nPositionType.*
 parser_class_name: nomad_measurements.xrf.parser.XRFParser
 code_name: XRF Parser

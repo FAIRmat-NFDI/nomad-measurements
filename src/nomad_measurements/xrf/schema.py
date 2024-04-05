@@ -104,8 +104,17 @@ class XRayFluorescence(Measurement):
     '''
     Generic X-ray fluorescence measurement.
     '''
-    m_def = Section()
-    method = Quantity(type=str,default='X-Ray Fluorescence (XRF)')
+    m_def = Section(
+        categories=[NOMADMeasurementsCategory],
+        label='X-Ray Fluorescence (XRF)',
+        a_eln=dict(
+            lane_width='800px',
+        ),
+        a_template=dict(
+            measurement_identifiers=dict(),
+        ),
+    )
+    # method = Quantity(type=str,default='X-Ray Fluorescence (XRF)')
 
     data_file = Quantity(
         type=str,
