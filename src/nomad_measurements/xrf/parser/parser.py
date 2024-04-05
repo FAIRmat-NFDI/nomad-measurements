@@ -30,7 +30,7 @@ from nomad.datamodel.data import (
 )
 
 from nomad_measurements.utils import create_archive
-from nomad_measurements.xrf import XRayFluorescence
+from nomad_measurements.xrf import ELNXRayFluorescence
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -43,7 +43,7 @@ class RawFileXRFData(EntryData):
     Section for an XRF data file.
     '''
     measurement = Quantity(
-        type=XRayFluorescence,
+        type=ELNXRayFluorescence,
         a_eln=ELNAnnotation(
             component='ReferenceEditQuantity',
         )
@@ -62,7 +62,7 @@ class XRFParser(MatchingParser):
             self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None
         ) -> None:
         data_file = mainfile.split('/')[-1]
-        entry = XRayFluorescence.m_from_dict(XRayFluorescence.m_def.a_template)
+        entry = ELNXRayFluorescence.m_from_dict(ELNXRayFluorescence.m_def.a_template)
         entry.data_file = data_file
         file_name = f'{"".join(data_file.split(".")[:-1])}.archive.json'
         archive.data = RawFileXRFData(measurement=create_archive(entry,archive,file_name))

@@ -104,24 +104,10 @@ class XRayFluorescence(Measurement):
     '''
     Generic X-ray fluorescence measurement.
     '''
-    m_def = Section(
-        categories=[NOMADMeasurementsCategory],
-        label='X-Ray Fluorescence (XRF)',
-        a_eln=dict(
-            lane_width='800px',
-        ),
-        a_template=dict(
-            measurement_identifiers=dict(),
-        ),
-    )
-    # method = Quantity(type=str,default='X-Ray Fluorescence (XRF)')
-
-    data_file = Quantity(
+    m_def = Section()
+    method = Quantity(
         type=str,
-        description='Data file containing the xrf results',
-        a_eln=ELNAnnotation(
-            component=ELNComponentEnum.FileEditQuantity,
-        ),
+        default='X-Ray Fluorescence (XRF)',
     )
 
     xrf_settings = SubSection(
@@ -130,16 +116,6 @@ class XRayFluorescence(Measurement):
 
     results = Measurement.results.m_copy()
     results.section_def = XRFResult
-
-    def get_read_function(self) -> Callable:
-        """
-        Method for getting the correct read function for the current data file.
-
-        Returns:
-            Callable: The read function.
-        """
-        if self.data_file.endswith('.txt'): # specify more!?
-            return readers.read_UBIK_trn
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         '''
@@ -151,7 +127,67 @@ class XRayFluorescence(Measurement):
             logger (BoundLogger): A structlog logger.
         '''
         super().normalize(archive, logger)
+        if not archive.results:
+            archive.results = Results()
+        if not archive.results.properties:
+            archive.results.properties = Properties()
+        # if not archive.results.method:
+        #     archive.results.method = Method(
+        #         method_name='XRF',
+        #         measurement=MeasurementMethod(
+        #             xrd=XRFMethod()
+        #         )
+        #     )
 
+
+class ELNXRayFluorescence(XRayFluorescence, EntryData):
+    '''
+    Example section for how XRayFluorescence can be implemented with a general reader for
+    some XRF file types.
+    '''
+
+    m_def = Section(
+        categories=[NOMADMeasurementsCategory],
+        label='X-Ray Fluorescence (XRF)',
+        a_eln=ELNAnnotation(
+            lane_width='800px',
+        ),
+        a_template=dict(
+            measurement_identifiers=dict(),
+        ),
+    )
+
+    data_file = Quantity(
+        type=str,
+        description='Data file containing the xrf results',
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.FileEditQuantity,
+        ),
+    )
+
+    measurement_identifiers = SubSection(
+        section_def=ReadableIdentifiers,
+    )
+
+    def get_read_function(self) -> Callable:
+        '''
+        Method for getting the correct read function for the current data file.
+
+        Returns:
+            Callable: The read function.
+        '''
+        if self.data_file.endswith('.txt'): # needs more specification
+            return readers.read_UBIK_txt
+
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+        '''
+        The normalize function of the `ELNXRayDiffraction` section.
+
+        Args:
+            archive (EntryArchive): The archive containing the section that is being
+            normalized.
+            logger (BoundLogger): A structlog logger.
+        '''
         if self.data_file is not None:
             read_function = self.get_read_function()
             if read_function is None:

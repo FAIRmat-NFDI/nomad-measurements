@@ -45,7 +45,7 @@ def read_UBIK_txt(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any
 
     for line in lines:
         if 'Analyzed value' in line:
-            xrf_dict['film_thickness'] = float(line.split()[1])
+            xrf_dict['film_thickness'] = float(line.split()[2])
             break
 
     return xrf_dict
