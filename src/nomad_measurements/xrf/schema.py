@@ -126,7 +126,6 @@ class XRayFluorescence(Measurement):
             normalized.
             logger (BoundLogger): A structlog logger.
         '''
-        super().normalize(archive, logger)
         if not archive.results:
             archive.results = Results()
         if not archive.results.properties:
@@ -138,6 +137,7 @@ class XRayFluorescence(Measurement):
         #             xrd=XRFMethod()
         #         )
         #     )
+        super().normalize(archive, logger)
 
 
 class ELNXRayFluorescence(XRayFluorescence, EntryData):
@@ -179,9 +179,44 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
         if self.data_file.endswith('.txt'): # needs more specification
             return readers.read_UBIK_txt
 
+    def write_xrf_data(
+            self,
+            xrf_dict: Dict[str, Any],
+            archive: 'EntryArchive',
+            logger: 'BoundLogger',
+        ) -> None:
+        '''
+        Write method for populating the `ELNXRayFluorescence` section from a dict.
+
+        Args:
+            xrf_dict (Dict[str, Any]): A dictionary with the XRF data.
+            archive (EntryArchive): The archive containing the section.
+            logger (BoundLogger): A structlog logger.
+        '''
+
+        result = XRFResult(
+            thickness = xrf_dict.get('film_thickness', None)
+        )
+        result.normalize(archive, logger)
+
+        xrf_settings = XRFSettings()
+        xrf_settings.normalize(archive, logger)
+
+        sample = CompositeSystemReference(
+            #lab_id=metadata_dict.get('sample_id', None),
+        )
+        sample.normalize(archive, logger)
+
+        xrf = ELNXRayFluorescence(
+            results = [result],
+            xrf_settings = xrf_settings,
+            samples = [sample]
+        )
+        merge_sections(self, xrf, logger)
+
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         '''
-        The normalize function of the `ELNXRayDiffraction` section.
+        The normalize function of the `ELNXRayFluorescence` section.
 
         Args:
             archive (EntryArchive): The archive containing the section that is being
@@ -197,6 +232,10 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
             else:
                 with archive.m_context.raw_file(self.data_file) as file:
                     xrf_dict = read_function(file.name, logger)
-                    self.results.thickness = xrf_dict.get('film_thickness', None)
+                self.write_xrf_data(xrf_dict, archive, logger)
+        super().normalize(archive, logger)
+
+        if not self.results:
+            return
 
 m_package.__init_metainfo__()
