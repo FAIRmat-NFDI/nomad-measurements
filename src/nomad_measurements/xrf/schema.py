@@ -176,7 +176,8 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
         Returns:
             Callable: The read function.
         '''
-        if self.data_file.endswith('.txt'): # needs more specification
+        # TODO: Reader selection must be more specific
+        if self.data_file.endswith('.txt'):
             return readers.read_UBIK_txt
 
     def write_xrf_data(
@@ -203,7 +204,7 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
         xrf_settings.normalize(archive, logger)
 
         sample = CompositeSystemReference(
-            #lab_id=metadata_dict.get('sample_id', None),
+            lab_id = xrf_dict.get('sample_name', None),
         )
         sample.normalize(archive, logger)
 
@@ -232,6 +233,7 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
             else:
                 with archive.m_context.raw_file(self.data_file) as file:
                     xrf_dict = read_function(file.name, logger)
+                # TODO: Implement population of other xrf_dict components
                 self.write_xrf_data(xrf_dict, archive, logger)
         super().normalize(archive, logger)
 
