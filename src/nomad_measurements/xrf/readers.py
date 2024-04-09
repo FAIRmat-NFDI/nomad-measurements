@@ -76,7 +76,7 @@ def read_UBIK_txt(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any
                 xrf_dict[key]['sample_name'] = None
                 xrf_dict[key]['date'] = None
                 logger.warn(
-                    f'read_UBIK_txt failed to extract metadata from file: "{self.data_file}".'
+                    f'read_UBIK_txt failed to extract metadata from file: "{file_path}".'
                 )
 
             # Extract elements and their shares
@@ -104,7 +104,7 @@ def read_UBIK_txt(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any
                 xrf_dict[key]['film_thickness'] = None
                 xrf_dict[key]['elements'] = None
                 logger.warn(
-                    f'read_UBIK_txt failed to extract elements and shares from file: "{self.data_file}".'
+                    f'read_UBIK_txt failed to extract elements and shares from file: "{file_path}".'
                 )
 
     return xrf_dict
