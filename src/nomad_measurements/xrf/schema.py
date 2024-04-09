@@ -28,7 +28,7 @@ from nomad.datamodel.metainfo.basesections import (
     MeasurementResult,
     CompositeSystemReference,
     ReadableIdentifiers,
-    System
+    System,
 )
 from nomad.metainfo import (
     Package,
@@ -61,6 +61,7 @@ from nomad_measurements.utils import merge_sections, get_bounding_range_2d
 
 m_package = Package(name='nomad_xrf')
 
+
 class XRFResult(MeasurementResult, System):
     """
     Section containing the result of an X-ray fluorescence measurement.
@@ -69,63 +70,67 @@ class XRFResult(MeasurementResult, System):
     thickness = Quantity(
         type=np.dtype(np.float64),
         unit=('nm'),
-        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='nm'))
+        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='nm'),
+    )
+
 
 class XRFSettings(ArchiveSection):
-    '''
+    """
     Section containing the settings for an XRF measurement.
-    '''
+    """
 
     xray_energy = Quantity(
         type=np.dtype(np.float64),
         unit=('eV'),
-        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='eV'))
+        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='eV'),
+    )
 
     current = Quantity(
         type=np.dtype(np.float64),
         unit=('uA'),
-        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='uA'))
+        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='uA'),
+    )
 
     spot_size = Quantity(
         type=np.dtype(np.float64),
         unit=('mm'),
-        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='mm'))
+        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='mm'),
+    )
 
     integration_time = Quantity(
         type=np.dtype(np.float64),
         unit=('s'),
-        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='s'))
+        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='s'),
+    )
 
-    element_line = Quantity(
-        type=str,
-        a_eln=dict(component='StringEditQuantity'))
+    element_line = Quantity(type=str, a_eln=dict(component='StringEditQuantity'))
+
 
 class XRayFluorescence(Measurement):
-    '''
+    """
     Generic X-ray fluorescence measurement.
-    '''
+    """
+
     m_def = Section()
     method = Quantity(
         type=str,
         default='X-Ray Fluorescence (XRF)',
     )
 
-    xrf_settings = SubSection(
-        section_def = XRFSettings
-    )
+    xrf_settings = SubSection(section_def=XRFSettings)
 
     results = Measurement.results.m_copy()
     results.section_def = XRFResult
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-        '''
+        """
         The normalize function of the `XRayFluorescence` section.
 
         Args:
             archive (EntryArchive): The archive containing the section that is being
             normalized.
             logger (BoundLogger): A structlog logger.
-        '''
+        """
         if not archive.results:
             archive.results = Results()
         if not archive.results.properties:
@@ -141,10 +146,10 @@ class XRayFluorescence(Measurement):
 
 
 class ELNXRayFluorescence(XRayFluorescence, EntryData):
-    '''
+    """
     Example section for how XRayFluorescence can be implemented with a general reader for
     some XRF file types.
-    '''
+    """
 
     m_def = Section(
         categories=[NOMADMeasurementsCategory],
@@ -170,60 +175,62 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
     )
 
     def get_read_function(self) -> Callable:
-        '''
+        """
         Method for getting the correct read function for the current data file.
 
         Returns:
             Callable: The read function.
-        '''
+        """
         # TODO: Reader selection must be more specific
         if self.data_file.endswith('.txt'):
             return readers.read_UBIK_txt
 
     def write_xrf_data(
-            self,
-            xrf_dict: Dict[str, Any],
-            archive: 'EntryArchive',
-            logger: 'BoundLogger',
-        ) -> None:
-        '''
+        self,
+        xrf_dict: Dict[str, Any],
+        archive: 'EntryArchive',
+        logger: 'BoundLogger',
+    ) -> None:
+        """
         Write method for populating the `ELNXRayFluorescence` section from a dict.
 
         Args:
             xrf_dict (Dict[str, Any]): A dictionary with the XRF data.
             archive (EntryArchive): The archive containing the section.
             logger (BoundLogger): A structlog logger.
-        '''
+        """
 
-        result = XRFResult(
-            thickness = xrf_dict.get('film_thickness', None)
-        )
-        result.normalize(archive, logger)
+        # write for each measurement in xrf_dict
+        for key in xrf_dict:
+            result = XRFResult(
+                name=xrf_dict.get(key, {}).get('application', None),
+                datetime=xrf_dict.get(key, {}).get('date', None),
+                thickness=xrf_dict.get(key, {}).get('film_thickness', None),
+            )
+            result.normalize(archive, logger)
 
-        xrf_settings = XRFSettings()
-        xrf_settings.normalize(archive, logger)
+            sample = CompositeSystemReference(
+                lab_id=xrf_dict.get(key, {}).get('sample_name', None),
+            )
+            sample.normalize(archive, logger)
 
-        sample = CompositeSystemReference(
-            lab_id = xrf_dict.get('sample_name', None),
-        )
-        sample.normalize(archive, logger)
+            xrf_settings = XRFSettings()
+            xrf_settings.normalize(archive, logger)
 
-        xrf = ELNXRayFluorescence(
-            results = [result],
-            xrf_settings = xrf_settings,
-            samples = [sample]
-        )
-        merge_sections(self, xrf, logger)
+            xrf = ELNXRayFluorescence(
+                results=[result], xrf_settings=xrf_settings, samples=[sample]
+            )
+            merge_sections(self, xrf, logger)
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-        '''
+        """
         The normalize function of the `ELNXRayFluorescence` section.
 
         Args:
             archive (EntryArchive): The archive containing the section that is being
             normalized.
             logger (BoundLogger): A structlog logger.
-        '''
+        """
         if self.data_file is not None:
             read_function = self.get_read_function()
             if read_function is None:
@@ -239,5 +246,6 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
 
         if not self.results:
             return
+
 
 m_package.__init_metainfo__()
