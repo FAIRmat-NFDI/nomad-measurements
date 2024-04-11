@@ -45,41 +45,18 @@ def read_UBIK_txt(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any
         data = file.read()
 
     xrf_dict = dict()
-    idx = 0
 
     # Splitting data into individual measurements
     measurements = re.split(r'_{100,}\n', data)
     for measurement in measurements:
         if len(measurement) > 100:
-            # Initialize dictionary for each measurement
-            key = str(idx)
-            xrf_dict[key] = dict()
-            idx += 1
-
-            # Extract meta information
+            # Try to match meta information
             meta_match = re.search(
                 r'PositionType\s+Application\s+Sample name\s+Date\s+(\S+)\s+Quant analysis\s+(\S+(?:\s\S+)*)\s+(\S+)\s+(\d{4}-\s*\d{1,2}-\s*\d{1,2}\s+\d{1,2}:\d{2})',
                 measurement,
             )
-            if meta_match:
-                xrf_dict[key]['position'] = meta_match.group(1).strip()
-                xrf_dict[key]['application'] = meta_match.group(2).strip()
-                xrf_dict[key]['sample_name'] = meta_match.group(3).strip()
-                # workaround for missing zeros, e.g. '2024- 3- 3  9:33' -> '2024- 3- 3 T9:33' -> '2024-3-3T9:33'
-                date = 'T'.join(meta_match.group(4).strip().rsplit(' ', 1))
-                xrf_dict[key]['date'] = datetime.strptime(
-                    date.replace(' ', ''), '%Y-%m-%dT%H:%M'
-                )
-            else:
-                xrf_dict[key]['position'] = None
-                xrf_dict[key]['application'] = None
-                xrf_dict[key]['sample_name'] = None
-                xrf_dict[key]['date'] = None
-                logger.warn(
-                    f'read_UBIK_txt failed to extract metadata from file: "{file_path}".'
-                )
 
-            # Extract elements and their shares
+            # Try to match elements and their shares
             elements_match = re.search(
                 r'Component\s+Film1\s+(.*?)\s+Analyzed value', measurement, re.DOTALL
             )
@@ -88,23 +65,54 @@ def read_UBIK_txt(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any
             )
             units_match = re.search(r'Unit\s+(.*?)\s+Component', measurement, re.DOTALL)
 
-            if elements_match and shares_match and units_match:
+            if not (meta_match and elements_match and shares_match and units_match):
+                logger.warn(
+                    f'read_UBIK_txt failed to extract all necessary information from file: "{file_path}"'
+                )
+                continue
+
+            else:
+                # Extract metadata
+                position = meta_match.group(1).strip()
+                application = meta_match.group(2).strip()
+                sample_name = meta_match.group(3).strip()
+                # workaround for missing zeros, e.g. '2024- 3- 3  9:33' -> '2024- 3- 3 T9:33' -> '2024-3-3T9:33'
+                date = 'T'.join(meta_match.group(4).strip().rsplit(' ', 1))
+                date = datetime.strptime(date.replace(' ', ''), '%Y-%m-%dT%H:%M')
+
+                # Extract elements and shares
                 elements = elements_match.group(1).split()
                 shares = shares_match.group(1).split()
                 units = units_match.group(1).split()
 
-                xrf_dict[key]['film_thickness'] = shares[0]
-                xrf_dict[key]['elements'] = dict()
+                # Initialize dictionary for each measurement
+                if application not in xrf_dict:
+                    xrf_dict[application] = dict()
+                    xrf_dict[application]['position'] = position
+                    xrf_dict[application]['application'] = application
+                    xrf_dict[application]['sample_name'] = sample_name
+                    xrf_dict[application]['date'] = date
+                    xrf_dict[application]['film_thickness'] = shares[0]
+                    xrf_dict[application]['elements'] = dict()
 
-                for el, sh, un in zip(elements, shares[1:], units[1:]):
-                    xrf_dict[key]['elements'][el] = dict()
-                    xrf_dict[key]['elements'][el]['value'] = float(sh)
-                    xrf_dict[key]['elements'][el]['unit'] = un
-            else:
-                xrf_dict[key]['film_thickness'] = None
-                xrf_dict[key]['elements'] = None
-                logger.warn(
-                    f'read_UBIK_txt failed to extract elements and shares from file: "{file_path}".'
-                )
+                    for el, val, unit in zip(elements, shares[1:], units[1:]):
+                        xrf_dict[application]['elements'][el] = dict()
+                        xrf_dict[application]['elements'][el]['element'] = el
+                        if unit == 'mass%':
+                            xrf_dict[application]['elements'][el][
+                                'mass_fraction'
+                            ] = float(val)
+                        elif unit == 'at%':
+                            xrf_dict[application]['elements'][el][
+                                'atomic_fraction'
+                            ] = float(val)
+                        else:
+                            logger.warn(
+                                f'read_UBIK_txt found unknown unit "{unit}" in file: "{file_path}"'
+                            )
+                else:
+                    logger.warn(
+                        f'read_UBIK_txt found duplicate application "{application}" in file: "{file_path}".'
+                    )
 
     return xrf_dict
