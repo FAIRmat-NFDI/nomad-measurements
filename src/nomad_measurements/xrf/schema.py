@@ -35,6 +35,7 @@ from nomad.metainfo import (
     Quantity,
     Section,
     SubSection,
+    Datetime,
     MEnum,
 )
 from nomad.datamodel.data import (
@@ -48,6 +49,7 @@ from nomad.datamodel.metainfo.annotations import (
 from nomad.datamodel.results import (
     Results,
     Properties,
+    ElementalComposition,
     StructuralProperties,
     DiffractionPattern,
     Method,
@@ -62,15 +64,30 @@ from nomad_measurements.utils import merge_sections, get_bounding_range_2d
 m_package = Package(name='nomad_xrf')
 
 
-class XRFResult(MeasurementResult, System):
+class XRFResult(MeasurementResult):
     """
     Section containing the result of an X-ray fluorescence measurement.
     """
+
+    elements = SubSection(section_def=ElementalComposition, repeats=True)
+
+    date = Quantity(
+        type=Datetime,
+        a_eln=ELNAnnotation(component=ELNComponentEnum.DateTimeEditQuantity),
+        description='Date of the measurement',
+    )
 
     thickness = Quantity(
         type=np.dtype(np.float64),
         unit=('nm'),
         a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='nm'),
+        description='Thickness of the sample',
+    )
+
+    position = Quantity(
+        type=str,
+        a_eln=dict(component='StringEditQuantity'),
+        description='Position of the measurement',
     )
 
 
@@ -139,7 +156,7 @@ class XRayFluorescence(Measurement):
         #     archive.results.method = Method(
         #         method_name='XRF',
         #         measurement=MeasurementMethod(
-        #             xrd=XRFMethod()
+        #             xrf=XRFMethod()
         #         )
         #     )
         super().normalize(archive, logger)
@@ -202,10 +219,38 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
 
         # write for each measurement in xrf_dict
         for key in xrf_dict:
+            name = xrf_dict.get(key, {}).get('application', None)
+            date = xrf_dict.get(key, {}).get('date', None)
+            thickeness = xrf_dict.get(key, {}).get('film_thickness', None)
+            position = xrf_dict.get(key, {}).get('position', None)
+            list_of_elements = xrf_dict.get(key, {}).get('elements', {}).keys()
+            list_of_ElementalComposition = []
+            for element in list_of_elements:
+                mass_fraction = (
+                    xrf_dict.get(key, {})
+                    .get('elements', {})
+                    .get(element, {})
+                    .get('mass_fraction', None)
+                )
+                atomic_fraction = (
+                    xrf_dict.get(key, {})
+                    .get('elements', {})
+                    .get(element, {})
+                    .get('atomic_fraction', None)
+                )
+                list_of_ElementalComposition.append(
+                    ElementalComposition(
+                        element=element,
+                        mass_fraction=mass_fraction,
+                        atomic_fraction=atomic_fraction,
+                    )
+                )
             result = XRFResult(
-                name=xrf_dict.get(key, {}).get('application', None),
-                datetime=xrf_dict.get(key, {}).get('date', None),
-                thickness=xrf_dict.get(key, {}).get('film_thickness', None),
+                name=name,
+                date=date,
+                thickness=thickeness,
+                position=position,
+                elements=list_of_ElementalComposition,
             )
             result.normalize(archive, logger)
 
@@ -240,10 +285,9 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
             else:
                 with archive.m_context.raw_file(self.data_file) as file:
                     xrf_dict = read_function(file.name, logger)
-                # TODO: Implement population of other xrf_dict components
                 self.write_xrf_data(xrf_dict, archive, logger)
         super().normalize(archive, logger)
-
+        # TODO: Structure of multiple measurements in one file
         if not self.results:
             return
 
