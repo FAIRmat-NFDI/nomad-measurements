@@ -216,6 +216,9 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
             archive (EntryArchive): The archive containing the section.
             logger (BoundLogger): A structlog logger.
         """
+        # Initialize results and samples lists
+        list_of_results = []
+        list_of_samples = []
 
         # write for each measurement in xrf_dict
         for key in xrf_dict:
@@ -224,7 +227,7 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
             thickeness = xrf_dict.get(key, {}).get('film_thickness', None)
             position = xrf_dict.get(key, {}).get('position', None)
             list_of_elements = xrf_dict.get(key, {}).get('elements', {}).keys()
-            list_of_ElementalComposition = []
+            list_of_ElementalCompositions = []
             for element in list_of_elements:
                 mass_fraction = (
                     xrf_dict.get(key, {})
@@ -238,34 +241,42 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
                     .get(element, {})
                     .get('atomic_fraction', None)
                 )
-                list_of_ElementalComposition.append(
+                list_of_ElementalCompositions.append(
                     ElementalComposition(
                         element=element,
                         mass_fraction=mass_fraction,
                         atomic_fraction=atomic_fraction,
                     )
                 )
+
+            sample = CompositeSystemReference(
+                lab_id=xrf_dict.get(key, {}).get('sample_name', None),
+            )
+            # append new sample to samples list
+            if sample not in list_of_samples:
+                sample.normalize(archive, logger)
+                list_of_samples.append(sample)
+
+            # append new result to results list
             result = XRFResult(
                 name=name,
                 date=date,
                 thickness=thickeness,
                 position=position,
-                elements=list_of_ElementalComposition,
+                elements=list_of_ElementalCompositions,
             )
             result.normalize(archive, logger)
+            list_of_results.append(result)
 
-            sample = CompositeSystemReference(
-                lab_id=xrf_dict.get(key, {}).get('sample_name', None),
-            )
-            sample.normalize(archive, logger)
+        xrf_settings = XRFSettings()
+        xrf_settings.normalize(archive, logger)
 
-            xrf_settings = XRFSettings()
-            xrf_settings.normalize(archive, logger)
-
-            xrf = ELNXRayFluorescence(
-                results=[result], xrf_settings=xrf_settings, samples=[sample]
-            )
-            merge_sections(self, xrf, logger)
+        xrf = ELNXRayFluorescence(
+            results=list_of_results,
+            xrf_settings=xrf_settings,
+            samples=list_of_samples,
+        )
+        merge_sections(self, xrf, logger)
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
