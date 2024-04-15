@@ -31,6 +31,8 @@ from nomad.client import parse, normalize_all
         'Omega-2Theta_scan_high_temperature.rasx',
         'RSM_111_sdd=350.rasx',
         'TwoTheta_scan_powder.rasx',
+        'XRF_UIBK_OneElement.txt',
+        'XRF_UIBK_TwoElements.txt',
     ]
 )
 def parsed_archive(request):
@@ -54,10 +56,12 @@ def parsed_archive(request):
 def test_normalize_all(parsed_archive):
     normalize_all(parsed_archive)
     print(parsed_archive.data)
-    assert parsed_archive.data.xrd_settings.source.xray_tube_material == 'Cu'
-    assert parsed_archive.data.results[
-        0
-    ].source_peak_wavelength.magnitude == pytest.approx(1.540598, 1e-2)
-    assert parsed_archive.results.properties.structural.diffraction_pattern[
-        0
-    ].incident_beam_wavelength.magnitude * 1e10 == pytest.approx(1.540598, 1e-2)
+    if parsed_archive.data.method == 'X-Ray Diffraction (XRD)':
+        assert parsed_archive.data.xrd_settings.source.xray_tube_material == 'Cu'
+        assert parsed_archive.data.results[
+            0
+        ].source_peak_wavelength.magnitude == pytest.approx(1.540598, 1e-2)
+        assert parsed_archive.results.properties.structural.diffraction_pattern[
+            0
+        ].incident_beam_wavelength.magnitude * 1e10 == pytest.approx(1.540598, 1e-2)
+    # TODO: Add tests for XRF method

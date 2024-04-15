@@ -1,0 +1,40 @@
+{
+    "Ti on Si": {
+        "position": "A-1",
+        "application": "Ti on Si",
+        "sample_name": "Ti_13W",
+        "date": "2022-02-22T09:33:00",
+        "film_thickness": "5",
+        "elements": {
+            "Ti": {
+                "element": "Ti",
+                "mass_fraction": 100.0
+            },
+            "Si": {
+                "element": "Si",
+                "mass_fraction": 100.0
+            }
+        }
+    },
+    "CuTi on Si": {
+        "position": "A-1",
+        "application": "CuTi on Si",
+        "sample_name": "Ti_13W",
+        "date": "2022-02-22T10:11:00",
+        "film_thickness": "5",
+        "elements": {
+            "Cu": {
+                "element": "Cu",
+                "atomic_fraction": 1.167
+            },
+            "Ti": {
+                "element": "Ti",
+                "atomic_fraction": 98.833
+            },
+            "Si": {
+                "element": "Si",
+                "mass_fraction": 100.0
+            }
+        }
+    }
+}

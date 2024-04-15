@@ -17,6 +17,7 @@
 #
 import json
 import numpy as np
+from datetime import datetime
 
 from nomad.units import ureg
 from nomad_measurements.xrd.readers import (
@@ -24,6 +25,7 @@ from nomad_measurements.xrd.readers import (
     read_rigaku_rasx,
     read_bruker_brml,
 )
+from nomad_measurements.xrf.readers import read_UBIK_txt
 
 
 def convert_quantity_to_string(data_dict):
@@ -39,7 +41,9 @@ def convert_quantity_to_string(data_dict):
                 data_dict[k] = str(v.shape)
             else:
                 data_dict[k] = str(v.magnitude)
-        if isinstance(v, dict):
+        elif isinstance(v, datetime):
+            data_dict[k] = v.isoformat()
+        elif isinstance(v, dict):
             convert_quantity_to_string(v)
 
 
@@ -76,6 +80,16 @@ def test_brml_reader():
     ]
     for path in file_path:
         output = read_bruker_brml(path)
+        convert_quantity_to_string(output)
+        with open(f'{path}.json', 'r', encoding='utf-8') as f:
+            reference = json.load(f)
+        assert output == reference
+
+
+def test_UBIK_txt_reader():
+    file_path = ['tests/data/XRF_UIBK_OneElement.txt', 'tests/data/XRF_UIBK_TwoElements.txt']
+    for path in file_path:
+        output = read_UBIK_txt(path)
         convert_quantity_to_string(output)
         with open(f'{path}.json', 'r', encoding='utf-8') as f:
             reference = json.load(f)
