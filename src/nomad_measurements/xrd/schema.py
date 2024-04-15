@@ -19,7 +19,6 @@ from typing import (
     TYPE_CHECKING,
     Dict,
     Any,
-    Callable,
 )
 import numpy as np
 import plotly.express as px
@@ -60,11 +59,13 @@ from nomad.datamodel.metainfo.plot import (
     PlotlyFigure,
 )
 # from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
+from pynxtools.dataconverter import convert as dataconverter
+from pynxtools_xrd.read_file_formats import read_file
+from pynxtools_xrd.utils import merge_sections, get_bounding_range_2d
 from nomad_measurements import (
     NOMADMeasurementsCategory,
 )
-from nomad_measurements.xrd import readers
-from nomad_measurements.utils import merge_sections, get_bounding_range_2d
+
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -704,21 +705,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         ),
     )
 
-    def get_read_write_functions(self) -> tuple[Callable, Callable]:
-        """
-        Method for getting the correct read and write functions for the current data file.
-
-        Returns:
-            tuple[Callable, Callable]: The read, write functions.
-        """
-        if self.data_file.endswith('.rasx'):
-            return readers.read_rigaku_rasx, self.write_xrd_data
-        if self.data_file.endswith('.xrdml'):
-            return readers.read_panalytical_xrdml, self.write_xrd_data
-        if self.data_file.endswith('.brml'):
-            return readers.read_bruker_brml, self.write_xrd_data
-        return None, None
-
     def write_xrd_data(
             self,
             xrd_dict: Dict[str, Any],
@@ -791,114 +777,11 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         )
         merge_sections(self, xrd, logger)
 
-    def write_nx_xrd(
-            self,
-            xrd_dict: 'Template',
-            archive: 'EntryArchive',
-            logger: 'BoundLogger',
-        ) -> None:
-        '''
-        Populate `ELNXRayDiffraction` section from a NeXus Template.
-
-        Args:
-            xrd_dict (Dict[str, Any]): A dictionary with the XRD data.
-            archive (EntryArchive): The archive containing the section.
-            logger (BoundLogger): A structlog logger.
-        '''
-        # TODO add the result section based on the scan_type
-        result = XRDResult(
-            intensity=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/intensity',
-                None,
-            ),
-            two_theta=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/two_theta',
-                None,
-            ),
-            omega=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/omega',
-                None,
-            ),
-            chi=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/chi',
-                None),
-            phi=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/phi',
-                None,
-            ),
-            scan_axis=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis',
-                None,
-            ),
-            integration_time=xrd_dict.get(
-                '/ENTRY[entry]/COLLECTION[collection]/count_time',
-                None
-            ),
-        )
-        result.normalize(archive, logger)
-
-        source = XRayTubeSource(
-            xray_tube_material=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material',
-                None,
-            ),
-            kalpha_one=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one',
-                None,
-            ),
-            kalpha_two=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two',
-                None,
-                ),
-            ratio_kalphatwo_kalphaone=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone',
-                None,
-                ),
-            kbeta=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta',
-                None,
-            ),
-            xray_tube_voltage=xrd_dict.get(
-                'ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage',
-                None
-            ),
-            xray_tube_current=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current',
-                None,
-            ),
-        )
-        source.normalize(archive, logger)
-
-        xrd_settings = XRDSettings(
-            source=source
-        )
-        xrd_settings.normalize(archive, logger)
-
-        sample = CompositeSystemReference(
-            lab_id=xrd_dict.get(
-                '/ENTRY[entry]/SAMPLE[sample]/sample_id', 
-                None,
-                ),
-        )
-        sample.normalize(archive, logger)
-
-        xrd = ELNXRayDiffraction(
-            results = [result],
-            xrd_settings = xrd_settings,
-            samples = [sample],
-        )
-        merge_sections(self, xrd, logger)
-
-        nexus_output = None
         if self.generate_nexus_file:
             archive_name = archive.metadata.mainfile.split('.')[0]
             nexus_output = f'{archive_name}_output.nxs'
-        handle_nexus_subsection(
-            xrd_dict,
-            nexus_output,
-            archive,
-            logger,
-        )
+            dataconverter.logger = logger
+            dataconverter.convert(input_file=[], output="todo-add_name_for_this_file.nxs", reader="xrd", nxdl="NXxrd_pan", objects=(xrd_dict,))
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
@@ -910,15 +793,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             logger (BoundLogger): A structlog logger.
         """
         if self.data_file is not None:
-            read_function, write_function = self.get_read_write_functions()
-            if read_function is None or write_function is None:
-                logger.warn(
-                    f'No compatible reader found for the file: "{self.data_file}".'
-                )
-            else:
-                with archive.m_context.raw_file(self.data_file) as file:
-                    xrd_dict = read_function(file.name, logger)
-                write_function(xrd_dict, archive, logger)
+            with archive.m_context.raw_file(self.data_file) as file:
+                xrd_dict = read_file(file.name)
+            self.write_xrd_data(xrd_dict, archive, logger)
         super().normalize(archive, logger)
         self.figures = self.results[0].generate_plots(archive, logger)
 
