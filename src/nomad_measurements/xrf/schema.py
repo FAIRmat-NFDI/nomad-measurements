@@ -59,9 +59,60 @@ from nomad_measurements import (
     NOMADMeasurementsCategory,
 )
 from nomad_measurements.xrf import readers
-from nomad_measurements.utils import merge_sections, get_bounding_range_2d
+from nomad_measurements.utils import merge_sections
 
 m_package = Package(name='nomad_xrf')
+
+
+class XRFElementalComposition(ElementalComposition):
+    """
+    Section extending ElementalComposition with XRF relevant properties.
+    """
+
+    line = Quantity(
+        type=str,
+        a_eln=ELNAnnotation(component=ELNComponentEnum.StringEditQuantity),
+        description='Elemental line used for element analysis',
+    )
+
+    intensity_peak = Quantity(
+        type=np.dtype(np.float64),
+        a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
+        description='Intensity of the peak',
+    )
+
+    intensity_background = Quantity(
+        type=np.dtype(np.float64),
+        a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
+        description='Intensity of the background',
+    )
+
+    intensity_net = Quantity(
+        type=np.dtype(np.float64),
+        a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
+        description='Net intensity = peak - background',
+    )
+
+
+class XRFLayer(StructuralProperties):
+    """
+    Section containing the properties of a layer in an X-ray fluorescence measurement.
+    """
+
+    # TODO: Add a kind of order to the layers
+
+    name = Quantity(
+        type=str,
+        a_eln=dict(component='StringEditQuantity'),
+    )
+
+    thickness = Quantity(
+        type=np.dtype(np.float64),
+        unit=('nm'),
+        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='nm'),
+    )
+
+    elements = SubSection(section_def=XRFElementalComposition, repeats=True)
 
 
 class XRFResult(MeasurementResult):
@@ -69,25 +120,12 @@ class XRFResult(MeasurementResult):
     Section containing the result of an X-ray fluorescence measurement.
     """
 
-    elements = SubSection(section_def=ElementalComposition, repeats=True)
+    layer = SubSection(section_def=XRFLayer, repeats=True)
 
     date = Quantity(
         type=Datetime,
         a_eln=ELNAnnotation(component=ELNComponentEnum.DateTimeEditQuantity),
         description='Date of the measurement',
-    )
-
-    thickness = Quantity(
-        type=np.dtype(np.float64),
-        unit=('nm'),
-        a_eln=dict(component='NumberEditQuantity', defaultDisplayUnit='nm'),
-        description='Thickness of the sample',
-    )
-
-    position = Quantity(
-        type=str,
-        a_eln=dict(component='StringEditQuantity'),
-        description='Position of the measurement',
     )
 
 
@@ -172,7 +210,7 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
         categories=[NOMADMeasurementsCategory],
         label='X-Ray Fluorescence (XRF)',
         a_eln=ELNAnnotation(
-            lane_width='800px',
+            lane_width='600px',
         ),
         a_template=dict(
             measurement_identifiers=dict(),
@@ -221,36 +259,38 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
         list_of_samples = []
 
         # write for each measurement in xrf_dict
-        for key in xrf_dict:
-            name = xrf_dict.get(key, {}).get('application', None)
-            date = xrf_dict.get(key, {}).get('date', None)
-            thickeness = xrf_dict.get(key, {}).get('film_thickness', None)
-            position = xrf_dict.get(key, {}).get('position', None)
-            list_of_elements = xrf_dict.get(key, {}).get('elements', {}).keys()
-            list_of_ElementalCompositions = []
-            for element in list_of_elements:
-                mass_fraction = (
-                    xrf_dict.get(key, {})
-                    .get('elements', {})
-                    .get(element, {})
-                    .get('mass_fraction', None)
-                )
-                atomic_fraction = (
-                    xrf_dict.get(key, {})
-                    .get('elements', {})
-                    .get(element, {})
-                    .get('atomic_fraction', None)
-                )
-                list_of_ElementalCompositions.append(
-                    ElementalComposition(
-                        element=element,
-                        mass_fraction=mass_fraction,
-                        atomic_fraction=atomic_fraction,
+        for data in xrf_dict.values():
+            name = data.get('application', None)
+            date = data.get('date', None)
+
+            # create list of XRFLayers each with a list of XRFElementalCompositions
+            list_of_XRFLayers = []
+            for layer, content in data.get('layers', []).items():
+                list_of_ElementalCompositions = []
+                for attributes in content.get('elements', {}).values():
+                    list_of_ElementalCompositions.append(
+                        XRFElementalComposition(
+                            element=attributes.get('element', None),
+                            mass_fraction=attributes.get('mass_fraction', None),
+                            atomic_fraction=attributes.get('atomic_fraction', None),
+                            line=attributes.get('line', None),
+                            intensity_peak=attributes.get('intensity_peak', None),
+                            intensity_background=attributes.get(
+                                'intensity_background', None
+                            ),
+                            intensity_net=attributes.get('intensity_net', None),
+                        )
+                    )
+                list_of_XRFLayers.append(
+                    XRFLayer(
+                        name=layer,
+                        thickness=content.get('thickness', None),
+                        elements=list_of_ElementalCompositions,
                     )
                 )
 
             sample = CompositeSystemReference(
-                lab_id=xrf_dict.get(key, {}).get('sample_name', None),
+                lab_id=data.get('sample_name', None),
             )
             # append new sample to samples list
             if sample not in list_of_samples:
@@ -261,9 +301,7 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
             result = XRFResult(
                 name=name,
                 date=date,
-                thickness=thickeness,
-                position=position,
-                elements=list_of_ElementalCompositions,
+                layer=list_of_XRFLayers,
             )
             result.normalize(archive, logger)
             list_of_results.append(result)
@@ -296,9 +334,11 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
             else:
                 with archive.m_context.raw_file(self.data_file) as file:
                     xrf_dict = read_function(file.name, logger)
-                self.write_xrf_data(xrf_dict, archive, logger)
+                if xrf_dict:
+                    self.write_xrf_data(xrf_dict, archive, logger)
+                else:
+                    logger.warn(f'No XRF data found in file: "{self.data_file}".')
         super().normalize(archive, logger)
-        # TODO: Structure of multiple measurements in one file
         if not self.results:
             return
 
