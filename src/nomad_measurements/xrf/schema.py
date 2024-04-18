@@ -328,16 +328,18 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
         if self.data_file is not None:
             read_function = self.get_read_function()
             if read_function is None:
-                logger.warn(
-                    f'No compatible reader found for the file: "{self.data_file}".'
-                )
+                if logger is not None:
+                    logger.warn(
+                        f'No compatible reader found for the file: "{self.data_file}".'
+                    )
             else:
                 with archive.m_context.raw_file(self.data_file) as file:
                     xrf_dict = read_function(file.name, logger)
                 if xrf_dict:
                     self.write_xrf_data(xrf_dict, archive, logger)
                 else:
-                    logger.warn(f'No XRF data found in file: "{self.data_file}".')
+                    if logger is not None:
+                        logger.warn(f'No XRF data found in file: "{self.data_file}".')
         super().normalize(archive, logger)
         if not self.results:
             return

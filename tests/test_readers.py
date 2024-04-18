@@ -87,10 +87,15 @@ def test_brml_reader():
 
 
 def test_UBIK_txt_reader():
-    file_path = ['tests/data/XRF_UIBK_OneElement.txt', 'tests/data/XRF_UIBK_TwoElements.txt']
+    file_path = ['tests/data/XRF_UIBK_OneElement.txt',
+                 'tests/data/XRF_UBIK_QNT20231115_A1_2m.txt',
+                 'tests/data/XRF_UBIK_QNT20231115_A2_2m.txt']
     for path in file_path:
         output = read_UBIK_txt(path)
         convert_quantity_to_string(output)
+        # temporary soluition  for generating reference files
+        with open(f'{path}.json', 'w', encoding='utf-8') as f:
+            json.dump(output, f, indent=2)
         with open(f'{path}.json', 'r', encoding='utf-8') as f:
             reference = json.load(f)
         assert output == reference

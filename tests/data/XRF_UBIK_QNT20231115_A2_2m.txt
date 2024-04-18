@@ -1,0 +1,39 @@
+PositionType              Application               Sample name                     Date            
+A-2     Quant analysis    SS_SiO2_CIGS_st           20231115_A2_2m                  2023-12- 5 11:29
+                                                                                                    
+Component            CIGS         Cu          In          Ga          Se        MoLayer       Mo    
+Analyzed value         2.357      20.988      21.206       6.471      51.336       269.8     100.000
+Unit                      um         at%         at%         at%         at%          nm       mass%
+                                                                                                    
+Component           TiLayer       Ti          Na          Al          Si          P           S     
+Analyzed value           0.0     100.000       0.083       0.026      32.000       0.009       0.004
+Unit                      nm       mass%       mass%       mass%       mass%       mass%       mass%
+                                                                                                    
+Component             Cl          K           Ca          Ti          V           Cr          Mn    
+Analyzed value         0.007       2.230       0.005       0.016       0.075      14.000       0.622
+Unit                   mass%       mass%       mass%       mass%       mass%       mass%       mass%
+                                                                                                    
+Component             Fe          Co          Ni          Cu                                        
+Analyzed value        50.800       0.039       0.034       0.012                                    
+Unit                   mass%       mass%       mass%       mass%                                    
+                                                                                                    
+Component            CIGS         Cu          Ga          Se        MoLayer     TiLayer             
+Element line           In-KA       Cu-KA       Ga-KA       Se-KA       Mo-KA       Ti-KA            
+Peak intensity      84.45706   415.42198   156.41404  1384.62593   517.95729     0.13392            
+BG intensity         8.42630     1.54516     1.99472     3.08429     6.05294     0.12321            
+Net intensity       76.03077   413.87682   154.41932  1381.54164   511.90436     0.01072            
+Drift corrected     76.03077   413.87682   154.41932  1381.54164   511.90436     0.01072            
+Application result     2.357      20.988       6.471      51.336       269.8         0.0            
+                                                                                                    
+Element line         In-KA       In-KA       In-KA       Cu-KA       Cu-KA       Cu-KA       Ga-KA  
+Peak/BG                 Peak         BG1         BG2        Peak         BG1         BG2        Peak
+Meas. intensity     84.45706     9.27751     7.45348   415.42198     1.69399     1.34758   156.41404
+                                                                                                    
+Element line         Ga-KA       Ga-KA       Se-KA       Se-KA       Se-KA       Mo-KA       Mo-KA  
+Peak/BG                  BG1         BG2        Peak         BG1         BG2        Peak         BG1
+Meas. intensity      1.97797     2.01147  1384.62593     3.11497     3.05260   517.95729     6.48075
+                                                                                                    
+Element line         Mo-KA       Ti-KA       Ti-KA       Ti-KA                                      
+Peak/BG                  BG2        Peak         BG1         BG2                                    
+Meas. intensity      5.43688     0.13392     0.12792     0.11943                                    
+____________________________________________________________________________________________________
