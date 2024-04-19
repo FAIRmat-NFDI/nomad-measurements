@@ -1,40 +1,53 @@
 {
-    "Ti on Si": {
-        "position": "A-1",
-        "application": "Ti on Si",
-        "sample_name": "Ti_13W",
-        "date": "2022-02-22T09:33:00",
-        "film_thickness": "5",
+  "Ti on Si": {
+    "application": "Ti on Si",
+    "sample_name": "Ti_13W",
+    "date": "2022-02-22T09:33:00",
+    "layers": {
+      "Film1": {
+        "thickness": "5.0",
         "elements": {
-            "Ti": {
-                "element": "Ti",
-                "mass_fraction": 100.0
-            },
-            "Si": {
-                "element": "Si",
-                "mass_fraction": 100.0
-            }
+          "Ti": {
+            "mass_fraction": 100.0,
+            "line": "Ti-KA",
+            "intensity_peak": 0.06552,
+            "intensity_background": 0.0041,
+            "intensity_background_2": 0.00348
+          },
+          "Si": {
+            "mass_fraction": 100.0
+          }
         }
-    },
-    "CuTi on Si": {
-        "position": "A-1",
-        "application": "CuTi on Si",
-        "sample_name": "Ti_13W",
-        "date": "2022-02-22T10:11:00",
-        "film_thickness": "5",
-        "elements": {
-            "Cu": {
-                "element": "Cu",
-                "atomic_fraction": 1.167
-            },
-            "Ti": {
-                "element": "Ti",
-                "atomic_fraction": 98.833
-            },
-            "Si": {
-                "element": "Si",
-                "mass_fraction": 100.0
-            }
-        }
+      }
     }
+  },
+  "CuTi on Si": {
+    "application": "CuTi on Si",
+    "sample_name": "Ti_13W",
+    "date": "2022-02-22T10:11:00",
+    "layers": {
+      "Film1": {
+        "thickness": "5.0",
+        "elements": {
+          "Cu": {
+            "atomic_fraction": 1.167,
+            "line": "Cu-KA",
+            "intensity_peak": 0.02737,
+            "intensity_background": 0.02438,
+            "intensity_background_2": 0.02385
+          },
+          "Ti": {
+            "atomic_fraction": 98.833,
+            "line": "Ti-KA",
+            "intensity_peak": 0.06495,
+            "intensity_background": 0.00368,
+            "intensity_background_2": 0.00359
+          },
+          "Si": {
+            "mass_fraction": 100.0
+          }
+        }
+      }
+    }
+  }
 }

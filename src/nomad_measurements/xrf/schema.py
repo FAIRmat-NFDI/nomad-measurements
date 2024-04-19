@@ -78,19 +78,19 @@ class XRFElementalComposition(ElementalComposition):
     intensity_peak = Quantity(
         type=np.dtype(np.float64),
         a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
-        description='Intensity of the peak',
+        description='Intensity of the element peak',
     )
 
     intensity_background = Quantity(
         type=np.dtype(np.float64),
         a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
-        description='Intensity of the background',
+        description='Intensity of the background sourrounding the element peak',
     )
 
-    intensity_net = Quantity(
+    intensity_background_2 = Quantity(
         type=np.dtype(np.float64),
         a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
-        description='Net intensity = peak - background',
+        description='Optional 2nd backgound intensity',
     )
 
 
@@ -267,18 +267,18 @@ class ELNXRayFluorescence(XRayFluorescence, EntryData):
             list_of_XRFLayers = []
             for layer, content in data.get('layers', []).items():
                 list_of_ElementalCompositions = []
-                for attributes in content.get('elements', {}).values():
+                for element, attributes in content.get('elements', {}).items():
                     list_of_ElementalCompositions.append(
                         XRFElementalComposition(
-                            element=attributes.get('element', None),
-                            mass_fraction=attributes.get('mass_fraction', None),
-                            atomic_fraction=attributes.get('atomic_fraction', None),
-                            line=attributes.get('line', None),
-                            intensity_peak=attributes.get('intensity_peak', None),
-                            intensity_background=attributes.get(
-                                'intensity_background', None
+                            element=element,
+                            mass_fraction=attributes.get('mass_fraction'),
+                            atomic_fraction=attributes.get('atomic_fraction'),
+                            line=attributes.get('line'),
+                            intensity_peak=attributes.get('intensity_peak'),
+                            intensity_background=attributes.get('intensity_background'),
+                            intensity_background_2=attributes.get(
+                                'intensity_background_2'
                             ),
-                            intensity_net=attributes.get('intensity_net', None),
                         )
                     )
                 list_of_XRFLayers.append(

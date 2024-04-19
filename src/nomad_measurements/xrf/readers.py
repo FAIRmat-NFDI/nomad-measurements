@@ -43,11 +43,11 @@ def read_UBIK_txt(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any
     """
 
     def group_composition_into_layers(
-            layers: dict = {},
-            names: list = [],
-            values: list = [],
-            units: list = [],
-            ) -> dict:
+        layers: dict = {},
+        names: list = [],
+        values: list = [],
+        units: list = [],
+    ) -> dict:
         """
         Function for grouping the composition data into layers.
 
@@ -67,7 +67,7 @@ def read_UBIK_txt(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any
             if '%' not in unit:
                 current_layer = name
                 layers[current_layer] = dict()
-                layers[current_layer]['thickness'] = float(value) * ureg(unit)
+                layers[current_layer]['thickness'] = value * ureg(unit)
                 if 'layer' in current_layer.lower():
                     reached_metal_layer = True
             else:
@@ -91,33 +91,58 @@ def read_UBIK_txt(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any
         return layers
 
     def sort_intensity_values_into_layers(
-            layers: dict = {},
-            int_peak_elements: list = [],
-            int_peak_lines: list = [],
-            int_peak_values: list = [],
-            int_background_lines: list = [],
-            int_background_types: list = [],
-            int_background_values: list = [],
-            ) -> dict:
+        layers: dict = {},
+        int_peak_elements: list = [],
+        int_peak_lines: list = [],
+        int_peak_values: list = [],
+        int_background_lines: list = [],
+        int_background_types: list = [],
+        int_background_values: list = [],
+    ) -> dict:
         """
-        Function for grouping the intensity values into layers.
+        Function for sorting the intensity values into layers.
+
+        Args:
+            layers (dict): The layers to sort the data into.
+            int_peak_elements (list): The elements of the peak intensity values.
+            int_peak_lines (list): The lines of the peak intensity values.
+            int_peak_values (list): The values of the peak intensity values.
+            int_background_lines (list): The lines of the background intensity values.
+            int_background_types (list): The types of the background intensity values.
+            int_background_values (list): The values of the background intensity values.
+
+        Returns:
+            dict: Updated dictionary with the intensity values sorted into layers.
         """
         int_dict = dict()
+
+        # Group peak intensity values into dictionary
         for line, el, peak in zip(int_peak_lines, int_peak_elements, int_peak_values):
             if line not in int_dict:
                 int_dict[line] = dict()
             int_dict[line]['element'] = el
             int_dict[line]['peak'] = peak
-        for line, bg_type, bg in zip(int_background_lines, int_background_types, int_background_values):
+
+        # Group background intensity values into dictionary
+        for line, bg_type, bg in zip(
+            int_background_lines, int_background_types, int_background_values
+        ):
             if bg_type == 'BG1':
                 int_dict[line]['BG1'] = bg
             elif bg_type == 'BG2':
                 int_dict[line]['BG2'] = bg
-        
-        for line, values in int_dict.items():
-            if values['element'] in layers.keys():
-                # TODO: CONTINUE HERE!
-                pass
+
+        # Sort intensity values into layers
+        for layer in layers.values():
+            for element, content in layer['elements'].items():
+                for line, int_values in int_dict.items():
+                    if element in line:
+                        content['line'] = line
+                        content['intensity_peak'] = int_values.get('peak')
+                        content['intensity_background'] = int_values.get('BG1')
+                        content['intensity_background_2'] = int_values.get('BG2')
+
+        return layers
 
     with open(file_path, 'r', encoding='utf-8') as file:
         data = file.read()
@@ -185,22 +210,50 @@ def read_UBIK_txt(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any
 
                 # Extract elements and shares
                 names = [name for line in names_match for name in line.split()]
-                values = [value for line in values_match for value in line.split()]
+                values = [
+                    float(value) for line in values_match for value in line.split()
+                ]
                 units = [unit for line in units_match for unit in line.split()]
 
                 # Extract intensity values
-                int_peak_elements = [element for line in int_peak_elements_match for element in line.split()]
-                int_peak_lines = [element for line in int_peak_lines_match for element in line.split()]
-                int_peak_values = [float(element) for line in int_peak_values_match for element in line.split()]
-                int_background_lines = [element for line in int_background_lines_match for element in line.split()]
-                int_background_types = [element for line in int_background_types_match for element in line.split()]
-                int_background_values = [float(element) for line in int_background_values_match for element in line.split()]
+                int_peak_elements = [
+                    element
+                    for line in int_peak_elements_match
+                    for element in line.split()
+                ]
+                int_peak_lines = [
+                    element for line in int_peak_lines_match for element in line.split()
+                ]
+                int_peak_values = [
+                    float(element)
+                    for line in int_peak_values_match
+                    for element in line.split()
+                ]
+                int_background_lines = [
+                    element
+                    for line in int_background_lines_match
+                    for element in line.split()
+                ]
+                int_background_types = [
+                    element
+                    for line in int_background_types_match
+                    for element in line.split()
+                ]
+                int_background_values = [
+                    float(element)
+                    for line in int_background_values_match
+                    for element in line.split()
+                ]
 
                 # Check if all intensity values have the same length
                 if not all(
                     (
-                        len(int_peak_elements) == len(int_peak_lines) == len(int_peak_values),
-                        len(int_background_lines) == len(int_background_types) == len(int_background_values),
+                        len(int_peak_elements)
+                        == len(int_peak_lines)
+                        == len(int_peak_values),
+                        len(int_background_lines)
+                        == len(int_background_types)
+                        == len(int_background_values),
                     )
                 ):
                     if logger is not None:
@@ -215,8 +268,12 @@ def read_UBIK_txt(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any
                     layers = group_composition_into_layers(layers, names, values, units)
                     layers = sort_intensity_values_into_layers(
                         layers,
-                        int_peak_elements, int_peak_lines, int_peak_values,
-                        int_background_lines, int_background_types, int_background_values
+                        int_peak_elements,
+                        int_peak_lines,
+                        int_peak_values,
+                        int_background_lines,
+                        int_background_types,
+                        int_background_values,
                     )
 
                     # Fill dictionary with data
@@ -235,6 +292,17 @@ def read_UBIK_txt(file_path: str, logger: 'BoundLogger' = None) -> Dict[str, Any
                     logger.warn(
                         f'read_UBIK_txt failed to extract all necessary information from file: "{file_path}"'
                     )
-                    continue
+
+    # Delete layers with thickness 0
+    for application in xrf_dict.values():
+        layers_to_delete = []
+        for layer_key, layer in application['layers'].items():
+            try:
+                if layer['thickness'] == 0:
+                    layers_to_delete.append(layer_key)
+            except KeyError:
+                pass
+        for key in layers_to_delete:
+            del application['layers'][key]
 
     return xrf_dict
