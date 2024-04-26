@@ -66,6 +66,7 @@ from pynxtools_xrd.utils import merge_sections, get_bounding_range_2d
 from nomad_measurements import (
     NOMADMeasurementsCategory,
 )
+from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
 
 
 if TYPE_CHECKING:
@@ -795,19 +796,15 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         
         archive_name = archive.metadata.mainfile.split('.')[0]
         nexus_output = f'{archive_name}.nxs'
-        dataconverter.logger = logger
-        with archive.m_context.raw_file(self.data_file) as file:
-            dataconverter.convert(input_file=[file.name], output=nexus_output, reader="xrd", nxdl="NXxrd_pan", skip_verify=True)
-        # TODO: Need to check what NeXus definitions version can parse this NXxrd_pan
-        # from nomad.parsing.nexus.nexus import NexusParser
-        # nexus_parser = NexusParser()
-        # nexus_parser.parse(mainfile=nexus_output, archive=archive, logger=logger)
-        if not self.generate_nexus_file:
-            import os
-            with archive.m_context.raw_file(nexus_output) as file:
-                os.remove(file.name)
+        populate_nexus_subsection(
+                template = xrd_dict,
+                app_def = 'NXxrd_pan',
+                archive = archive,
+                logger = logger,
+                output_file_path = nexus_output,
+                on_temp_file=self.generate_nexus_file)
 
-
+    
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
         The normalize function of the `ELNXRayDiffraction` section.
