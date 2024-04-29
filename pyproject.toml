@@ -26,6 +26,7 @@ classifiers = [
 dependencies = [
     "nomad-lab>=1.2.2.dev399",
     "xmltodict==0.13.0",
+    "unidecode",
     "pynxtools@git+https://github.com/FAIRmat-NFDI/pynxtools",
     "pynxtools-xrd@git+https://github.com/FAIRmat-NFDI/pynxtools-xrd@nomad-measurements-migration"
 ]
