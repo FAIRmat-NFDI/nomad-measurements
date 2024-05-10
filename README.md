@@ -5,7 +5,13 @@
 
 # NOMAD's Measurements Plugin
 This is a plugin for [NOMAD](https://nomad-lab.eu) which contains base sections for
-materials science measurements.
+materials science measurements. 
+
+The `nomad_measurements.xrd` module supports
+parsing of following vendor-specific file formats:
+- `.rasx` (Rigaku)
+- `.xrdml` (Malvern Panalytical)
+- `.brml` (Bruker)
 
 ## Getting started
 `nomad-measurements` can be installed from PyPI using `pip`.
