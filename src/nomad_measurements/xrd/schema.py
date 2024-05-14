@@ -373,6 +373,8 @@ class XRDResult1D(XRDResult):
             (dict, dict): line_linear, line_log
         """
         plots = []
+        if self.two_theta is None or self.intensity is None:
+            return plots
 
         x = self.two_theta.to('degree').magnitude
         y = self.intensity.magnitude
@@ -470,6 +472,8 @@ class XRDResultRSM(XRDResult):
             (dict, dict): json_2theta_omega, json_q_vector
         """
         plots = []
+        if self.two_theta is None or self.intensity is None or self.omega is None:
+            return plots
 
         # Plot for 2theta-omega RSM
         x = self.omega.to('degree').magnitude
@@ -920,10 +924,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                     xrd_dict = read_function(file.name, logger)
                 write_function(xrd_dict, archive, logger)
         super().normalize(archive, logger)
-        self.figures = self.results[0].generate_plots(archive, logger)
-
         if not self.results:
             return
+        self.figures = self.results[0].generate_plots(archive, logger)
 
 
 m_package.__init_metainfo__()
