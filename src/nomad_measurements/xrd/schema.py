@@ -19,7 +19,6 @@ from typing import (
     TYPE_CHECKING,
     Dict,
     Any,
-    Callable,
 )
 import numpy as np
 import plotly.express as px
@@ -59,12 +58,16 @@ from nomad.datamodel.metainfo.plot import (
     PlotSection,
     PlotlyFigure,
 )
-# from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
+from pynxtools.dataconverter import convert as dataconverter
+from pynxtools.dataconverter.template import Template
+from pynxtools_xrd.reader import XRDReader
+from pynxtools_xrd.read_file_formats import read_file
+from pynxtools_xrd.utils import merge_sections, get_bounding_range_2d
 from nomad_measurements import (
     NOMADMeasurementsCategory,
 )
-from nomad_measurements.xrd import readers
-from nomad_measurements.utils import merge_sections, get_bounding_range_2d
+from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
+
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -74,51 +77,8 @@ if TYPE_CHECKING:
         BoundLogger,
     )
     import pint
-    from pynxtools.dataconverter.template import Template
 
 m_package = Package(name='nomad_xrd')
-
-
-def populate_nexus_subsection(**kwargs):
-    raise NotImplementedError
-
-def handle_nexus_subsection(
-        xrd_template: 'Template',
-        nexus_out: str,
-        archive: 'EntryArchive',
-        logger: 'BoundLogger'
-    ):
-    '''
-    Function for populating the NeXus section from the xrd_template.
-
-    Args:
-        xrd_template (Template): The xrd data in a NeXus Template.
-        nexus_out (str): The name of the optional NeXus output file.
-        archive (EntryArchive): The archive containing the section.
-        logger (BoundLogger): A structlog logger.
-    '''
-    nxdl_name = 'NXxrd_pan'
-    if nexus_out:
-        if not nexus_out.endswith('.nxs'):
-            nexus_out = nexus_out + '.nxs'
-        populate_nexus_subsection(
-            template=xrd_template,
-            app_def=nxdl_name,
-            archive=archive,
-            logger=logger,
-            output_file_path=nexus_out,
-            on_temp_file=False,
-        )
-    else:
-        populate_nexus_subsection(
-            template=xrd_template,
-            app_def=nxdl_name,
-            archive=archive,
-            logger=logger,
-            output_file_path=nexus_out,
-            on_temp_file=True,
-        )
-
 
 def calculate_two_theta_or_q(
         wavelength: 'pint.Quantity',
@@ -708,24 +668,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         ),
     )
 
-    def get_read_write_functions(self) -> tuple[Callable, Callable]:
-        """
-        Method for getting the correct read and write functions for the current data file.
-
-        Returns:
-            tuple[Callable, Callable]: The read, write functions.
-        """
-        if self.data_file.endswith('.rasx'):
-            return readers.read_rigaku_rasx, self.write_xrd_data
-        if self.data_file.endswith('.xrdml'):
-            return readers.read_panalytical_xrdml, self.write_xrd_data
-        if self.data_file.endswith('.brml'):
-            return readers.read_bruker_brml, self.write_xrd_data
-        return None, None
-
     def write_xrd_data(
             self,
-            xrd_dict: Dict[str, Any],
+            xrd_dict: Template,
             archive: 'EntryArchive',
             logger: 'BoundLogger',
         ) -> None:
@@ -733,113 +678,75 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         Write method for populating the `ELNXRayDiffraction` section from a dict.
 
         Args:
-            xrd_dict (Dict[str, Any]): A dictionary with the XRD data.
+            xrd_dict (Template): A NeXus Dataconverter Template with the XRD data.
             archive (EntryArchive): The archive containing the section.
             logger (BoundLogger): A structlog logger.
         '''
-        metadata_dict: dict = xrd_dict.get('metadata', {})
-        source_dict: dict = metadata_dict.get('source', {})
-
-        scan_type = metadata_dict.get('scan_type', None)
+        scan_type = xrd_dict.get("/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_mode")
         if scan_type == 'line':
             result = XRDResult1D(
-                intensity=xrd_dict.get('intensity', None),
-                two_theta=xrd_dict.get('2Theta', None),
-                omega=xrd_dict.get('Omega', None),
-                chi=xrd_dict.get('Chi', None),
-                phi=xrd_dict.get('Phi', None),
-                scan_axis=metadata_dict.get('scan_axis', None),
-                integration_time=xrd_dict.get('countTime', None),
+                intensity=xrd_dict.get(
+                    '/ENTRY[entry]/2theta_plot/intensity',
+                    None,
+                ),
+                two_theta=xrd_dict.get(
+                    '/ENTRY[entry]/2theta_plot/two_theta',
+                    None,
+                ),
+                omega=xrd_dict.get(
+                    '/ENTRY[entry]/2theta_plot/omega',
+                    None,
+                ),
+                chi=xrd_dict.get(
+                    '/ENTRY[entry]/2theta_plot/chi',
+                    None),
+                phi=xrd_dict.get(
+                    '/ENTRY[entry]/2theta_plot/phi',
+                    None,
+                ),
+                scan_axis=xrd_dict.get(
+                    '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis',
+                    None,
+                ),
+                integration_time=xrd_dict.get(
+                    '/ENTRY[entry]/COLLECTION[collection]/count_time',
+                    None
+                ),
             )
             result.normalize(archive, logger)
-
         elif scan_type == 'rsm':
             result = XRDResultRSM(
-                intensity=xrd_dict.get('intensity', None),
-                two_theta=xrd_dict.get('2Theta', None),
-                omega=xrd_dict.get('Omega', None),
-                chi=xrd_dict.get('Chi', None),
-                phi=xrd_dict.get('Phi', None),
-                scan_axis=metadata_dict.get('scan_axis', None),
-                integration_time=xrd_dict.get('countTime', None),
+                intensity=xrd_dict.get(
+                    '/ENTRY[entry]/2theta_plot/intensity',
+                    None,
+                ),
+                two_theta=xrd_dict.get(
+                    '/ENTRY[entry]/2theta_plot/two_theta',
+                    None,
+                ),
+                omega=xrd_dict.get(
+                    '/ENTRY[entry]/2theta_plot/omega',
+                    None,
+                ),
+                chi=xrd_dict.get(
+                    '/ENTRY[entry]/2theta_plot/chi',
+                    None),
+                phi=xrd_dict.get(
+                    '/ENTRY[entry]/2theta_plot/phi',
+                    None,
+                ),
+                scan_axis=xrd_dict.get(
+                    '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis',
+                    None,
+                ),
+                integration_time=xrd_dict.get(
+                    '/ENTRY[entry]/COLLECTION[collection]/count_time',
+                    None
+                ),
             )
             result.normalize(archive, logger)
         else:
             raise NotImplementedError(f'Scan type `{scan_type}` is not supported.')
-
-        source = XRayTubeSource(
-            xray_tube_material=source_dict.get('anode_material', None),
-            kalpha_one=source_dict.get('kAlpha1', None),
-            kalpha_two=source_dict.get('kAlpha2', None),
-            ratio_kalphatwo_kalphaone=source_dict.get('ratioKAlpha2KAlpha1', None),
-            kbeta=source_dict.get('kBeta', None),
-            xray_tube_voltage=source_dict.get('voltage', None),
-            xray_tube_current=source_dict.get('current', None),
-        )
-        source.normalize(archive, logger)
-
-        xrd_settings = XRDSettings(
-            source=source
-        )
-        xrd_settings.normalize(archive, logger)
-
-        sample = CompositeSystemReference(
-            lab_id=metadata_dict.get('sample_id', None),
-        )
-        sample.normalize(archive, logger)
-
-        xrd = ELNXRayDiffraction(
-            results = [result],
-            xrd_settings = xrd_settings,
-            samples = [sample],
-        )
-        merge_sections(self, xrd, logger)
-
-    def write_nx_xrd(
-            self,
-            xrd_dict: 'Template',
-            archive: 'EntryArchive',
-            logger: 'BoundLogger',
-        ) -> None:
-        '''
-        Populate `ELNXRayDiffraction` section from a NeXus Template.
-
-        Args:
-            xrd_dict (Dict[str, Any]): A dictionary with the XRD data.
-            archive (EntryArchive): The archive containing the section.
-            logger (BoundLogger): A structlog logger.
-        '''
-        # TODO add the result section based on the scan_type
-        result = XRDResult(
-            intensity=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/intensity',
-                None,
-            ),
-            two_theta=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/two_theta',
-                None,
-            ),
-            omega=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/omega',
-                None,
-            ),
-            chi=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/chi',
-                None),
-            phi=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/phi',
-                None,
-            ),
-            scan_axis=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis',
-                None,
-            ),
-            integration_time=xrd_dict.get(
-                '/ENTRY[entry]/COLLECTION[collection]/count_time',
-                None
-            ),
-        )
-        result.normalize(archive, logger)
 
         source = XRayTubeSource(
             xray_tube_material=xrd_dict.get(
@@ -879,10 +786,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         xrd_settings.normalize(archive, logger)
 
         sample = CompositeSystemReference(
-            lab_id=xrd_dict.get(
-                '/ENTRY[entry]/SAMPLE[sample]/sample_id', 
-                None,
-                ),
+            lab_id=xrd_dict.get('/ENTRY[entry]/SAMPLE[sample]/sample_id', None),
         )
         sample.normalize(archive, logger)
 
@@ -893,17 +797,18 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         )
         merge_sections(self, xrd, logger)
 
-        nexus_output = None
-        if self.generate_nexus_file:
-            archive_name = archive.metadata.mainfile.split('.')[0]
-            nexus_output = f'{archive_name}_output.nxs'
-        handle_nexus_subsection(
-            xrd_dict,
-            nexus_output,
-            archive,
-            logger,
-        )
+        
+        archive_name = archive.metadata.mainfile.split('.')[0]
+        nexus_output = f'{archive_name}.nxs'
+        populate_nexus_subsection(
+                template = xrd_dict,
+                app_def = 'NXxrd_pan',
+                archive = archive,
+                logger = logger,
+                output_file_path = nexus_output,
+                on_temp_file=self.generate_nexus_file)
 
+    
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
         The normalize function of the `ELNXRayDiffraction` section.
@@ -914,15 +819,12 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             logger (BoundLogger): A structlog logger.
         """
         if self.data_file is not None:
-            read_function, write_function = self.get_read_write_functions()
-            if read_function is None or write_function is None:
-                logger.warn(
-                    f'No compatible reader found for the file: "{self.data_file}".'
-                )
-            else:
-                with archive.m_context.raw_file(self.data_file) as file:
-                    xrd_dict = read_function(file.name, logger)
-                write_function(xrd_dict, archive, logger)
+            with archive.m_context.raw_file(self.data_file) as file:
+                nxdl_root, nxdl_f_path = dataconverter.get_nxdl_root_and_path("NXxrd_pan")
+                template = Template()
+                dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
+                filled_template = XRDReader().read(template, [file.name])
+            self.write_xrd_data(filled_template, archive, logger)
         super().normalize(archive, logger)
         if not self.results:
             return
