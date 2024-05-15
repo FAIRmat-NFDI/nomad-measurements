@@ -1,0 +1,39 @@
+                                    Quantitative Analysis Result                                    
+PositionType              Application               Sample name                     Date            
+A-1     Quant analysis    Ti on Si                  Ti_13W                          2022- 2-22 09:33
+                                                                                                    
+Component            Film1        Ti          Si                                                    
+Analyzed value             5     100.000     100.000                                                
+Unit                      nm       mass%       mass%                                                
+                                                                                                    
+Component            Film1                                                                          
+Element line           Ti-KA                                                                        
+Peak intensity       0.06552                                                                        
+BG intensity         0.00379                                                                        
+Net intensity        0.06174                                                                        
+Drift corrected      0.06174                                                                        
+Application result         5                                                                        
+                                                                                                    
+Element line         Ti-KA       Ti-KA       Ti-KA                                                  
+Peak/BG                 Peak         BG1         BG2                                                
+Meas. intensity      0.06552     0.00410     0.00348                                                
+____________________________________________________________________________________________________
+PositionType              Application               Sample name                     Date            
+A-1     Quant analysis    CuTi on Si                Ti_13W                          2022- 2-22 10:11
+                                                                                                    
+Component            Film1        Cu          Ti          Si                                        
+Analyzed value             5       1.167      98.833     100.000                                    
+Unit                      nm         at%         at%       mass%                                    
+                                                                                                    
+Component            Film1        Ti                                                                
+Element line           Cu-KA       Ti-KA                                                            
+Peak intensity       0.02737     0.06495                                                            
+BG intensity         0.02410     0.00363                                                            
+Net intensity        0.00327     0.06132                                                            
+Drift corrected      0.00327     0.06132                                                            
+Application result         5      98.833                                                            
+                                                                                                    
+Element line         Cu-KA       Cu-KA       Cu-KA       Ti-KA       Ti-KA       Ti-KA              
+Peak/BG                 Peak         BG1         BG2        Peak         BG1         BG2            
+Meas. intensity      0.02737     0.02438     0.02385     0.06495     0.00368     0.00359            
+____________________________________________________________________________________________________

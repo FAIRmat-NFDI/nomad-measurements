@@ -1,0 +1,122 @@
+{
+  "SS_SiO2_CIGS_st": {
+    "application": "SS_SiO2_CIGS_st",
+    "sample_name": "20231115_A1_2m",
+    "date": "2023-12-05T11:23:00",
+    "layers": {
+      "CIGS": {
+        "thickness": "2.417",
+        "elements": {
+          "Cu": {
+            "atomic_fraction": 21.545,
+            "line": "Cu-KA",
+            "intensity_peak": 436.39395,
+            "intensity_background": 1.73007,
+            "intensity_background_2": 1.37213
+          },
+          "In": {
+            "atomic_fraction": 21.009,
+            "line": "In-KA",
+            "intensity_peak": 85.87123,
+            "intensity_background": 9.40608,
+            "intensity_background_2": 7.60354
+          },
+          "Ga": {
+            "atomic_fraction": 6.447,
+            "line": "Ga-KA",
+            "intensity_peak": 159.3461,
+            "intensity_background": 1.96977,
+            "intensity_background_2": 2.04829
+          },
+          "Se": {
+            "atomic_fraction": 50.999,
+            "line": "Se-KA",
+            "intensity_peak": 1407.48369,
+            "intensity_background": 3.04008,
+            "intensity_background_2": 3.17262
+          }
+        }
+      },
+      "MoLayer": {
+        "thickness": "262.3",
+        "elements": {
+          "Mo": {
+            "mass_fraction": 100.0,
+            "line": "Mo-KA",
+            "intensity_peak": 501.97377,
+            "intensity_background": 6.48903,
+            "intensity_background_2": 5.41089
+          }
+        }
+      },
+      "Substrate": {
+        "elements": {
+          "Na": {
+            "mass_fraction": 0.083
+          },
+          "Al": {
+            "mass_fraction": 0.026
+          },
+          "Si": {
+            "mass_fraction": 32.0
+          },
+          "P": {
+            "mass_fraction": 0.009
+          },
+          "S": {
+            "mass_fraction": 0.004,
+            "line": "Se-KA",
+            "intensity_peak": 1407.48369,
+            "intensity_background": 3.04008,
+            "intensity_background_2": 3.17262
+          },
+          "Cl": {
+            "mass_fraction": 0.007
+          },
+          "K": {
+            "mass_fraction": 2.23,
+            "line": "Ti-KA",
+            "intensity_peak": 0.13182,
+            "intensity_background": 0.12612,
+            "intensity_background_2": 0.12363
+          },
+          "Ca": {
+            "mass_fraction": 0.005
+          },
+          "Ti": {
+            "mass_fraction": 0.016,
+            "line": "Ti-KA",
+            "intensity_peak": 0.13182,
+            "intensity_background": 0.12612,
+            "intensity_background_2": 0.12363
+          },
+          "V": {
+            "mass_fraction": 0.075
+          },
+          "Cr": {
+            "mass_fraction": 14.0
+          },
+          "Mn": {
+            "mass_fraction": 0.622
+          },
+          "Fe": {
+            "mass_fraction": 50.8
+          },
+          "Co": {
+            "mass_fraction": 0.039
+          },
+          "Ni": {
+            "mass_fraction": 0.034
+          },
+          "Cu": {
+            "mass_fraction": 0.012,
+            "line": "Cu-KA",
+            "intensity_peak": 436.39395,
+            "intensity_background": 1.73007,
+            "intensity_background_2": 1.37213
+          }
+        }
+      }
+    }
+  }
+}
