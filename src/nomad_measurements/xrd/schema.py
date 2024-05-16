@@ -556,8 +556,8 @@ class XRDResultRSM(XRDResult):
             )
             fig_q_vector.update_layout(
                 title='RSM plot: Intensity (log-scale) vs Q-vectors',
-                xaxis_title='Q_parallel (1/Å)',
-                yaxis_title='Q_perpendicular (1/Å)',
+                xaxis_title='<em>q<sub>&#x2016;</sub></em> (Å<sup>-1</sup>)', # q ‖
+                yaxis_title='<em>q<sub>&#x22A5;</sub></em> (Å<sup>-1</sup>)', # q ⊥
                 xaxis=dict(
                     autorange=False,
                     fixedrange=False,
