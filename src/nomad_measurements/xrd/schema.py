@@ -843,15 +843,18 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         )
         xrd_settings.normalize(archive, logger)
 
-        sample = CompositeSystemReference(
-            lab_id=metadata_dict.get('sample_id', None),
-        )
-        sample.normalize(archive, logger)
+        samples = []
+        if metadata_dict.get('sample_id', None) is not None:
+            sample = CompositeSystemReference(
+                lab_id=metadata_dict['sample_id'],
+            )
+            sample.normalize(archive, logger)
+            samples.append(sample)
 
         xrd = ELNXRayDiffraction(
             results = [result],
             xrd_settings = xrd_settings,
-            samples = [sample],
+            samples = samples,
         )
         merge_sections(self, xrd, logger)
 
