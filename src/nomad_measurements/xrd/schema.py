@@ -452,6 +452,11 @@ class XRDResult1D(XRDResult):
             logger (BoundLogger): A structlog logger.
         """
         super().normalize(archive, logger)
+        if self.name is None:
+            if self.scan_axis:
+                self.name = f'{self.scan_axis} Scan Result'
+            else:
+                self.name = 'XRD Scan Result'
         if self.source_peak_wavelength is not None:
             self.q_norm, self.two_theta = calculate_two_theta_or_q(
                 wavelength=self.source_peak_wavelength,
@@ -624,6 +629,8 @@ class XRDResultRSM(XRDResult):
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         super().normalize(archive, logger)
+        if self.name is None:
+            self.name = 'RSM Scan Result'
         var_axis = 'omega'
         if self.source_peak_wavelength is not None:
             for var_axis in ['omega', 'chi', 'phi']:
