@@ -488,6 +488,7 @@ class XRDResultRSM(XRDResult):
             return plots
 
         # Plot for 2theta-omega RSM
+        # Zero values in intensity become -inf in log scale and are not plotted
         x = self.omega.to('degree').magnitude
         y = self.two_theta.to('degree').magnitude
         z = self.intensity.magnitude
@@ -498,10 +499,24 @@ class XRDResultRSM(XRDResult):
             img=np.around(log_z, 3).T,
             x=np.around(x, 3),
             y=np.around(y, 3),
-            color_continuous_scale='inferno',
+        )
+        fig_2theta_omega.update_coloraxes(
+            colorscale='inferno',
+            cmin=np.nanmin(log_z[log_z != -np.inf]),
+            cmax=log_z.max(),
+            colorbar={
+                'len': 0.9,
+                'title': '<em>log<sub>10</sub></em> Intensity<em></em>',
+                'ticks': 'outside',
+                'tickformat': '5',
+            },
         )
         fig_2theta_omega.update_layout(
-            title='RSM plot: Intensity (log-scale) vs Axis position',
+            title={
+                    'text': 'Reciprocal Space Map over 2θ-ω',
+                    'x': 0.5,
+                    'xanchor': 'center',
+                },
             xaxis_title='ω (°)',
             yaxis_title='2θ (°)',
             xaxis=dict(
@@ -514,6 +529,7 @@ class XRDResultRSM(XRDResult):
                 fixedrange=False,
                 range=y_range,
             ),
+            template='plotly_white',
             width=600,
             height=600,
         )
@@ -548,14 +564,24 @@ class XRDResultRSM(XRDResult):
                 img=np.around(log_z_interpolated, 3),
                 x=np.around(x_regular, 3),
                 y=np.around(y_regular, 3),
-                color_continuous_scale='inferno',
-                range_color=[
-                    np.nanmin(log_z[log_z != -np.inf]),
-                    log_z_interpolated.max(),
-                ],
+            )
+            fig_q_vector.update_coloraxes(
+                colorscale='inferno',
+                cmin=np.nanmin(log_z[log_z != -np.inf]),
+                cmax=log_z_interpolated.max(),
+                colorbar={
+                    'len': 0.9,
+                    'title': '<em>log<sub>10</sub></em> Intensity<em></em>',
+                    'ticks': 'outside',
+                    'tickformat': '5',
+                },
             )
             fig_q_vector.update_layout(
-                title='RSM plot: Intensity (log-scale) vs Q-vectors',
+                title={
+                    'text': 'Reciprocal Space Map over Q-vectors',
+                    'x': 0.5,
+                    'xanchor': 'center',
+                },
                 xaxis_title='<em>q<sub>&#x2016;</sub></em> (Å<sup>-1</sup>)', # q ‖
                 yaxis_title='<em>q<sub>&#x22A5;</sub></em> (Å<sup>-1</sup>)', # q ⊥
                 xaxis=dict(
@@ -568,6 +594,7 @@ class XRDResultRSM(XRDResult):
                     fixedrange=False,
                     range=y_range,
                 ),
+                template='plotly_white',
                 width=600,
                 height=600,
             )
