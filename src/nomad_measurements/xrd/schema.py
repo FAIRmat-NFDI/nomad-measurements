@@ -384,7 +384,11 @@ class XRDResult1D(XRDResult):
             y=y,
         )
         fig_line_linear.update_layout(
-            title='Intensity vs 2θ (linear scale)',
+            title={
+                'text': 'Intensity vs 2θ (linear scale)',
+                'x': 0.5,
+                'xanchor': 'center',
+            },
             xaxis_title='2θ (°)',
             yaxis_title='Intensity',
             xaxis=dict(
@@ -393,6 +397,9 @@ class XRDResult1D(XRDResult):
             yaxis=dict(
                 fixedrange=False,
             ),
+            template='plotly_white',
+            width=600,
+            height=600,
         )
         plots.append(
             PlotlyFigure(
@@ -408,7 +415,11 @@ class XRDResult1D(XRDResult):
             log_y=True,
         )
         fig_line_log.update_layout(
-            title='Intensity vs 2θ (log scale)',
+            title={
+                'text': 'Intensity vs 2θ (log scale)',
+                'x': 0.5,
+                'xanchor': 'center',
+            },
             xaxis_title='2θ (°)',
             yaxis_title='Intensity',
             xaxis=dict(
@@ -417,6 +428,9 @@ class XRDResult1D(XRDResult):
             yaxis=dict(
                 fixedrange=False,
             ),
+            template='plotly_white',
+            width=600,
+            height=600,
         )
         plots.append(
             PlotlyFigure(
@@ -535,7 +549,7 @@ class XRDResultRSM(XRDResult):
         )
         plots.append(
             PlotlyFigure(
-                label='RSM 2Theta-Omega',
+                label='RSM 2θ-ω',
                 index=1,
                 figure=fig_2theta_omega.to_plotly_json(),
             ),
