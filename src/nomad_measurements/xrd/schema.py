@@ -403,7 +403,7 @@ class XRDResult1D(XRDResult):
         )
         plots.append(
             PlotlyFigure(
-                label='Intensity (linear scale)',
+                label='Intensity vs 2θ (linear scale)',
                 index=1,
                 figure=fig_line_linear.to_plotly_json(),
             )
@@ -434,8 +434,43 @@ class XRDResult1D(XRDResult):
         )
         plots.append(
             PlotlyFigure(
-                label='Intensity (log scale)',
+                label='Intensity vs 2θ (log scale)',
                 index=0,
+                figure=fig_line_log.to_plotly_json(),
+            )
+        )
+
+        if self.q_norm is None:
+            return plots
+
+        x = self.q_norm.to('1/angstrom').magnitude
+        fig_line_log = px.line(
+            x=x,
+            y=y,
+            log_y=True,
+        )
+        fig_line_log.update_layout(
+            title={
+                'text': 'Intensity vs <em>|q|</em> (log scale)',
+                'x': 0.5,
+                'xanchor': 'center',
+            },
+            xaxis_title='<em>|q|</em> (Å<sup>-1</sup>)',
+            yaxis_title='Intensity',
+            xaxis=dict(
+                fixedrange=False,
+            ),
+            yaxis=dict(
+                fixedrange=False,
+            ),
+            template='plotly_white',
+            width=600,
+            height=600,
+        )
+        plots.append(
+            PlotlyFigure(
+                label='Intensity vs q_norm (log scale)',
+                index=2,
                 figure=fig_line_log.to_plotly_json(),
             )
         )
