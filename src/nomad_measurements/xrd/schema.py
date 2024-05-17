@@ -299,23 +299,35 @@ class XRDResult(MeasurementResult):
 
     m_def = Section()
 
+    index_array = Quantity(
+        type=np.dtype(np.float64),
+        shape=['*'],
+        description=(
+            'A placeholder for the indices of vectorial quantities. '
+            'Used as x-axis for plots within quantities.'
+        ),
+        a_display={'visible': False},
+    )
     intensity = Quantity(
         type=np.dtype(np.float64),
         shape=['*'],
         unit='dimensionless',
         description='The count at each 2-theta value, dimensionless',
+        a_plot={'x': 'index_array', 'y': 'intensity'},
     )
     two_theta = Quantity(
         type=np.dtype(np.float64),
         shape=['*'],
         unit='deg',
         description='The 2-theta range of the diffractogram',
+        a_plot={'x': 'index_array', 'y': 'two_theta'},
     )
     q_norm = Quantity(
         type=np.dtype(np.float64),
         shape=['*'],
         unit='meter**(-1)',
         description='The norm of scattering vector *Q* of the diffractogram',
+        a_plot={'x': 'index_array', 'y': 'q_norm'},
     )
     omega = Quantity(
         type=np.dtype(np.float64),
