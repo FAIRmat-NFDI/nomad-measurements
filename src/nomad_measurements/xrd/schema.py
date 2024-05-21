@@ -299,23 +299,35 @@ class XRDResult(MeasurementResult):
 
     m_def = Section()
 
+    array_index = Quantity(
+        type=np.dtype(np.float64),
+        shape=['*'],
+        description=(
+            'A placeholder for the indices of vectorial quantities. '
+            'Used as x-axis for plots within quantities.'
+        ),
+        a_display={'visible': False},
+    )
     intensity = Quantity(
         type=np.dtype(np.float64),
         shape=['*'],
         unit='dimensionless',
         description='The count at each 2-theta value, dimensionless',
+        a_plot={'x': 'array_index', 'y': 'intensity'},
     )
     two_theta = Quantity(
         type=np.dtype(np.float64),
         shape=['*'],
         unit='deg',
         description='The 2-theta range of the diffractogram',
+        a_plot={'x': 'array_index', 'y': 'two_theta'},
     )
     q_norm = Quantity(
         type=np.dtype(np.float64),
         shape=['*'],
         unit='meter**(-1)',
         description='The norm of scattering vector *Q* of the diffractogram',
+        a_plot={'x': 'array_index', 'y': 'q_norm'},
     )
     omega = Quantity(
         type=np.dtype(np.float64),
@@ -382,17 +394,42 @@ class XRDResult1D(XRDResult):
         fig_line_linear = px.line(
             x=x,
             y=y,
-            labels={
-                'x': '2θ (°)',
-                'y': 'Intensity',
+        )
+        fig_line_linear.update_layout(
+            title={
+                'text': '<i>Intensity</i> over 2<i>θ</i> (linear scale)',
+                'x': 0.5,
+                'xanchor': 'center',
             },
-            title='Intensity (linear scale)',
+            xaxis_title='2<i>θ</i> (°)',
+            yaxis_title='<i>Intensity</i>',
+            xaxis=dict(
+                fixedrange=False,
+            ),
+            yaxis=dict(
+                fixedrange=False,
+            ),
+            template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
+            width=600,
+            height=600,
+        )
+        fig_line_linear.update_traces(
+            hovertemplate='<i>Intensity</i>: %{y:.2f}<br>2<i>θ</i>: %{x}°',
+        )
+        plot_json = fig_line_linear.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
         )
         plots.append(
             PlotlyFigure(
-                label='Intensity vs 2Theta (Linear)',
+                label='Intensity over 2θ (linear scale)',
                 index=1,
-                figure=fig_line_linear.to_plotly_json(),
+                figure=plot_json,
             )
         )
 
@@ -400,17 +437,92 @@ class XRDResult1D(XRDResult):
             x=x,
             y=y,
             log_y=True,
-            labels={
-                'x': '2θ (°)',
-                'y': 'Intensity',
+        )
+        fig_line_log.update_layout(
+            title={
+                'text': '<i>Intensity</i> over 2<i>θ</i> (log scale)',
+                'x': 0.5,
+                'xanchor': 'center',
             },
-            title='Intensity (log scale)',
+            xaxis_title='2<i>θ</i> (°)',
+            yaxis_title='<i>Intensity</i>',
+            xaxis=dict(
+                fixedrange=False,
+            ),
+            yaxis=dict(
+                fixedrange=False,
+            ),
+            template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
+            width=600,
+            height=600,
+        )
+        fig_line_log.update_traces(
+            hovertemplate='<i>Intensity</i>: %{y:.2f}<br>2<i>θ</i>: %{x}°',
+        )
+        plot_json = fig_line_log.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
         )
         plots.append(
             PlotlyFigure(
-                label='Intensity vs 2Theta (Log)',
+                label='Intensity over 2θ (log scale)',
                 index=0,
-                figure=fig_line_log.to_plotly_json(),
+                figure=plot_json,
+            )
+        )
+
+        if self.q_norm is None:
+            return plots
+
+        x = self.q_norm.to('1/angstrom').magnitude
+        fig_line_log = px.line(
+            x=x,
+            y=y,
+            log_y=True,
+        )
+        fig_line_log.update_layout(
+            title={
+                'text': '<i>Intensity</i> over |<em>q</em>| (log scale)',
+                'x': 0.5,
+                'xanchor': 'center',
+            },
+            xaxis_title='|<em>q</em>| (Å<sup>-1</sup>)',
+            yaxis_title='<i>Intensity</i>',
+            xaxis=dict(
+                fixedrange=False,
+            ),
+            yaxis=dict(
+                fixedrange=False,
+            ),
+            template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
+            width=600,
+            height=600,
+        )
+        fig_line_log.update_traces(
+            hovertemplate=(
+                '<i>Intensity</i>: %{y:.2f}<br>'
+                '|<em>q</em>|: %{x} Å<sup>-1</sup>'
+            ),
+        )
+        plot_json = fig_line_log.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
+        )
+        plots.append(
+            PlotlyFigure(
+                label='Intensity over q_norm (log scale)',
+                index=2,
+                figure=plot_json,
             )
         )
 
@@ -426,6 +538,11 @@ class XRDResult1D(XRDResult):
             logger (BoundLogger): A structlog logger.
         """
         super().normalize(archive, logger)
+        if self.name is None:
+            if self.scan_axis:
+                self.name = f'{self.scan_axis} Scan Result'
+            else:
+                self.name = 'XRD Scan Result'
         if self.source_peak_wavelength is not None:
             self.q_norm, self.two_theta = calculate_two_theta_or_q(
                 wavelength=self.source_peak_wavelength,
@@ -476,6 +593,7 @@ class XRDResultRSM(XRDResult):
             return plots
 
         # Plot for 2theta-omega RSM
+        # Zero values in intensity become -inf in log scale and are not plotted
         x = self.omega.to('degree').magnitude
         y = self.two_theta.to('degree').magnitude
         z = self.intensity.magnitude
@@ -486,12 +604,26 @@ class XRDResultRSM(XRDResult):
             img=np.around(log_z, 3).T,
             x=np.around(x, 3),
             y=np.around(y, 3),
-            color_continuous_scale='inferno',
+        )
+        fig_2theta_omega.update_coloraxes(
+            colorscale='inferno',
+            cmin=np.nanmin(log_z[log_z != -np.inf]),
+            cmax=log_z.max(),
+            colorbar={
+                'len': 0.9,
+                'title': 'log<sub>10</sub> <i>Intensity</i>',
+                'ticks': 'outside',
+                'tickformat': '5',
+            },
         )
         fig_2theta_omega.update_layout(
-            title='RSM plot: Intensity (log-scale) vs Axis position',
-            xaxis_title='ω (°)',
-            yaxis_title='2θ (°)',
+            title={
+                    'text': 'Reciprocal Space Map over 2<i>θ</i>-<i>ω</i>',
+                    'x': 0.5,
+                    'xanchor': 'center',
+                },
+            xaxis_title='<i>ω</i> (°)',
+            yaxis_title='2<i>θ</i> (°)',
             xaxis=dict(
                 autorange=False,
                 fixedrange=False,
@@ -502,14 +634,32 @@ class XRDResultRSM(XRDResult):
                 fixedrange=False,
                 range=y_range,
             ),
+            template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
             width=600,
             height=600,
         )
+        fig_2theta_omega.update_traces(
+            hovertemplate=(
+                '<i>Intensity</i>: 10<sup>%{z:.2f}</sup><br>'
+                '2<i>θ</i>: %{y}°<br>'
+                '<i>ω</i>: %{x}°'
+                '<extra></extra>'
+            )
+        )
+        plot_json = fig_2theta_omega.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
+        )
         plots.append(
             PlotlyFigure(
-                label='RSM 2Theta-Omega',
+                label='RSM 2θ-ω',
                 index=1,
-                figure=fig_2theta_omega.to_plotly_json(),
+                figure=plot_json,
             ),
         )
 
@@ -536,16 +686,26 @@ class XRDResultRSM(XRDResult):
                 img=np.around(log_z_interpolated, 3),
                 x=np.around(x_regular, 3),
                 y=np.around(y_regular, 3),
-                color_continuous_scale='inferno',
-                range_color=[
-                    np.nanmin(log_z[log_z != -np.inf]),
-                    log_z_interpolated.max(),
-                ],
+            )
+            fig_q_vector.update_coloraxes(
+                colorscale='inferno',
+                cmin=np.nanmin(log_z[log_z != -np.inf]),
+                cmax=log_z_interpolated.max(),
+                colorbar={
+                    'len': 0.9,
+                    'title': 'log<sub>10</sub> <i>Intensity</i>',
+                    'ticks': 'outside',
+                    'tickformat': '5',
+                },
             )
             fig_q_vector.update_layout(
-                title='RSM plot: Intensity (log-scale) vs Q-vectors',
-                xaxis_title='Q_parallel (1/Å)',
-                yaxis_title='Q_perpendicular (1/Å)',
+                title={
+                    'text': 'Reciprocal Space Map over Q-vectors',
+                    'x': 0.5,
+                    'xanchor': 'center',
+                },
+                xaxis_title='<i>q</i><sub>&#x2016;</sub> (Å<sup>-1</sup>)', # q ‖
+                yaxis_title='<i>q</i><sub>&#x22A5;</sub> (Å<sup>-1</sup>)', # q ⊥
                 xaxis=dict(
                     autorange=False,
                     fixedrange=False,
@@ -556,14 +716,32 @@ class XRDResultRSM(XRDResult):
                     fixedrange=False,
                     range=y_range,
                 ),
+                template='plotly_white',
+                hovermode='closest',
+                hoverlabel=dict(
+                    bgcolor='white',
+                ),
+                dragmode='zoom',
                 width=600,
                 height=600,
             )
+            fig_q_vector.update_traces(
+                hovertemplate=(
+                    '<i>Intensity</i>: 10<sup>%{z:.2f}</sup><br>'
+                    '<i>q</i><sub>&#x22A5;</sub>: %{y} Å<sup>-1</sup><br>'
+                    '<i>q</i><sub>&#x2016;</sub>: %{x} Å<sup>-1</sup>'
+                    '<extra></extra>'
+                )
+            )
+            plot_json = fig_q_vector.to_plotly_json()
+            plot_json['config'] = dict(
+                scrollZoom=False,
+            )
             plots.append(
                 PlotlyFigure(
-                    label='RSM Q-Vectors',
+                    label='RSM Q-vectors',
                     index=0,
-                    figure=fig_q_vector.to_plotly_json(),
+                    figure=plot_json,
                 ),
             )
 
@@ -571,6 +749,8 @@ class XRDResultRSM(XRDResult):
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         super().normalize(archive, logger)
+        if self.name is None:
+            self.name = 'RSM Scan Result'
         var_axis = 'omega'
         if self.source_peak_wavelength is not None:
             for var_axis in ['omega', 'chi', 'phi']:
@@ -783,15 +963,18 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         )
         xrd_settings.normalize(archive, logger)
 
-        sample = CompositeSystemReference(
-            lab_id=metadata_dict.get('sample_id', None),
-        )
-        sample.normalize(archive, logger)
+        samples = []
+        if metadata_dict.get('sample_id', None) is not None:
+            sample = CompositeSystemReference(
+                lab_id=metadata_dict['sample_id'],
+            )
+            sample.normalize(archive, logger)
+            samples.append(sample)
 
         xrd = ELNXRayDiffraction(
             results = [result],
             xrd_settings = xrd_settings,
-            samples = [sample],
+            samples = samples,
         )
         merge_sections(self, xrd, logger)
 
