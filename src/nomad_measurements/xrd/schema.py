@@ -397,12 +397,12 @@ class XRDResult1D(XRDResult):
         )
         fig_line_linear.update_layout(
             title={
-                'text': 'Intensity vs 2θ (linear scale)',
+                'text': '<i>Intensity</i> over 2<i>θ</i> (linear scale)',
                 'x': 0.5,
                 'xanchor': 'center',
             },
-            xaxis_title='2θ (°)',
-            yaxis_title='Intensity',
+            xaxis_title='2<i>θ</i> (°)',
+            yaxis_title='<i>Intensity</i>',
             xaxis=dict(
                 fixedrange=False,
             ),
@@ -415,7 +415,7 @@ class XRDResult1D(XRDResult):
         )
         plots.append(
             PlotlyFigure(
-                label='Intensity vs 2θ (linear scale)',
+                label='Intensity over 2θ (linear scale)',
                 index=1,
                 figure=fig_line_linear.to_plotly_json(),
             )
@@ -428,12 +428,12 @@ class XRDResult1D(XRDResult):
         )
         fig_line_log.update_layout(
             title={
-                'text': 'Intensity vs 2θ (log scale)',
+                'text': '<i>Intensity</i> over 2<i>θ</i> (log scale)',
                 'x': 0.5,
                 'xanchor': 'center',
             },
-            xaxis_title='2θ (°)',
-            yaxis_title='Intensity',
+            xaxis_title='2<i>θ</i> (°)',
+            yaxis_title='<i>Intensity</i>',
             xaxis=dict(
                 fixedrange=False,
             ),
@@ -446,7 +446,7 @@ class XRDResult1D(XRDResult):
         )
         plots.append(
             PlotlyFigure(
-                label='Intensity vs 2θ (log scale)',
+                label='Intensity over 2θ (log scale)',
                 index=0,
                 figure=fig_line_log.to_plotly_json(),
             )
@@ -463,12 +463,12 @@ class XRDResult1D(XRDResult):
         )
         fig_line_log.update_layout(
             title={
-                'text': 'Intensity vs <em>|q|</em> (log scale)',
+                'text': '<i>Intensity</i> over |<em>q</em>| (log scale)',
                 'x': 0.5,
                 'xanchor': 'center',
             },
-            xaxis_title='<em>|q|</em> (Å<sup>-1</sup>)',
-            yaxis_title='Intensity',
+            xaxis_title='|<em>q</em>| (Å<sup>-1</sup>)',
+            yaxis_title='<i>Intensity</i>',
             xaxis=dict(
                 fixedrange=False,
             ),
@@ -481,7 +481,7 @@ class XRDResult1D(XRDResult):
         )
         plots.append(
             PlotlyFigure(
-                label='Intensity vs q_norm (log scale)',
+                label='Intensity over q_norm (log scale)',
                 index=2,
                 figure=fig_line_log.to_plotly_json(),
             )
@@ -572,19 +572,19 @@ class XRDResultRSM(XRDResult):
             cmax=log_z.max(),
             colorbar={
                 'len': 0.9,
-                'title': '<em>log<sub>10</sub></em> Intensity<em></em>',
+                'title': 'log<sub>10</sub> <i>Intensity</i>',
                 'ticks': 'outside',
                 'tickformat': '5',
             },
         )
         fig_2theta_omega.update_layout(
             title={
-                    'text': 'Reciprocal Space Map over 2θ-ω',
+                    'text': 'Reciprocal Space Map over 2<i>θ</i>-<i>ω</i>',
                     'x': 0.5,
                     'xanchor': 'center',
                 },
-            xaxis_title='ω (°)',
-            yaxis_title='2θ (°)',
+            xaxis_title='<i>ω</i> (°)',
+            yaxis_title='2<i>θ</i> (°)',
             xaxis=dict(
                 autorange=False,
                 fixedrange=False,
@@ -637,7 +637,7 @@ class XRDResultRSM(XRDResult):
                 cmax=log_z_interpolated.max(),
                 colorbar={
                     'len': 0.9,
-                    'title': '<em>log<sub>10</sub></em> Intensity<em></em>',
+                    'title': 'log<sub>10</sub> <i>Intensity</i>',
                     'ticks': 'outside',
                     'tickformat': '5',
                 },
@@ -648,8 +648,8 @@ class XRDResultRSM(XRDResult):
                     'x': 0.5,
                     'xanchor': 'center',
                 },
-                xaxis_title='<em>q<sub>&#x2016;</sub></em> (Å<sup>-1</sup>)', # q ‖
-                yaxis_title='<em>q<sub>&#x22A5;</sub></em> (Å<sup>-1</sup>)', # q ⊥
+                xaxis_title='<i>q</i><sub>&#x2016;</sub> (Å<sup>-1</sup>)', # q ‖
+                yaxis_title='<i>q</i><sub>&#x22A5;</sub> (Å<sup>-1</sup>)', # q ⊥
                 xaxis=dict(
                     autorange=False,
                     fixedrange=False,
@@ -666,7 +666,7 @@ class XRDResultRSM(XRDResult):
             )
             plots.append(
                 PlotlyFigure(
-                    label='RSM Q-Vectors',
+                    label='RSM Q-vectors',
                     index=0,
                     figure=fig_q_vector.to_plotly_json(),
                 ),
