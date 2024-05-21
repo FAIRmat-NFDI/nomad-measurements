@@ -410,14 +410,26 @@ class XRDResult1D(XRDResult):
                 fixedrange=False,
             ),
             template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
             width=600,
             height=600,
+        )
+        fig_line_linear.update_traces(
+            hovertemplate='<i>Intensity</i>: %{y:.2f}<br>2<i>θ</i>: %{x}°',
+        )
+        plot_json = fig_line_linear.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
         )
         plots.append(
             PlotlyFigure(
                 label='Intensity over 2θ (linear scale)',
                 index=1,
-                figure=fig_line_linear.to_plotly_json(),
+                figure=plot_json,
             )
         )
 
@@ -441,14 +453,26 @@ class XRDResult1D(XRDResult):
                 fixedrange=False,
             ),
             template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
             width=600,
             height=600,
+        )
+        fig_line_log.update_traces(
+            hovertemplate='<i>Intensity</i>: %{y:.2f}<br>2<i>θ</i>: %{x}°',
+        )
+        plot_json = fig_line_log.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
         )
         plots.append(
             PlotlyFigure(
                 label='Intensity over 2θ (log scale)',
                 index=0,
-                figure=fig_line_log.to_plotly_json(),
+                figure=plot_json,
             )
         )
 
@@ -476,14 +500,29 @@ class XRDResult1D(XRDResult):
                 fixedrange=False,
             ),
             template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
             width=600,
             height=600,
+        )
+        fig_line_log.update_traces(
+            hovertemplate=(
+                '<i>Intensity</i>: %{y:.2f}<br>'
+                '|<em>q</em>|: %{x} Å<sup>-1</sup>'
+            ),
+        )
+        plot_json = fig_line_log.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
         )
         plots.append(
             PlotlyFigure(
                 label='Intensity over q_norm (log scale)',
                 index=2,
-                figure=fig_line_log.to_plotly_json(),
+                figure=plot_json,
             )
         )
 
@@ -596,14 +635,30 @@ class XRDResultRSM(XRDResult):
                 range=y_range,
             ),
             template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
             width=600,
             height=600,
+        )
+        fig_2theta_omega.update_traces(
+            hovertemplate=(
+                '<i>Intensity</i>: %{z:.2f}<br>'
+                '2<i>θ</i>: %{y}°<br>'
+                '<i>ω</i>: %{x}°'
+            )
+        )
+        plot_json = fig_2theta_omega.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
         )
         plots.append(
             PlotlyFigure(
                 label='RSM 2θ-ω',
                 index=1,
-                figure=fig_2theta_omega.to_plotly_json(),
+                figure=plot_json,
             ),
         )
 
@@ -661,14 +716,30 @@ class XRDResultRSM(XRDResult):
                     range=y_range,
                 ),
                 template='plotly_white',
+                hovermode='closest',
+                hoverlabel=dict(
+                    bgcolor='white',
+                ),
+                dragmode='zoom',
                 width=600,
                 height=600,
+            )
+            fig_q_vector.update_traces(
+                hovertemplate=(
+                    '<i>Intensity</i>: %{z:.2f}<br>'
+                    '<i>q</i><sub>&#x22A5;</sub>: %{y}Å<sup>-1</sup><br>'
+                    '<i>q</i><sub>&#x2016;</sub>: %{x}Å<sup>-1</sup>'
+                    )
+                )
+            plot_json = fig_q_vector.to_plotly_json()
+            plot_json['config'] = dict(
+                scrollZoom=False,
             )
             plots.append(
                 PlotlyFigure(
                     label='RSM Q-vectors',
                     index=0,
-                    figure=fig_q_vector.to_plotly_json(),
+                    figure=plot_json,
                 ),
             )
 
