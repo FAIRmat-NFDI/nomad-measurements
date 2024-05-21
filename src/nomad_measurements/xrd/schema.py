@@ -645,9 +645,10 @@ class XRDResultRSM(XRDResult):
         )
         fig_2theta_omega.update_traces(
             hovertemplate=(
-                '<i>Intensity</i>: %{z:.2f}<br>'
+                '<i>Intensity</i>: 10<sup>%{z:.2f}</sup><br>'
                 '2<i>θ</i>: %{y}°<br>'
                 '<i>ω</i>: %{x}°'
+                '<extra></extra>'
             )
         )
         plot_json = fig_2theta_omega.to_plotly_json()
@@ -726,11 +727,12 @@ class XRDResultRSM(XRDResult):
             )
             fig_q_vector.update_traces(
                 hovertemplate=(
-                    '<i>Intensity</i>: %{z:.2f}<br>'
-                    '<i>q</i><sub>&#x22A5;</sub>: %{y}Å<sup>-1</sup><br>'
-                    '<i>q</i><sub>&#x2016;</sub>: %{x}Å<sup>-1</sup>'
-                    )
+                    '<i>Intensity</i>: 10<sup>%{z:.2f}</sup><br>'
+                    '<i>q</i><sub>&#x22A5;</sub>: %{y} Å<sup>-1</sup><br>'
+                    '<i>q</i><sub>&#x2016;</sub>: %{x} Å<sup>-1</sup>'
+                    '<extra></extra>'
                 )
+            )
             plot_json = fig_q_vector.to_plotly_json()
             plot_json['config'] = dict(
                 scrollZoom=False,
