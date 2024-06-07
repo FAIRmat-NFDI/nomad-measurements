@@ -63,7 +63,11 @@ from nomad.datamodel.metainfo.plot import (
 from nomad_measurements import (
     NOMADMeasurementsCategory,
 )
-from nomad_measurements.xrd import readers
+from fairmat_readers_xrd import (
+    read_panalytical_xrdml,
+    read_rigaku_rasx,
+    read_bruker_brml,
+)
 from nomad_measurements.utils import merge_sections, get_bounding_range_2d
 
 if TYPE_CHECKING:
@@ -896,11 +900,11 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             tuple[Callable, Callable]: The read, write functions.
         """
         if self.data_file.endswith('.rasx'):
-            return readers.read_rigaku_rasx, self.write_xrd_data
+            return read_rigaku_rasx, self.write_xrd_data
         if self.data_file.endswith('.xrdml'):
-            return readers.read_panalytical_xrdml, self.write_xrd_data
+            return read_panalytical_xrdml, self.write_xrd_data
         if self.data_file.endswith('.brml'):
-            return readers.read_bruker_brml, self.write_xrd_data
+            return read_bruker_brml, self.write_xrd_data
         return None, None
 
     def write_xrd_data(
