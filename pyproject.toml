@@ -26,6 +26,7 @@ classifiers = [
 dependencies = [
     "nomad-lab>=1.2.2.dev399",
     "xmltodict==0.13.0",
+    "fairmat-readers-xrd~=0.0.3"
 ]
 [project.optional-dependencies]
 dev = [
