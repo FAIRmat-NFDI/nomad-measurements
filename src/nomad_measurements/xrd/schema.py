@@ -78,50 +78,12 @@ if TYPE_CHECKING:
         BoundLogger,
     )
     import pint
-    from pynxtools.dataconverter.template import Template
+
+from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
+from pynxtools import dataconverter
 
 m_package = Package(name='nomad_xrd')
 
-
-def populate_nexus_subsection(**kwargs):
-    raise NotImplementedError
-
-def handle_nexus_subsection(
-        xrd_template: 'Template',
-        nexus_out: str,
-        archive: 'EntryArchive',
-        logger: 'BoundLogger'
-    ):
-    '''
-    Function for populating the NeXus section from the xrd_template.
-
-    Args:
-        xrd_template (Template): The xrd data in a NeXus Template.
-        nexus_out (str): The name of the optional NeXus output file.
-        archive (EntryArchive): The archive containing the section.
-        logger (BoundLogger): A structlog logger.
-    '''
-    nxdl_name = 'NXxrd_pan'
-    if nexus_out:
-        if not nexus_out.endswith('.nxs'):
-            nexus_out = nexus_out + '.nxs'
-        populate_nexus_subsection(
-            template=xrd_template,
-            app_def=nxdl_name,
-            archive=archive,
-            logger=logger,
-            output_file_path=nexus_out,
-            on_temp_file=False,
-        )
-    else:
-        populate_nexus_subsection(
-            template=xrd_template,
-            app_def=nxdl_name,
-            archive=archive,
-            logger=logger,
-            output_file_path=nexus_out,
-            on_temp_file=True,
-        )
 
 
 def calculate_two_theta_or_q(
@@ -869,7 +831,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         label='X-Ray Diffraction (XRD)',
         a_eln=ELNAnnotation(
             lane_width='800px',
-            hide=['generate_nexus_file'],
         ),
         a_template={
             'measurement_identifiers': {},
@@ -988,113 +949,31 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         )
         merge_sections(self, xrd, logger)
 
-    def write_nx_xrd(
-            self,
-            xrd_dict: 'Template',
-            archive: 'EntryArchive',
-            logger: 'BoundLogger',
-        ) -> None:
+    def write_nx_section_and_create_file(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         '''
-        Populate `ELNXRayDiffraction` section from a NeXus Template.
+        Uses the archive to generate the NeXus section and .nxs file.
 
         Args:
-            xrd_dict (Dict[str, Any]): A dictionary with the XRD data.
             archive (EntryArchive): The archive containing the section.
             logger (BoundLogger): A structlog logger.
         '''
-        # TODO add the result section based on the scan_type
-        result = XRDResult(
-            intensity=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/intensity',
-                None,
-            ),
-            two_theta=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/two_theta',
-                None,
-            ),
-            omega=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/omega',
-                None,
-            ),
-            chi=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/chi',
-                None),
-            phi=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/phi',
-                None,
-            ),
-            scan_axis=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis',
-                None,
-            ),
-            integration_time=xrd_dict.get(
-                '/ENTRY[entry]/COLLECTION[collection]/count_time',
-                None
-            ),
-        )
-        result.normalize(archive, logger)
+        nxdl_root, _ = dataconverter.helpers.get_nxdl_root_and_path("NXxrd_pan")
+        template = dataconverter.template.Template()
+        dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
 
-        source = XRayTubeSource(
-            xray_tube_material=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material',
-                None,
-            ),
-            kalpha_one=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one',
-                None,
-            ),
-            kalpha_two=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two',
-                None,
-                ),
-            ratio_kalphatwo_kalphaone=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone',
-                None,
-                ),
-            kbeta=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta',
-                None,
-            ),
-            xray_tube_voltage=xrd_dict.get(
-                'ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage',
-                None
-            ),
-            xray_tube_current=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current',
-                None,
-            ),
-        )
-        source.normalize(archive, logger)
+        template['/ENTRY[entry]/2theta_plot/intensity'] = archive.data.results[0].intensity.magnitude
+        template['/ENTRY[entry]/2theta_plot/two_theta'] = archive.data.results[0].two_theta.magnitude
+        template['/ENTRY[entry]/2theta_plot/two_theta/@units'] = str(archive.data.results[0].two_theta.units)
+        archive_name = archive.metadata.mainfile.split('.')[0]
+        nexus_output = f'{archive_name}_output.nxs'
 
-        xrd_settings = XRDSettings(
-            source=source
-        )
-        xrd_settings.normalize(archive, logger)
-
-        sample = CompositeSystemReference(
-            lab_id=xrd_dict.get(
-                '/ENTRY[entry]/SAMPLE[sample]/sample_id', 
-                None,
-                ),
-        )
-        sample.normalize(archive, logger)
-
-        xrd = ELNXRayDiffraction(
-            results = [result],
-            xrd_settings = xrd_settings,
-            samples = [sample],
-        )
-        merge_sections(self, xrd, logger)
-
-        nexus_output = None
-        if self.generate_nexus_file:
-            archive_name = archive.metadata.mainfile.split('.')[0]
-            nexus_output = f'{archive_name}_output.nxs'
-        handle_nexus_subsection(
-            xrd_dict,
-            nexus_output,
-            archive,
-            logger,
+        populate_nexus_subsection(
+            template=template,
+            app_def="NXxrd_pan",
+            archive=archive,
+            logger=logger,
+            output_file_path=nexus_output,
+            on_temp_file=self.generate_nexus_file,
         )
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
@@ -1119,6 +998,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         super().normalize(archive, logger)
         if not self.results:
             return
+        self.write_nx_section_and_create_file(archive, logger)
         self.figures = self.results[0].generate_plots(archive, logger)
 
 
