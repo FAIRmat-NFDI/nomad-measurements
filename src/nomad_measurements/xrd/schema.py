@@ -79,6 +79,10 @@ if TYPE_CHECKING:
     from structlog.stdlib import (
         BoundLogger,
     )
+    import pint
+
+from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
+from pynxtools import dataconverter
 
 from nomad.config import config
 
