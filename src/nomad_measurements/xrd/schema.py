@@ -790,7 +790,7 @@ class XRayDiffraction(Measurement):
                 'Small-Angle X-Ray Scattering (SAXS)',
                 'X-Ray Reflectivity (XRR)',
                 'Grazing Incidence X-Ray Diffraction (GIXRD)',
-                # 'Reciprocal Space Mapping (RSM)',
+                'Reciprocal Space Mapping (RSM)',
             ]
         ),
         description='''
@@ -803,8 +803,8 @@ class XRayDiffraction(Measurement):
         | **Small-Angle X-ray Scattering (SAXS)**                    | Used for studying nanostructures in the size range of 1-100 nm. Provides information on particle size, shape, and distribution.                                                                             |
         | **X-ray Reflectivity (XRR)**                               | Used to study thin film layers, interfaces, and multilayers. Provides info on film thickness, density, and roughness.                                                                                       |
         | **Grazing Incidence X-ray Diffraction (GIXRD)**            | Primarily used for the analysis of thin films with the incident beam at a fixed shallow angle.                                                                                                              |
+        | **Reciprocal Space Mapping (RSM)**                         | High-resolution XRD method to measure diffracted intensity in a 2-dimensional region of reciprocal space. Provides information about the real-structure (lattice mismatch, domain structure, stress and defects) in single-crystalline and epitaxial samples.|
         ''',
-        # | **Reciprocal Space Mapping (RSM)**                         | High-resolution XRD method to measure a reciprocal space map. Provides additional information used to aid the interpretation of peak displacement, peak broadening or peak overlap.                                                                                                                                                             |
     )
     results = Measurement.results.m_copy()
     results.section_def = XRDResult
