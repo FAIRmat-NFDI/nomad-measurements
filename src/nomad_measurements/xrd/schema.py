@@ -844,6 +844,15 @@ class XRayDiffraction(Measurement):
                             q_vector=result.q_norm,
                         )
                     )
+                elif len(result.intensity.shape) == 2:
+                    diffraction_patterns.append(
+                        DiffractionPattern(
+                            incident_beam_wavelength=result.source_peak_wavelength,
+                            two_theta_angles=result.two_theta,
+                            intensity=result.intensity[0],
+                            q_vector=result.q_perpendicular[0],
+                        )
+                    )
             archive.results.properties.structural = StructuralProperties(
                 diffraction_pattern=diffraction_patterns
             )
