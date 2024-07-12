@@ -833,13 +833,19 @@ class XRayDiffraction(Measurement):
         if not archive.results.properties:
             archive.results.properties = Properties()
         if not archive.results.properties.structural:
+            diffraction_patterns = []
+            for result in self.results:
+                if len(result.intensity.shape) == 1:
+                    diffraction_patterns.append(
+                        DiffractionPattern(
+                            incident_beam_wavelength=result.source_peak_wavelength,
+                            two_theta_angles=result.two_theta,
+                            intensity=result.intensity,
+                            q_vector=result.q_norm,
+                        )
+                    )
             archive.results.properties.structural = StructuralProperties(
-                diffraction_pattern=[DiffractionPattern(
-                    incident_beam_wavelength=result.source_peak_wavelength,
-                    two_theta_angles=result.two_theta,
-                    intensity=result.intensity,
-                    q_vector=result.q_norm,
-                ) for result in self.results]
+                diffraction_pattern=diffraction_patterns
             )
         if not archive.results.method:
             archive.results.method = Method(
