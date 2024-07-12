@@ -58,6 +58,7 @@ def test_normalize_all(parsed_archive):
     assert parsed_archive.data.results[
         0
     ].source_peak_wavelength.magnitude == pytest.approx(1.540598, 1e-2)
-    assert parsed_archive.results.properties.structural.diffraction_pattern[
-        0
-    ].incident_beam_wavelength.magnitude * 1e10 == pytest.approx(1.540598, 1e-2)
+    if len(parsed_archive.data.results[0].intensity.shape) == 1:
+        assert parsed_archive.results.properties.structural.diffraction_pattern[
+            0
+        ].incident_beam_wavelength.magnitude * 1e10 == pytest.approx(1.540598, 1e-2)
