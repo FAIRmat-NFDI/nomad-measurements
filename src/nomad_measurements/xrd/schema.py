@@ -80,7 +80,7 @@ if TYPE_CHECKING:
     )
     import pint
 
-from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
+from pynxtools.nomad.dataconverter import populate_nexus_subsection
 from pynxtools import dataconverter
 
 m_package = Package(name='nomad_xrd')
@@ -963,6 +963,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         template = dataconverter.template.Template()
         dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
 
+        template['/ENTRY[entry]/definition'] = 'NXxrd_pan'
         template['/ENTRY[entry]/2theta_plot/intensity'] = archive.data.results[0].intensity.magnitude
         template['/ENTRY[entry]/2theta_plot/two_theta'] = archive.data.results[0].two_theta.magnitude
         template['/ENTRY[entry]/2theta_plot/two_theta/@units'] = str(archive.data.results[0].two_theta.units)
