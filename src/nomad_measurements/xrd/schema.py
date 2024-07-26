@@ -70,6 +70,7 @@ from fairmat_readers_xrd import (
     read_bruker_brml,
 )
 from nomad_measurements.utils import merge_sections, get_bounding_range_2d
+from nomad_measurements.xrd.nx import connect_concepts
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -962,11 +963,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         nxdl_root, _ = dataconverter.helpers.get_nxdl_root_and_path("NXxrd_pan")
         template = dataconverter.template.Template()
         dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
-
-        template['/ENTRY[entry]/definition'] = 'NXxrd_pan'
-        template['/ENTRY[entry]/2theta_plot/intensity'] = archive.data.results[0].intensity.magnitude
-        template['/ENTRY[entry]/2theta_plot/two_theta'] = archive.data.results[0].two_theta.magnitude
-        template['/ENTRY[entry]/2theta_plot/two_theta/@units'] = str(archive.data.results[0].two_theta.units)
+        connect_concepts(template, archive)
         archive_name = archive.metadata.mainfile.split('.')[0]
         nexus_output = f'{archive_name}_output.nxs'
 
@@ -977,7 +974,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             logger=logger,
             output_file_path=nexus_output,
             on_temp_file=self.generate_nexus_file,
+            nxs_as_entry=True
         )
+        archive.metadata.entry_type = "ELNXRayDiffraction"
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
