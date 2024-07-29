@@ -16,121 +16,242 @@
 # limitations under the License.
 #
 from typing import TYPE_CHECKING
+from pynxtools.nomad.dataconverter import populate_nexus_subsection
+from pynxtools import dataconverter
+
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import EntryArchive
 
 
-def check_and_connect_concept(xrd_pan_concept, eln_xrd_dif_concept, template):
-    """Check the concept between two schema (ELNXrayDiffraction and NXxrd_pan)
+def check_hdf5_incompatible_unit(unit: str):
+    """In hdf5 file degree symbol 'o' is incompatible getting an error.
 
-    The ELNXrayDiffraction and NXxrd_pan both can handle multiple techniques of the
-    X-ray diffraction measurements (e.g. Bragg-Brentano, Reciprocal Space Mapping (RSM)).
-    So, all the concepts in this schema not the exactly the same for all techniques.
-
-    This function will check the concept between the two schema and connect the concepts
-    if they are available in both schema.
-
-    Args:
-        xrd_pan_concept (str): The concept from NXxrd_pan schema e.g. /ENTRY[entry]/definition.
-        eln_xrd_dif_concept (Archive.quantity): The concept from ELNXrayDiffraction schema.
-        template (dict): The template of the NXxrd_pan schema.
+    TypeError: Object dtype dtype('O') has no native HDF5 equivalent
+    As 'O' is not a string type.
     """
+    if unit == 'degree' or unit == 'deg':
+        return 'degree'
+    return unit
+
+# source_peak_wavelength
+def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
+    """Connect the concepts between ELNXrayDiffraction and NXxrd_pan schema."""
+
+    # Genneral concepts
     try:
-        template[xrd_pan_concept] = eln_xrd_dif_concept
-    except Exception as e:
+        template['/ENTRY[entry]/definition'] = 'NXxrd_pan'
+    except AttributeError as e:
         pass
 
+    try:
+        template['/ENTRY[entry]/method'] = archive.data.method
+    except AttributeError as e:
+        pass
 
-def connect_concepts(template, archive: 'EntryArchive'):
-    """Connect the concepts between ELNXrayDiffraction and NXxrd_pan schema."""
-    template['/ENTRY[entry]/definition'] = 'NXxrd_pan'
-    check_and_connect_concept('/ENTRY[entry]/method', archive.data.method, template)
-    check_and_connect_concept(
-        '/ENTRY[entry]/measurement_type', archive.data.diffraction_method_name, template
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/intensity',
-        archive.data.results[0].intensity.magnitude,
-        template,
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/two_theta',
-        archive.data.results[0].two_theta.magnitude,
-        template,
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/two_theta/@units',
-        archive.data.results[0].two_theta.units,
-        template,
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/omega',
-        archive.data.results[0].omega.magnitude,
-        template,
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/omega/@units',
-        archive.data.results[0].omega.units,
-        template,
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/chi',
-        archive.data.results[0].chi.magnitude,
-        template,
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/chi/@units',
-        archive.data.results[0].chi.units,
-        template,
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/phi',
-        archive.data.results[0].phi.magnitude,
-        template,
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/phi/@units',
-        archive.data.data.results[0].phi.units,
-        template,
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/q_parallel',
-        archive.data.results[0].q_parallel.magnitude,
-        template,
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/q_parallel/@units',
-        archive.data.results[0].q_parallel.units,
-        template,
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/q_perpendicular',
-        archive.data.results[0].q_perpendicular.magnitude,
-        template,
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/q_perpendicular/@units',
-        archive.data.results[0].q_perpendicular.units,
-        template,
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/q_norm',
-        archive.data.results[0].q_norm.magnitude,
-        template,
-    )
-    check_and_connect_concept(
-        '/ENTRY[entry]/experiment_result/q_norm/@units',
-        archive.data.results[0].q_norm.units,
-        template,
-    )
+    try:
+        template['/ENTRY[entry]/measurement_type'] = (
+            archive.data.diffraction_method_name
+        )
+    except AttributeError as e:
+        pass
 
-    template['/ENTRY[entry]/2theta_plot/intensity'] = archive.data.results[
-        0
-    ].intensity.magnitude
-    template['/ENTRY[entry]/2theta_plot/two_theta'] = archive.data.results[
-        0
-    ].two_theta.magnitude
-    template['/ENTRY[entry]/2theta_plot/two_theta/@units'] = str(
-        archive.data.results[0].two_theta.units
+    # Technique specific concepts
+    if scan_type == 'line':
+        try:
+            template['/ENTRY[entry]/experiment_result/intensity'] = archive.data.results[0].intensity.magnitude
+        except AttributeError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/experiment_result/two_theta'] = archive.data.results[0].two_theta.magnitude
+            template['/ENTRY[entry]/experiment_result/two_theta/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].two_theta.units)
+        except AttributeError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/experiment_result/omega'] = archive.data.results[0].omega.magnitude
+            template['/ENTRY[entry]/experiment_result/omega/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].omega.units)
+        except AttributeError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/experiment_result/chi'] = archive.data.results[0].chi.magnitude
+            template['/ENTRY[entry]/experiment_result/chi/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].chi.units)
+        except AttributeError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/experiment_result/phi'] = archive.data.results[0].phi.magnitude
+            template['/ENTRY[entry]/experiment_result/phi/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].phi.units)
+        except AttributeError as e:
+            pass
+
+        try:
+            template[
+                '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis'
+            ] = archive.data.results[0].scan_axis
+        except AttributeError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/experiment_config/count_time'] = archive.data.results[0].count_time.magnitude
+        except AttributeError as e:
+            pass
+    # rsm
+    elif scan_type == 'rsm':
+        try:
+            template['/ENTRY[entry]/experiment_result/intensity'] = archive.data.results[0].intensity.magnitude
+        except AttributeError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/experiment_result/two_theta'] = archive.data.results[0].two_theta.magnitude
+            template['/ENTRY[entry]/experiment_result/two_theta/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].two_theta.units)
+        except AttributeError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/experiment_result/omega'] = archive.data.results[0].omega.magnitude
+            template['/ENTRY[entry]/experiment_result/omega/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].omega.units)
+        except AttributeError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/experiment_result/chi'] = archive.data.results[0].chi.magnitude
+            template['/ENTRY[entry]/experiment_result/chi/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].chi.units)
+        except AttributeError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/experiment_result/phi'] = archive.data.results[0].phi.magnitude
+            template['/ENTRY[entry]/experiment_result/phi/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].phi.units)
+        except AttributeError as e:
+            pass
+
+        try:
+            template[
+                '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis'
+            ] = archive.data.results[0].scan_axis
+        except AttributeError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/experiment_config/count_time'] = archive.data.results[0].count_time.magnitude
+        except AttributeError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/experiment_result/q_parallel'] = archive.data.results[0].q_parallel,
+            template['/ENTRY[entry]/experiment_result/q_parallel/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].q_parallel.units)
+        except AttributeError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/experiment_result/q_perpendicular'] = archive.data.results[0].q_perpendicular.magnitude
+            template['/ENTRY[entry]/experiment_result/q_perpendicular/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].q_perpendicular.units)
+        except AttributeError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/experiment_result/q_norm'] = archive.data.results[0].q_norm.magnitude
+            template['/ENTRY[entry]/experiment_result/q_norm/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].q_norm.units)
+        except AttributeError as e:
+            pass
+
+        # Source
+        try:
+            template[
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material'
+            ] = archive.data.xrd_settings.source.xray_tube_material
+        except AttributeError as e:
+            pass
+
+        try:
+            template[
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current'
+            ] = archive.data.xrd_settings.source.xray_tube_current.magnitude
+            template[
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current/@units'
+            ] = archive.data.xrd_settings.source.xray_tube_current.units
+        except AttributeError as e:
+            pass
+
+        try:
+            template[
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage'
+            ] = archive.data.xrd_settings.source.xray_tube_voltage.magnitude
+            template[
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage/@units'
+            ] = archive.data.xrd_settings.source.xray_tube_voltage.units
+        except AttributeError as e:
+            pass
+
+        try:
+            template[
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one'
+            ] = archive.data.xrd_settings.source.kalpha_one.magnitude
+            template[
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one/@units'
+            ] = archive.data.xrd_settings.source.kalpha_one.units
+        except AttributeError as e:
+            pass
+
+        try:
+            template[
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two'
+            ] = archive.data.xrd_settings.source.kalpha_two.magnitude
+            template[
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two/@units'
+            ] = archive.data.xrd_settings.source.kalpha_two.units
+        except AttributeError as e:
+            pass
+
+        try:
+            template[
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone'
+            ] = archive.data.xrd_settings.source.ratio_kalphatwo_kalphaone
+        except AttributeError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta'] = archive.data.xrd_settings.source.kbeta.magnitude
+            template[
+                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta/@units'
+            ] = archive.data.xrd_settings.source.kbeta.units
+        except AttributeError as e:
+            pass
+
+
+def write_nx_section_and_create_file(archive: 'EntryArchive', 
+                                     logger: 'BoundLogger',
+                                     generate_nexus_file,
+                                     nxs_as_entry):
+    '''
+    Uses the archive to generate the NeXus section and .nxs file.
+
+    Args:
+        archive (EntryArchive): The archive containing the section.
+        logger (BoundLogger): A structlog logger.
+        generate_nexus_file (boolean): If True, the function will generate a .nxs file.
+        nxs_as_entry (boolean): If True, the function will generate a .nxs file
+                as a nomad entry.
+    '''
+    entry_type = archive.metadata.entry_type
+    nxdl_root, _ = dataconverter.helpers.get_nxdl_root_and_path("NXxrd_pan")
+    template = dataconverter.template.Template()
+    dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
+    connect_concepts(template, archive, scan_type='line')
+    archive_name = archive.metadata.mainfile.split('.')[0]
+    nexus_output = f'{archive_name}_output.nxs'
+
+    populate_nexus_subsection(
+        template=template,
+        app_def="NXxrd_pan",
+        archive=archive,
+        logger=logger,
+        output_file_path=nexus_output,
+        on_temp_file=generate_nexus_file,
+        nxs_as_entry=nxs_as_entry
     )
+    archive.metadata.entry_type = entry_type
