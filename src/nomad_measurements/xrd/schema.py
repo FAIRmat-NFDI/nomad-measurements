@@ -949,32 +949,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         )
         merge_sections(self, xrd, logger)
 
-    # def write_nx_section_and_create_file(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-    #     '''
-    #     Uses the archive to generate the NeXus section and .nxs file.
-
-    #     Args:
-    #         archive (EntryArchive): The archive containing the section.
-    #         logger (BoundLogger): A structlog logger.
-    #     '''
-    #     nxdl_root, _ = dataconverter.helpers.get_nxdl_root_and_path("NXxrd_pan")
-    #     template = dataconverter.template.Template()
-    #     dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
-    #     connect_concepts(template, archive, scan_type='line')
-    #     archive_name = archive.metadata.mainfile.split('.')[0]
-    #     nexus_output = f'{archive_name}_output.nxs'
-
-    #     populate_nexus_subsection(
-    #         template=template,
-    #         app_def="NXxrd_pan",
-    #         archive=archive,
-    #         logger=logger,
-    #         output_file_path=nexus_output,
-    #         on_temp_file=self.generate_nexus_file,
-    #         nxs_as_entry=True
-    #     )
-    #     archive.metadata.entry_type = "ELNXRayDiffraction"
-
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
         The normalize function of the `ELNXRayDiffraction` section.
