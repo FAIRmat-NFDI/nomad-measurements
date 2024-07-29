@@ -70,7 +70,7 @@ from fairmat_readers_xrd import (
     read_bruker_brml,
 )
 from nomad_measurements.utils import merge_sections, get_bounding_range_2d
-from nomad_measurements.xrd.nx import connect_concepts
+from nomad_measurements.xrd.nx import write_nx_section_and_create_file
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -81,11 +81,8 @@ if TYPE_CHECKING:
     )
     import pint
 
-from pynxtools.nomad.dataconverter import populate_nexus_subsection
-from pynxtools import dataconverter
 
 m_package = Package(name='nomad_xrd')
-
 
 
 def calculate_two_theta_or_q(
@@ -952,31 +949,31 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         )
         merge_sections(self, xrd, logger)
 
-    def write_nx_section_and_create_file(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-        '''
-        Uses the archive to generate the NeXus section and .nxs file.
+    # def write_nx_section_and_create_file(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+    #     '''
+    #     Uses the archive to generate the NeXus section and .nxs file.
 
-        Args:
-            archive (EntryArchive): The archive containing the section.
-            logger (BoundLogger): A structlog logger.
-        '''
-        nxdl_root, _ = dataconverter.helpers.get_nxdl_root_and_path("NXxrd_pan")
-        template = dataconverter.template.Template()
-        dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
-        connect_concepts(template, archive)
-        archive_name = archive.metadata.mainfile.split('.')[0]
-        nexus_output = f'{archive_name}_output.nxs'
+    #     Args:
+    #         archive (EntryArchive): The archive containing the section.
+    #         logger (BoundLogger): A structlog logger.
+    #     '''
+    #     nxdl_root, _ = dataconverter.helpers.get_nxdl_root_and_path("NXxrd_pan")
+    #     template = dataconverter.template.Template()
+    #     dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
+    #     connect_concepts(template, archive, scan_type='line')
+    #     archive_name = archive.metadata.mainfile.split('.')[0]
+    #     nexus_output = f'{archive_name}_output.nxs'
 
-        populate_nexus_subsection(
-            template=template,
-            app_def="NXxrd_pan",
-            archive=archive,
-            logger=logger,
-            output_file_path=nexus_output,
-            on_temp_file=self.generate_nexus_file,
-            nxs_as_entry=True
-        )
-        archive.metadata.entry_type = "ELNXRayDiffraction"
+    #     populate_nexus_subsection(
+    #         template=template,
+    #         app_def="NXxrd_pan",
+    #         archive=archive,
+    #         logger=logger,
+    #         output_file_path=nexus_output,
+    #         on_temp_file=self.generate_nexus_file,
+    #         nxs_as_entry=True
+    #     )
+    #     archive.metadata.entry_type = "ELNXRayDiffraction"
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
@@ -1000,7 +997,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         super().normalize(archive, logger)
         if not self.results:
             return
-        self.write_nx_section_and_create_file(archive, logger)
+        write_nx_section_and_create_file(
+            archive, logger, self.generate_nexus_file, nxs_as_entry=True
+        )
         self.figures = self.results[0].generate_plots(archive, logger)
 
 
