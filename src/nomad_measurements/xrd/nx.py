@@ -159,69 +159,85 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         except AttributeError as e:
             pass
 
-        # Source
-        try:
-            template[
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material'
-            ] = archive.data.xrd_settings.source.xray_tube_material
-        except AttributeError as e:
-            pass
+    # Source
+    try:
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material'
+        ] = archive.data.xrd_settings.source.xray_tube_material
+    except AttributeError as e:
+        pass
 
-        try:
-            template[
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current'
-            ] = archive.data.xrd_settings.source.xray_tube_current.magnitude
-            template[
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current/@units'
-            ] = archive.data.xrd_settings.source.xray_tube_current.units
-        except AttributeError as e:
-            pass
+    try:
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current'
+        ] = archive.data.xrd_settings.source.xray_tube_current.magnitude
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current/@units'
+        ] = archive.data.xrd_settings.source.xray_tube_current.units
+    except AttributeError as e:
+        pass
 
-        try:
-            template[
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage'
-            ] = archive.data.xrd_settings.source.xray_tube_voltage.magnitude
-            template[
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage/@units'
-            ] = archive.data.xrd_settings.source.xray_tube_voltage.units
-        except AttributeError as e:
-            pass
+    try:
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage'
+        ] = archive.data.xrd_settings.source.xray_tube_voltage.magnitude
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage/@units'
+        ] = archive.data.xrd_settings.source.xray_tube_voltage.units
+    except AttributeError as e:
+        pass
 
-        try:
-            template[
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one'
-            ] = archive.data.xrd_settings.source.kalpha_one.magnitude
-            template[
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one/@units'
-            ] = archive.data.xrd_settings.source.kalpha_one.units
-        except AttributeError as e:
-            pass
+    try:
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one'
+        ] = archive.data.xrd_settings.source.kalpha_one.magnitude
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one/@units'
+        ] = archive.data.xrd_settings.source.kalpha_one.units
+    except AttributeError as e:
+        pass
 
-        try:
-            template[
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two'
-            ] = archive.data.xrd_settings.source.kalpha_two.magnitude
-            template[
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two/@units'
-            ] = archive.data.xrd_settings.source.kalpha_two.units
-        except AttributeError as e:
-            pass
+    try:
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two'
+        ] = archive.data.xrd_settings.source.kalpha_two.magnitude
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two/@units'
+        ] = archive.data.xrd_settings.source.kalpha_two.units
+    except AttributeError as e:
+        pass
 
-        try:
-            template[
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone'
-            ] = archive.data.xrd_settings.source.ratio_kalphatwo_kalphaone
-        except AttributeError as e:
-            pass
+    try:
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone'
+        ] = archive.data.xrd_settings.source.ratio_kalphatwo_kalphaone
+    except AttributeError as e:
+        pass
 
-        try:
-            template['/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta'] = archive.data.xrd_settings.source.kbeta.magnitude
-            template[
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta/@units'
-            ] = archive.data.xrd_settings.source.kbeta.units
-        except AttributeError as e:
-            pass
-
+    try:
+        template['/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta'] = archive.data.xrd_settings.source.kbeta.magnitude
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta/@units'
+        ] = archive.data.xrd_settings.source.kbeta.units
+    except AttributeError as e:
+        pass
+    
+    # Some links to the data and concepts
+    template["//ENTRY[entry]/@default"] = "experiment_result"
+    template["/ENTRY[entry]/experiment_result/@signal"] = "intensity"
+    template["/ENTRY[entry]/experiment_result/@axes"] = "two_theta"
+    template["/ENTRY[entry]/q_data/q"] = {
+        "link": "/ENTRY[entry]/experiment_result/q_norm"
+    }
+    template["/ENTRY[entry]/q_data/intensity"] = {
+        "link": "/ENTRY[entry]/experiment_result/intensity"
+    }
+    template["/ENTRY[entry]/q_data/q_parallel"] = {
+        "link": "/ENTRY[entry]/experiment_result/q_parallel"
+    }
+    template["/ENTRY[entry]/q_data/q_perpendicular"] = {
+        "link": "/ENTRY[entry]/experiment_result/q_perpendicular"
+    },
 
 def write_nx_section_and_create_file(archive: 'EntryArchive', 
                                      logger: 'BoundLogger',
