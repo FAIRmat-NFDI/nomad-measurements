@@ -24,16 +24,6 @@ if TYPE_CHECKING:
     from nomad.datamodel.datamodel import EntryArchive
 
 
-def check_hdf5_incompatible_unit(unit: str):
-    """In hdf5 file degree symbol 'o' is incompatible getting an error.
-
-    TypeError: Object dtype dtype('O') has no native HDF5 equivalent
-    As 'O' is not a string type.
-    """
-    if unit == 'degree' or unit == 'deg':
-        return 'degree'
-    return unit
-
 # source_peak_wavelength
 def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
     """Connect the concepts between ELNXrayDiffraction and NXxrd_pan schema."""
@@ -65,25 +55,25 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
 
         try:
             template['/ENTRY[entry]/experiment_result/two_theta'] = archive.data.results[0].two_theta.magnitude
-            template['/ENTRY[entry]/experiment_result/two_theta/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].two_theta.units)
+            template['/ENTRY[entry]/experiment_result/two_theta/@units'] = archive.data.results[0].two_theta.units.__str__()
         except AttributeError as e:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_result/omega'] = archive.data.results[0].omega.magnitude
-            template['/ENTRY[entry]/experiment_result/omega/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].omega.units)
+            template['/ENTRY[entry]/experiment_result/omega/@units'] = archive.data.results[0].omega.units.__str__()
         except AttributeError as e:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_result/chi'] = archive.data.results[0].chi.magnitude
-            template['/ENTRY[entry]/experiment_result/chi/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].chi.units)
+            template['/ENTRY[entry]/experiment_result/chi/@units'] = archive.data.results[0].chi.units.__str__()
         except AttributeError as e:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_result/phi'] = archive.data.results[0].phi.magnitude
-            template['/ENTRY[entry]/experiment_result/phi/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].phi.units)
+            template['/ENTRY[entry]/experiment_result/phi/@units'] = archive.data.results[0].phi.units.__str__()
         except AttributeError as e:
             pass
 
@@ -107,25 +97,25 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
 
         try:
             template['/ENTRY[entry]/experiment_result/two_theta'] = archive.data.results[0].two_theta.magnitude
-            template['/ENTRY[entry]/experiment_result/two_theta/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].two_theta.units)
+            template['/ENTRY[entry]/experiment_result/two_theta/@units'] = archive.data.results[0].two_theta.units.__str__()
         except AttributeError as e:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_result/omega'] = archive.data.results[0].omega.magnitude
-            template['/ENTRY[entry]/experiment_result/omega/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].omega.units)
+            template['/ENTRY[entry]/experiment_result/omega/@units'] = archive.data.results[0].omega.units.__str__()
         except AttributeError as e:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_result/chi'] = archive.data.results[0].chi.magnitude
-            template['/ENTRY[entry]/experiment_result/chi/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].chi.units)
+            template['/ENTRY[entry]/experiment_result/chi/@units'] = archive.data.results[0].chi.units.__str__()
         except AttributeError as e:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_result/phi'] = archive.data.results[0].phi.magnitude
-            template['/ENTRY[entry]/experiment_result/phi/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].phi.units)
+            template['/ENTRY[entry]/experiment_result/phi/@units'] = archive.data.results[0].phi.units.__str__()
         except AttributeError as e:
             pass
 
@@ -143,19 +133,19 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
 
         try:
             template['/ENTRY[entry]/experiment_result/q_parallel'] = archive.data.results[0].q_parallel,
-            template['/ENTRY[entry]/experiment_result/q_parallel/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].q_parallel.units)
+            template['/ENTRY[entry]/experiment_result/q_parallel/@units'] = archive.data.results[0].q_parallel.units.__str__()
         except AttributeError as e:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_result/q_perpendicular'] = archive.data.results[0].q_perpendicular.magnitude
-            template['/ENTRY[entry]/experiment_result/q_perpendicular/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].q_perpendicular.units)
+            template['/ENTRY[entry]/experiment_result/q_perpendicular/@units'] = archive.data.results[0].q_perpendicular.units.__str__()
         except AttributeError as e:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_result/q_norm'] = archive.data.results[0].q_norm.magnitude
-            template['/ENTRY[entry]/experiment_result/q_norm/@units'] = check_hdf5_incompatible_unit(archive.data.results[0].q_norm.units)
+            template['/ENTRY[entry]/experiment_result/q_norm/@units'] = archive.data.results[0].q_norm.units.__str__()
         except AttributeError as e:
             pass
 
@@ -173,7 +163,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         ] = archive.data.xrd_settings.source.xray_tube_current.magnitude
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current/@units'
-        ] = archive.data.xrd_settings.source.xray_tube_current.units
+        ] = archive.data.xrd_settings.source.xray_tube_current.units.__str__()
     except AttributeError as e:
         pass
 
@@ -183,7 +173,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         ] = archive.data.xrd_settings.source.xray_tube_voltage.magnitude
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage/@units'
-        ] = archive.data.xrd_settings.source.xray_tube_voltage.units
+        ] = archive.data.xrd_settings.source.xray_tube_voltage.units.__str__()
     except AttributeError as e:
         pass
 
@@ -193,7 +183,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         ] = archive.data.xrd_settings.source.kalpha_one.magnitude
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one/@units'
-        ] = archive.data.xrd_settings.source.kalpha_one.units
+        ] = archive.data.xrd_settings.source.kalpha_one.units.__str__()
     except AttributeError as e:
         pass
 
@@ -203,7 +193,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         ] = archive.data.xrd_settings.source.kalpha_two.magnitude
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two/@units'
-        ] = archive.data.xrd_settings.source.kalpha_two.units
+        ] = archive.data.xrd_settings.source.kalpha_two.units.__str__()
     except AttributeError as e:
         pass
 
@@ -218,11 +208,11 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         template['/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta'] = archive.data.xrd_settings.source.kbeta.magnitude
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta/@units'
-        ] = archive.data.xrd_settings.source.kbeta.units
+        ] = archive.data.xrd_settings.source.kbeta.units.__str__()
     except AttributeError as e:
         pass
     
-    # Some links to the data and concepts
+    # Links to the data and concepts
     template["//ENTRY[entry]/@default"] = "experiment_result"
     template["/ENTRY[entry]/experiment_result/@signal"] = "intensity"
     template["/ENTRY[entry]/experiment_result/@axes"] = "two_theta"
@@ -237,9 +227,9 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
     }
     template["/ENTRY[entry]/q_data/q_perpendicular"] = {
         "link": "/ENTRY[entry]/experiment_result/q_perpendicular"
-    },
+    }
 
-def write_nx_section_and_create_file(archive: 'EntryArchive', 
+def write_nx_section_and_create_file(archive: 'EntryArchive',
                                      logger: 'BoundLogger',
                                      generate_nexus_file,
                                      nxs_as_entry):
@@ -271,3 +261,4 @@ def write_nx_section_and_create_file(archive: 'EntryArchive',
         nxs_as_entry=nxs_as_entry
     )
     archive.metadata.entry_type = entry_type
+    
