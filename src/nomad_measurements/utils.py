@@ -39,36 +39,37 @@ def get_reference(upload_id: str, entry_id: str) -> str:
 
 def get_entry_id_from_file_name(file_name: str, archive: 'EntryArchive') -> str:
     from nomad.utils import hash
+
     return hash(archive.metadata.upload_id, file_name)
 
 
 def create_archive(
-        entity: 'ArchiveSection',
-        archive: 'EntryArchive',
-        file_name: str,
-    ) -> str:
+    entity: 'ArchiveSection',
+    archive: 'EntryArchive',
+    file_name: str,
+) -> str:
     import json
     from nomad.datamodel.context import ClientContext
+
     entity_entry = entity.m_to_dict(with_root_def=True)
     if isinstance(archive.m_context, ClientContext):
         with open(file_name, 'w') as outfile:
-            json.dump({"data": entity_entry}, outfile, indent=4)
+            json.dump({'data': entity_entry}, outfile, indent=4)
         return os.path.abspath(file_name)
     if not archive.m_context.raw_path_exists(file_name):
         with archive.m_context.raw_file(file_name, 'w') as outfile:
-            json.dump({"data": entity_entry}, outfile)
+            json.dump({'data': entity_entry}, outfile)
         archive.m_context.process_updated_raw_file(file_name)
     return get_reference(
-        archive.metadata.upload_id,
-        get_entry_id_from_file_name(file_name, archive)
+        archive.metadata.upload_id, get_entry_id_from_file_name(file_name, archive)
     )
 
 
 def merge_sections(
-        section: 'ArchiveSection',
-        update: 'ArchiveSection',
-        logger: 'BoundLogger'=None,
-    ) -> None:
+    section: 'ArchiveSection',
+    update: 'ArchiveSection',
+    logger: 'BoundLogger' = None,
+) -> None:
     if update is None:
         return
     if section is None:
@@ -85,8 +86,10 @@ def merge_sections(
         if not section.m_is_set(quantity):
             section.m_set(quantity, update.m_get(quantity))
         elif (
-            quantity.is_scalar and section.m_get(quantity) != update.m_get(quantity)
-            or quantity.repeats and (section.m_get(quantity) != update.m_get(quantity)).any()
+            quantity.is_scalar
+            and section.m_get(quantity) != update.m_get(quantity)
+            or quantity.repeats
+            and (section.m_get(quantity) != update.m_get(quantity)).any()
         ):
             warning = f'Merging sections with different values for quantity "{name}".'
             if logger:
@@ -106,7 +109,9 @@ def merge_sections(
                     logger,
                 )
         elif update.m_sub_section_count(sub_section_def) > 0:
-            warning = f'Merging sections with different number of "{name}" sub sections.'
+            warning = (
+                f'Merging sections with different number of "{name}" sub sections.'
+            )
             if logger:
                 logger.warning(warning)
             else:
@@ -114,7 +119,7 @@ def merge_sections(
 
 
 def get_bounding_range_2d(ax1, ax2):
-    '''
+    """
     Calculates the range of the smallest rectangular grid that can contain arbitrarily
     distributed 2D data.
 
@@ -124,23 +129,23 @@ def get_bounding_range_2d(ax1, ax2):
 
     Returns:
         (list, list): ax1_range, ax2_range
-    '''
+    """
     ax1_range_length = np.max(ax1) - np.min(ax1)
     ax2_range_length = np.max(ax2) - np.min(ax2)
 
     if ax1_range_length > ax2_range_length:
-        ax1_range = [np.min(ax1),np.max(ax1)]
-        ax2_mid = np.min(ax2) + ax2_range_length/2
+        ax1_range = [np.min(ax1), np.max(ax1)]
+        ax2_mid = np.min(ax2) + ax2_range_length / 2
         ax2_range = [
-            ax2_mid-ax1_range_length/2,
-            ax2_mid+ax1_range_length/2,
+            ax2_mid - ax1_range_length / 2,
+            ax2_mid + ax1_range_length / 2,
         ]
     else:
-        ax2_range = [np.min(ax2),np.max(ax2)]
-        ax1_mid = np.min(ax1) + ax1_range_length/2
+        ax2_range = [np.min(ax2), np.max(ax2)]
+        ax1_mid = np.min(ax1) + ax1_range_length / 2
         ax1_range = [
-            ax1_mid-ax2_range_length/2,
-            ax1_mid+ax2_range_length/2,
+            ax1_mid - ax2_range_length / 2,
+            ax1_mid + ax2_range_length / 2,
         ]
 
     return ax1_range, ax2_range
