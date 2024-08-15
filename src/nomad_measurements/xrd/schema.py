@@ -84,10 +84,11 @@ if TYPE_CHECKING:
 m_package = Package(name='nomad_xrd')
 
 
+
 def calculate_two_theta_or_q(
         wavelength: 'pint.Quantity',
         q: 'pint.Quantity'=None,
-        two_theta: 'pint.Quantity'=None,
+        two_theta: 'pint.Quantity'=None
     ) -> tuple['pint.Quantity', 'pint.Quantity']:
     '''
     Calculate the two-theta array from the scattering vector (q) or vice-versa,
@@ -254,7 +255,6 @@ class XRDSettings(ArchiveSection):
     '''
     Section containing the settings for an XRD measurement.
     '''
-
     source = SubSection(section_def=XRayTubeSource)
 
 
@@ -476,7 +476,7 @@ class XRDResult1D(XRDResult):
         )
         fig_line_log.update_traces(
             hovertemplate=(
-                '<i>Intensity</i>: %{y:.2f}<br>' 
+                '<i>Intensity</i>: %{y:.2f}<br>'
                 '|<em>q</em>|: %{x} Å<sup>-1</sup>'
             ),
         )
@@ -731,12 +731,10 @@ class XRDResultRSM(XRDResult):
                     )
                     break
 
-
 class XRayDiffraction(Measurement):
     '''
     Generic X-ray diffraction measurement.
     '''
-
     m_def = Section()
     method = Quantity(
         type=str,
@@ -818,7 +816,7 @@ class XRayDiffraction(Measurement):
                     xrd=XRDMethod(
                         diffraction_method_name=self.diffraction_method_name
                     )
-                ),
+                )
             )
 
 
