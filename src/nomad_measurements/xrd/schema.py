@@ -188,7 +188,6 @@ class XRayTubeSource(ArchiveSection):
     '''
     X-ray tube source used in conventional diffractometers.
     '''
-
     xray_tube_material = Quantity(
         type=MEnum(sorted(['Cu', 'Cr', 'Mo', 'Fe', 'Ag', 'In', 'Ga'])),
         description='Type of the X-ray tube',
