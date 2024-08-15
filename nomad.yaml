@@ -5,6 +5,9 @@ normalize:
 plugins:
   include: 
     - parsers/nomad_measurements/xrd
+    - pynxtools.nomad.entrypoints:nexus_data_converter
+    - pynxtools.nomad.entrypoints:nexus_parser
+    - pynxtools.nomad.entrypoints:nexus_schema
   options:
     parsers/nomad_measurements/xrd:
       python_package: nomad_measurements.xrd.parser
