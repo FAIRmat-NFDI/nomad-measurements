@@ -45,7 +45,6 @@ def parsed_archive(request):
     Sets up data for testing and cleans up after the test.
     """
     rel_file = os.path.join('tests', 'data', request.param)
-    
     file_archive = parse(rel_file)[0]
     measurement = os.path.join(
         'tests', 'data', '.'.join(request.param.split('.')[:-1]) + '.archive.json'
@@ -58,7 +57,6 @@ def parsed_archive(request):
     if os.path.exists(measurement):
         os.remove(measurement)
     delete_nx_file('tests/data')   
-    
 
 
 def test_normalize_all(parsed_archive):
