@@ -18,9 +18,7 @@
 import re
 import os
 import json
-from typing import (
-    TYPE_CHECKING
-)
+from typing import TYPE_CHECKING
 from nomad.datamodel.metainfo.basesections import (
     Measurement,
     ReadableIdentifiers,
@@ -57,25 +55,25 @@ m_package = Package(name='nomad-measurements Transmission')
 
 
 class Operator(ArchiveSection):
-    name=Quantity(
+    name = Quantity(
         type=str,
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.StringEditQuantity,
         ),
     )
-    affiliation=Quantity(
+    affiliation = Quantity(
         type=str,
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.StringEditQuantity,
         ),
     )
-    address=Quantity(
+    address = Quantity(
         type=str,
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.StringEditQuantity,
         ),
     )
-    email=Quantity(
+    email = Quantity(
         type=str,
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.StringEditQuantity,
@@ -107,7 +105,9 @@ class Transmission(Measurement):
             if self.operator.name:
                 eln_dict['/ENTRY[entry]/operator/name'] = self.name
             if self.operator.affiliation:
-                eln_dict['/ENTRY[entry]/operator/affiliation'] = self.operator.affiliation
+                eln_dict['/ENTRY[entry]/operator/affiliation'] = (
+                    self.operator.affiliation
+                )
             if self.operator.address:
                 eln_dict['/ENTRY[entry]/operator/address'] = self.operator.address
             if self.operator.email:
@@ -128,7 +128,7 @@ class Transmission(Measurement):
                 os.path.join(raw_path, self.data_file),
                 os.path.join(raw_path, eln_filename),
             ],
-            'output': os.path.join(raw_path, output)
+            'output': os.path.join(raw_path, output),
         }
         try:
             convert(**converter_params)

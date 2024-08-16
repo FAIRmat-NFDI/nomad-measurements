@@ -15,9 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from typing import (
-    TYPE_CHECKING
-)
+from typing import TYPE_CHECKING
 from nomad.metainfo import (
     Quantity,
 )
@@ -43,12 +41,11 @@ class RawFileTransmissionData(EntryData):
         type=ELNTransmission,
         a_eln=ELNAnnotation(
             component='ReferenceEditQuantity',
-        )
+        ),
     )
 
 
 class TransmissionParser(MatchingParser):
-
     def __init__(self):
         super().__init__(
             code_name='XRD Parser',
@@ -59,5 +56,7 @@ class TransmissionParser(MatchingParser):
         entry = ELNTransmission.m_from_dict(ELNTransmission.m_def.a_template)
         entry.data_file = data_file
         file_name = f'{data_file[:-6]}.archive.json'
-        archive.data = RawFileTransmissionData(measurement=create_archive(entry,archive,file_name))
+        archive.data = RawFileTransmissionData(
+            measurement=create_archive(entry, archive, file_name)
+        )
         archive.metadata.entry_name = data_file[:-4] + ' data file'

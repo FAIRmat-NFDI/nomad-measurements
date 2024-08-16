@@ -15,9 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from typing import (
-    TYPE_CHECKING
-)
+from typing import TYPE_CHECKING
 from nomad.metainfo import (
     Quantity,
 )
@@ -39,32 +37,36 @@ if TYPE_CHECKING:
 
 
 class RawFileXRDData(EntryData):
-    '''
+    """
     Section for a XRD data file.
-    '''
+    """
+
     measurement = Quantity(
         type=ELNXRayDiffraction,
         a_eln=ELNAnnotation(
             component='ReferenceEditQuantity',
-        )
+        ),
     )
 
 
 class XRDParser(MatchingParser):
-    '''
+    """
     Parser for matching XRD files and creating instances of ELNXRayDiffraction
-    '''
+    """
+
     def __init__(self):
         super().__init__(
             code_name='XRD Parser',
         )
 
     def parse(
-            self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None
-        ) -> None:
+        self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None
+    ) -> None:
         data_file = mainfile.split('/')[-1]
         entry = ELNXRayDiffraction.m_from_dict(ELNXRayDiffraction.m_def.a_template)
         entry.data_file = data_file
         file_name = f'{"".join(data_file.split(".")[:-1])}.archive.json'
-        archive.data = RawFileXRDData(measurement=create_archive(entry,archive,file_name))
+        archive.data = RawFileXRDData(
+            measurement=create_archive(entry, archive, file_name)
+        )
         archive.metadata.entry_name = f'{data_file} data file'
