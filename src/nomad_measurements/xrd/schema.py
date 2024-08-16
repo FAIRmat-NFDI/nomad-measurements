@@ -20,11 +20,13 @@ from typing import (
     Dict,
     Any,
     Callable,
+    Optional,
 )
 import numpy as np
 import plotly.express as px
 from scipy.interpolate import griddata
 
+from nomad.datamodel.hdf5 import HDF5Reference
 from nomad.datamodel.metainfo.basesections import (
     Measurement,
     MeasurementResult,
@@ -59,6 +61,7 @@ from nomad.datamodel.metainfo.plot import (
     PlotSection,
     PlotlyFigure,
 )
+
 # from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
 from nomad_measurements import (
     NOMADMeasurementsCategory,
@@ -84,13 +87,12 @@ if TYPE_CHECKING:
 m_package = Package(name='nomad_xrd')
 
 
-
 def calculate_two_theta_or_q(
-        wavelength: 'pint.Quantity',
-        q: 'pint.Quantity'=None,
-        two_theta: 'pint.Quantity'=None
-    ) -> tuple['pint.Quantity', 'pint.Quantity']:
-    '''
+    wavelength: 'pint.Quantity',
+    q: Optional[np.ndarray] = None,
+    two_theta: Optional[np.ndarray] = None,
+) -> tuple['pint.Quantity', 'pint.Quantity']:
+    """
     Calculate the two-theta array from the scattering vector (q) or vice-versa,
     given the wavelength of the X-ray source.
 
@@ -101,18 +103,20 @@ def calculate_two_theta_or_q(
 
     Returns:
        tuple[pint.Quantity, pint.Quantity]: Tuple of scattering vector, two-theta angles.
-    '''
+    """
     if q is not None and two_theta is None:
-        return q, 2 * np.arcsin(q * wavelength / (4 * np.pi))
+        return q, 2 * np.arcsin(q * wavelength.magnitude / (4 * np.pi))
     if two_theta is not None and q is None:
-        return (4 * np.pi / wavelength) * np.sin(two_theta.to('radian') / 2), two_theta
+        return (4 * np.pi / wavelength.magnitude) * np.sin(
+            two_theta * np.pi / 180.0
+        ), two_theta
     return q, two_theta
 
 
 def calculate_q_vectors_RSM(
     wavelength: 'pint.Quantity',
-    two_theta: 'pint.Quantity',
-    omega: 'pint.Quantity',
+    two_theta: np.ndarray,
+    omega: np.ndarray,
 ):
     """
     Calculate the q-vectors for RSM scans in coplanar configuration.
@@ -125,24 +129,18 @@ def calculate_q_vectors_RSM(
     Returns:
         tuple[pint.Quantity, pint.Quantity]: Tuple of q-vectors.
     """
-    omega = omega[:, None] * np.ones_like(two_theta.magnitude)
+    omega = omega[:, None] * np.ones_like(two_theta)
     qx = (
         2
         * np.pi
-        / wavelength
-        * (
-            np.cos(two_theta.to('radian') - omega.to('radian'))
-            - np.cos(omega.to('radian'))
-        )
+        / wavelength.magnitude
+        * (np.cos((two_theta - omega) * np.pi / 180.0) - np.cos(omega * np.pi / 180.0))
     )
     qz = (
         2
         * np.pi
         / wavelength
-        * (
-            np.sin(two_theta.to('radian') - omega.to('radian'))
-            + np.sin(omega.to('radian'))
-        )
+        * (np.sin((two_theta - omega) * np.pi / 180.0) + np.sin(omega * np.pi / 180.0))
     )
 
     q_parallel = qx
@@ -152,7 +150,7 @@ def calculate_q_vectors_RSM(
 
 
 def estimate_kalpha_wavelengths(source_material):
-    '''
+    """
     Estimate the K-alpha1 and K-alpha2 wavelengths of an X-ray source given the material
     of the source.
 
@@ -163,7 +161,7 @@ def estimate_kalpha_wavelengths(source_material):
     Returns:
         Tuple[float, float]: Estimated K-alpha1 and K-alpha2 wavelengths of the X-ray
         source, in angstroms.
-    '''
+    """
     # Dictionary of K-alpha1 and K-alpha2 wavelengths for various X-ray source materials,
     # in angstroms
     kalpha_wavelengths = {
@@ -173,11 +171,13 @@ def estimate_kalpha_wavelengths(source_material):
         'Mo': (0.7093, 0.7136),
         'Ag': (0.5594, 0.5638),
         'In': (0.6535, 0.6577),
-        'Ga': (1.2378, 1.2443)
+        'Ga': (1.2378, 1.2443),
     }
 
     try:
-        kalpha_one_wavelength, kalpha_two_wavelength = kalpha_wavelengths[source_material]
+        kalpha_one_wavelength, kalpha_two_wavelength = kalpha_wavelengths[
+            source_material
+        ]
     except KeyError as exc:
         raise ValueError('Unknown X-ray source material.') from exc
 
@@ -185,9 +185,10 @@ def estimate_kalpha_wavelengths(source_material):
 
 
 class XRayTubeSource(ArchiveSection):
-    '''
+    """
     X-ray tube source used in conventional diffractometers.
-    '''
+    """
+
     xray_tube_material = Quantity(
         type=MEnum(sorted(['Cu', 'Cr', 'Mo', 'Fe', 'Ag', 'In', 'Ga'])),
         description='Type of the X-ray tube',
@@ -235,14 +236,14 @@ class XRayTubeSource(ArchiveSection):
     )
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-        '''
+        """
         The normalize function of the `XRayTubeSource` section.
 
         Args:
             archive (EntryArchive): The archive containing the section that is being
             normalized.
             logger (BoundLogger): A structlog logger.
-        '''
+        """
         super().normalize(archive, logger)
         if self.kalpha_one is None and self.xray_tube_material is not None:
             self.kalpha_one, self.kalpha_two = estimate_kalpha_wavelengths(
@@ -251,9 +252,10 @@ class XRayTubeSource(ArchiveSection):
 
 
 class XRDSettings(ArchiveSection):
-    '''
+    """
     Section containing the settings for an XRD measurement.
-    '''
+    """
+
     source = SubSection(section_def=XRayTubeSource)
 
 
@@ -264,6 +266,8 @@ class XRDResult(MeasurementResult):
 
     m_def = Section()
 
+    # Discussion: array_index is not needed or? Because now the plot visualization 
+    # is comming from hdf5 file
     array_index = Quantity(
         type=np.dtype(np.float64),
         shape=['*'],
@@ -274,41 +278,35 @@ class XRDResult(MeasurementResult):
         a_display={'visible': False},
     )
     intensity = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        unit='dimensionless',
+        type=HDF5Reference,
         description='The count at each 2-theta value, dimensionless',
-        a_plot={'x': 'array_index', 'y': 'intensity'},
     )
     two_theta = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        unit='deg',
+        type=HDF5Reference,
         description='The 2-theta range of the diffractogram',
-        a_plot={'x': 'array_index', 'y': 'two_theta'},
+        unit='deg',
     )
     q_norm = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
+        type=HDF5Reference,
+        # shape=['*'],
         unit='meter**(-1)',
         description='The norm of scattering vector *Q* of the diffractogram',
-        a_plot={'x': 'array_index', 'y': 'q_norm'},
     )
     omega = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
+        type=HDF5Reference,
+        # shape=['*'],
         unit='deg',
         description='The omega range of the diffractogram',
     )
     phi = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
+        type=HDF5Reference,
+        # shape=['*'],
         unit='deg',
         description='The phi range of the diffractogram',
     )
     chi = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
+        type=HDF5Reference,
+        # shape=['*'],
         unit='deg',
         description='The chi range of the diffractogram',
     )
@@ -353,8 +351,10 @@ class XRDResult1D(XRDResult):
         if self.two_theta is None or self.intensity is None:
             return plots
 
-        x = self.two_theta.to('degree').magnitude
-        y = self.intensity.magnitude
+        # x = self.two_theta.to('degree').magnitude
+        # y = self.intensity.magnitude
+        x = HDF5Reference.read_dataset(archive, self.two_theta)
+        y = HDF5Reference.read_dataset(archive, self.intensity)
 
         fig_line_linear = px.line(
             x=x,
@@ -475,8 +475,7 @@ class XRDResult1D(XRDResult):
         )
         fig_line_log.update_traces(
             hovertemplate=(
-                '<i>Intensity</i>: %{y:.2f}<br>'
-                '|<em>q</em>|: %{x} Å<sup>-1</sup>'
+                '<i>Intensity</i>: %{y:.2f}<br>' '|<em>q</em>|: %{x} Å<sup>-1</sup>'
             ),
         )
         plot_json = fig_line_log.to_plotly_json()
@@ -509,36 +508,30 @@ class XRDResult1D(XRDResult):
             else:
                 self.name = 'XRD Scan Result'
         if self.source_peak_wavelength is not None:
-            self.q_norm, self.two_theta = calculate_two_theta_or_q(
+            q_norm, two_theta = calculate_two_theta_or_q(
                 wavelength=self.source_peak_wavelength,
-                two_theta=self.two_theta,
-                q=self.q_norm,
+                two_theta=xrd_dict.get('2Theta', None),
+                q=xrd_dict.get('q_norm', None),
             )
+            xrd_dict['two_theta'] = two_theta
+            xrd_dict['q_norm'] = q_norm
 
 
 class XRDResultRSM(XRDResult):
     """
-    Section containing the result of a Reciprocal Space Map (RSM) scan.
+    Section containing the result of a Recip rocal Space Map (RSM) scan.
     """
 
     m_def = Section()
     q_parallel = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*', '*'],
+        type=HDF5Reference,
         unit='meter**(-1)',
         description='The scattering vector *Q_parallel* of the diffractogram',
     )
     q_perpendicular = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*', '*'],
+        type=HDF5Reference,
         unit='meter**(-1)',
         description='The scattering vector *Q_perpendicular* of the diffractogram',
-    )
-    intensity = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*', '*'],
-        unit='dimensionless',
-        description='The count at each position, dimensionless',
     )
 
     def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
@@ -559,9 +552,12 @@ class XRDResultRSM(XRDResult):
 
         # Plot for 2theta-omega RSM
         # Zero values in intensity become -inf in log scale and are not plotted
-        x = self.omega.to('degree').magnitude
-        y = self.two_theta.to('degree').magnitude
-        z = self.intensity.magnitude
+        # x = self.omega.to('degree').magnitude
+        # y = self.two_theta.to('degree').magnitude
+        # z = self.intensity.magnitude
+        x = HDF5Reference.read_dataset(archive, self.omega)
+        y = HDF5Reference.read_dataset(archive, self.two_theta)
+        z = HDF5Reference.read_dataset(archive, self.intensity)
         log_z = np.log10(z)
         x_range, y_range = get_bounding_range_2d(x, y)
 
@@ -583,10 +579,10 @@ class XRDResultRSM(XRDResult):
         )
         fig_2theta_omega.update_layout(
             title={
-                    'text': 'Reciprocal Space Map over 2<i>θ</i>-<i>ω</i>',
-                    'x': 0.5,
-                    'xanchor': 'center',
-                },
+                'text': 'Reciprocal Space Map over 2<i>θ</i>-<i>ω</i>',
+                'x': 0.5,
+                'xanchor': 'center',
+            },
             xaxis_title='<i>ω</i> (°)',
             yaxis_title='2<i>θ</i> (°)',
             xaxis=dict(
@@ -669,8 +665,8 @@ class XRDResultRSM(XRDResult):
                     'x': 0.5,
                     'xanchor': 'center',
                 },
-                xaxis_title='<i>q</i><sub>&#x2016;</sub> (Å<sup>-1</sup>)', # q ‖
-                yaxis_title='<i>q</i><sub>&#x22A5;</sub> (Å<sup>-1</sup>)', # q ⊥
+                xaxis_title='<i>q</i><sub>&#x2016;</sub> (Å<sup>-1</sup>)',  # q ‖
+                yaxis_title='<i>q</i><sub>&#x22A5;</sub> (Å<sup>-1</sup>)',  # q ⊥
                 xaxis=dict(
                     autorange=False,
                     fixedrange=False,
@@ -716,24 +712,29 @@ class XRDResultRSM(XRDResult):
         super().normalize(archive, logger)
         if self.name is None:
             self.name = 'RSM Scan Result'
-        var_axis = 'omega'
         if self.source_peak_wavelength is not None:
-            for var_axis in ['omega', 'chi', 'phi']:
+            for var_axis in ['Omega', 'Chi', 'Phi']:
                 if (
-                    self[var_axis] is not None
-                    and len(np.unique(self[var_axis].magnitude)) > 1
+                    xrd_dict[var_axis] is not None
+                    and len(np.unique(xrd_dict[var_axis])) > 1
                 ):
-                    self.q_parallel, self.q_perpendicular = calculate_q_vectors_RSM(
+                    (
+                        xrd_dict['q_parallel'],
+                        xrd_dict['q_perpendicular'],
+                    ) = calculate_q_vectors_RSM(
                         wavelength=self.source_peak_wavelength,
-                        two_theta=self.two_theta * np.ones_like(self.intensity),
-                        omega=self[var_axis],
+                        two_theta=xrd_dict['2Theta']
+                        * np.ones_like(xrd_dict['intensity']),
+                        omega=xrd_dict[var_axis],
                     )
                     break
 
+
 class XRayDiffraction(Measurement):
-    '''
+    """
     Generic X-ray diffraction measurement.
-    '''
+    """
+
     m_def = Section()
     method = Quantity(
         type=str,
@@ -754,7 +755,7 @@ class XRayDiffraction(Measurement):
                 'Reciprocal Space Mapping (RSM)',
             ]
         ),
-        description='''
+        description="""
         The diffraction method used to obtain the diffraction pattern.
         | X-ray Diffraction Method                                   | Description                                                                                                                                                                                                 |
         |------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -765,20 +766,20 @@ class XRayDiffraction(Measurement):
         | **X-ray Reflectivity (XRR)**                               | Used to study thin film layers, interfaces, and multilayers. Provides info on film thickness, density, and roughness.                                                                                       |
         | **Grazing Incidence X-ray Diffraction (GIXRD)**            | Primarily used for the analysis of thin films with the incident beam at a fixed shallow angle.                                                                                                              |
         | **Reciprocal Space Mapping (RSM)**                         | High-resolution XRD method to measure diffracted intensity in a 2-dimensional region of reciprocal space. Provides information about the real-structure (lattice mismatch, domain structure, stress and defects) in single-crystalline and epitaxial samples.|
-        ''',
+        """,
     )
     results = Measurement.results.m_copy()
     results.section_def = XRDResult
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-        '''
+        """
         The normalize function of the `XRayDiffraction` section.
 
         Args:
             archive (EntryArchive): The archive containing the section that is being
             normalized.
             logger (BoundLogger): A structlog logger.
-        '''
+        """
         super().normalize(archive, logger)
         if (
             self.xrd_settings is not None
@@ -796,13 +797,13 @@ class XRayDiffraction(Measurement):
         if not archive.results.properties.structural:
             diffraction_patterns = []
             for result in self.results:
-                if len(result.intensity.shape) == 1:
+                if len(xrd_dict['intensity']) == 1:
                     diffraction_patterns.append(
                         DiffractionPattern(
                             incident_beam_wavelength=result.source_peak_wavelength,
-                            two_theta_angles=result.two_theta,
-                            intensity=result.intensity,
-                            q_vector=result.q_norm,
+                            two_theta_angles=xrd_dict.get('2Theta', None),
+                            intensity=xrd_dict.get('intensity', None),
+                            q_vector=xrd_dict.get('q_norm', None),
                         )
                     )
             archive.results.properties.structural = StructuralProperties(
@@ -812,10 +813,8 @@ class XRayDiffraction(Measurement):
             archive.results.method = Method(
                 method_name='XRD',
                 measurement=MeasurementMethod(
-                    xrd=XRDMethod(
-                        diffraction_method_name=self.diffraction_method_name
-                    )
-                )
+                    xrd=XRDMethod(diffraction_method_name=self.diffraction_method_name)
+                ),
             )
 
 
@@ -825,6 +824,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     common XRD file types.
     """
 
+    # Remove the parameters
     m_def = Section(
         categories=[NOMADMeasurementsCategory],
         label='X-Ray Diffraction (XRD)',
@@ -849,9 +849,11 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
     )
+    # Discussion: This quantity is not needed anymore or?
     generate_nexus_file = Quantity(
         type=bool,
         description='Whether or not to generate a NeXus output file (if possible).',
+        default=True,
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.BoolEditQuantity,
             label='Generate NeXus file',
@@ -874,48 +876,24 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         return None, None
 
     def write_xrd_data(
-            self,
-            xrd_dict: Dict[str, Any],
-            archive: 'EntryArchive',
-            logger: 'BoundLogger',
-        ) -> None:
-        '''
+        self,
+        xrd_dict: Dict[str, Any],
+        archive: 'EntryArchive',
+        logger: 'BoundLogger',
+    ) -> None:
+        """
         Write method for populating the `ELNXRayDiffraction` section from a dict.
 
         Args:
             xrd_dict (Dict[str, Any]): A dictionary with the XRD data.
             archive (EntryArchive): The archive containing the section.
             logger (BoundLogger): A structlog logger.
-        '''
+        """
         metadata_dict: dict = xrd_dict.get('metadata', {})
         source_dict: dict = metadata_dict.get('source', {})
-
         scan_type = metadata_dict.get('scan_type', None)
-        if scan_type == 'line':
-            result = XRDResult1D(
-                intensity=xrd_dict.get('intensity', None),
-                two_theta=xrd_dict.get('2Theta', None),
-                omega=xrd_dict.get('Omega', None),
-                chi=xrd_dict.get('Chi', None),
-                phi=xrd_dict.get('Phi', None),
-                scan_axis=metadata_dict.get('scan_axis', None),
-                integration_time=xrd_dict.get('countTime', None),
-            )
-            result.normalize(archive, logger)
-
-        elif scan_type == 'rsm':
-            result = XRDResultRSM(
-                intensity=xrd_dict.get('intensity', None),
-                two_theta=xrd_dict.get('2Theta', None),
-                omega=xrd_dict.get('Omega', None),
-                chi=xrd_dict.get('Chi', None),
-                phi=xrd_dict.get('Phi', None),
-                scan_axis=metadata_dict.get('scan_axis', None),
-                integration_time=xrd_dict.get('countTime', None),
-            )
-            result.normalize(archive, logger)
-        else:
-            raise NotImplementedError(f'Scan type `{scan_type}` is not supported.')
+        xrd_dict["eln_dict"] = {}
+        eln_dict: dict[str, Any] = xrd_dict["eln_dict"]
 
         source = XRayTubeSource(
             xray_tube_material=source_dict.get('anode_material', None),
@@ -928,9 +906,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         )
         source.normalize(archive, logger)
 
-        xrd_settings = XRDSettings(
-            source=source
-        )
+        xrd_settings = XRDSettings(source=source)
         xrd_settings.normalize(archive, logger)
 
         samples = []
@@ -941,11 +917,63 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             sample.normalize(archive, logger)
             samples.append(sample)
 
+        # ELN Data collection
+        eln_dict['method'] = XRayDiffraction.method.default
+        eln_dict['diffraction_method_name'] = self.diffraction_method_name
+        eln_dict['xray_tube_material'] = source.xray_tube_material
+        eln_dict['xray_tube_current'] = source.xray_tube_current.magnitude
+        eln_dict['xray_tube_current/unit'] = source.xray_tube_current.units.__str__()
+        eln_dict['xray_tube_voltage'] = source.xray_tube_voltage.magnitude
+        eln_dict['xray_tube_voltage/unit'] = source.xray_tube_voltage.units.__str__()
+        eln_dict['kalpha_one'] = source.kalpha_one.magnitude
+        eln_dict['kalpha_one/unit'] = source.kalpha_one.units.__str__()
+        eln_dict['kalpha_two'] = source.kalpha_two.magnitude
+        eln_dict['kalpha_two/unit'] = source.kalpha_two.units.__str__()
+        eln_dict[
+            'ratio_kalphatwo_kalphaone'
+        ] = source.ratio_kalphatwo_kalphaone.magnitude
+        eln_dict['kbeta'] = source.kbeta.magnitude
+        eln_dict['kbeta/unit'] = source.kbeta.units.__str__()
+
+        nx_out_f = archive.metadata.mainfile.split('.')[0] + '.h5'
+        result = None
+        if scan_type == 'line':
+            result = XRDResult1D(
+                intensity=f'{nx_out_f}#/entry/experiment_result/intensity',
+                two_theta=f'{nx_out_f}#/entry/experiment_result/two_theta',
+                omega=f'{nx_out_f}#/entry/experiment_result/omega',
+                chi=f'{nx_out_f}#/entry/experiment_result/chi',
+                phi=f'{nx_out_f}#/entry/experiment_result/phi',
+                scan_axis=metadata_dict.get('scan_axis', None),
+                integration_time=xrd_dict.get('countTime', None),
+            )
+        elif scan_type == 'rsm':
+            result = XRDResultRSM(
+                intensity=f'{nx_out_f}#/entry/experiment_result/intensity',
+                two_theta=f'{nx_out_f}#/entry/experiment_result/intensity',
+                omega=f'{nx_out_f}#/entry/experiment_result/omega',
+                chi=f'{nx_out_f}#/entry/experiment_result/chi',
+                phi=f'{nx_out_f}#/entry/experiment_result/phi',
+                scan_axis=metadata_dict.get('scan_axis', None),
+                integration_time=xrd_dict.get('countTime', None),
+            )
+        else:
+            raise NotImplementedError(f'Scan type `{scan_type}` is not supported.')
         xrd = ELNXRayDiffraction(
-            results = [result],
-            xrd_settings = xrd_settings,
-            samples = samples,
+            results=[result],
+            xrd_settings=xrd_settings,
+            samples=samples,
         )
+
+        write_nx_section_and_create_file(
+            archive,
+            logger,
+            nx_file=nx_out_f,
+            nxs_as_entry=True,
+            xrd_dict=xrd_dict,
+            scan_type=scan_type,
+        )
+        result.normalize(archive, logger)
         merge_sections(self, xrd, logger)
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
@@ -965,14 +993,12 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                 )
             else:
                 with archive.m_context.raw_file(self.data_file) as file:
+                    global xrd_dict
                     xrd_dict = read_function(file.name, logger)
-                write_function(xrd_dict, archive, logger)
+            write_function(xrd_dict, archive, logger)
         super().normalize(archive, logger)
         if not self.results:
             return
-        write_nx_section_and_create_file(
-            archive, logger, self.generate_nexus_file, nxs_as_entry=True
-        )
         self.figures = self.results[0].generate_plots(archive, logger)
 
 

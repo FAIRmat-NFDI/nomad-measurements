@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 from typing import TYPE_CHECKING
+from nomad_measurements import xrd
 from pynxtools.nomad.dataconverter import populate_nexus_subsection
 from pynxtools import dataconverter
 
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
 
 
 # source_peak_wavelength
-def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
+def connect_concepts_from_archive(archive: 'EntryArchive', template, scan_type: str):
     """Connect the concepts between ELNXrayDiffraction and NXxrd_pan schema."""
 
     # Genneral concepts
@@ -229,36 +230,212 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         "link": "/ENTRY[entry]/experiment_result/q_perpendicular"
     }
 
+# source_peak_wavelength
+def connect_concepts_from_dict(xrd_dict, archive: 'EntryArchive', template, scan_type: str):
+    """Connect the concepts between ELNXrayDiffraction and NXxrd_pan schema."""
+
+    eln_dict = xrd_dict['eln_dict']
+    # Genneral concepts
+    template['/ENTRY[entry]/definition'] = 'NXxrd_pan'
+
+    try:
+        print(' #################### ', eln_dict)
+
+        template['/ENTRY[entry]/method'] = eln_dict['method']
+        print(' #################### ')
+    except KeyError as e:
+        pass
+
+    try:
+        template['/ENTRY[entry]/measurement_type'] = eln_dict['diffraction_method_name']
+    except KeyError as e:
+        pass
+
+    # Source
+    try:
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material'
+        ] = eln_dict['xray_tube_material']
+    except KeyError as e:
+        pass
+
+    try:
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current'
+        ] = eln_dict['xray_tube_current']
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current/@units'
+        ] = eln_dict['xray_tube_current/unit']
+    except KeyError as e:
+        pass
+
+    try:
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage'
+        ] = eln_dict['xray_tube_voltage']
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage/@units'
+        ] = eln_dict['xray_tube_voltage/unit']
+    except KeyError as e:
+        pass
+
+    try:
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one'
+        ] = eln_dict['kalpha_one']
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one/@units'
+        ] = eln_dict['kalpha_one/unit']
+    except KeyError as e:
+        pass
+
+    try:
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two'
+        ] = eln_dict['kalpha_two']
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two/@units'
+        ] = eln_dict['kalpha_two/unit']
+    except KeyError as e:
+        pass
+
+    try:
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone'
+        ] = eln_dict['ratio_kalphatwo_kalphaone']
+    except KeyError as e:
+        pass
+
+    try:
+        template['/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta'] = eln_dict['kbeta']
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta/@units'
+        ] = eln_dict['kbeta/unit']
+    except KeyError as e:
+        pass
+
+    # Result or scattering data
+    try:
+        template['/ENTRY[entry]/experiment_result/intensity'] = xrd_dict['intensity']
+        template['/ENTRY[entry]/experiment_result/intensity/@units'] = 'counts per second'
+    except KeyError as e:
+        pass
+
+    try:
+        template['/ENTRY[entry]/experiment_result/two_theta'] = xrd_dict['2Theta']
+        template['/ENTRY[entry]/experiment_result/two_theta/@units'] = 'deg'
+    except KeyError as e:
+        pass
+
+    try:
+        template['/ENTRY[entry]/experiment_result/omega'] = xrd_dict['Omega'],
+        template['/ENTRY[entry]/experiment_result/omega/@units'] = 'deg'
+    except KeyError as e:
+        pass
+
+    try:
+        template['/ENTRY[entry]/experiment_result/chi'] = xrd_dict['Chi']
+        template['/ENTRY[entry]/experiment_result/chi/@units'] = 'deg'
+    except KeyError as e:
+        pass
+
+    try:
+        template['/ENTRY[entry]/experiment_result/phi'] = xrd_dict['Phi']
+        template['/ENTRY[entry]/experiment_result/phi/@units'] = 'deg'
+    except KeyError as e:
+        pass
+
+    try:
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis'
+        ] = xrd_dict['metadata']['scan_axis']
+    except KeyError as e:
+        pass
+
+    try:
+        template['/ENTRY[entry]/experiment_config/count_time'] = xrd_dict['countTime']
+        template['/ENTRY[entry]/experiment_config/count_time/@units'] = 's'
+    except KeyError as e:
+        pass
+    try:
+        template['/ENTRY[entry]/experiment_result/q_norm'] = xrd_dict['q_norm']
+        template['/ENTRY[entry]/experiment_result/q_norm/@units'] = '1/m'
+    except KeyError as e:
+        pass
+
+
+    if scan_type == 'line':
+        pass
+    # rsm
+    elif scan_type == 'rsm':
+        try:
+            template['/ENTRY[entry]/experiment_result/q_parallel'] = xrd_dict['q_parallel']
+            template['/ENTRY[entry]/experiment_result/q_parallel/@units'] = '1/m'
+        except KeyError as e:
+            pass
+
+        try:
+            template['/ENTRY[entry]/experiment_result/q_perpendicular'] = xrd_dict['q_perpendicular']
+            template['/ENTRY[entry]/experiment_result/q_perpendicular/@units'] = '1/m'
+        except KeyError as e:
+            pass
+
+
+    # Links to the data and concepts
+    template["//ENTRY[entry]/@default"] = "experiment_result"
+    template["/ENTRY[entry]/experiment_result/@signal"] = "intensity"
+    template["/ENTRY[entry]/experiment_result/@axes"] = "two_theta"
+    template["/ENTRY[entry]/q_data/q"] = {
+        "link": "/entry/experiment_result/q_norm"
+    }
+    template["/ENTRY[entry]/q_data/intensity"] = {
+        "link": "/entry/experiment_result/intensity"
+    }
+    template["/ENTRY[entry]/q_data/q_parallel"] = {
+        "link": "/entry/experiment_result/q_parallel"
+    }
+    template["/ENTRY[entry]/q_data/q_perpendicular"] = {
+        "link": "/entry/experiment_result/q_perpendicular"
+    }
+
+
 def write_nx_section_and_create_file(archive: 'EntryArchive',
                                      logger: 'BoundLogger',
-                                     generate_nexus_file,
-                                     nxs_as_entry):
+                                     nx_file,
+                                     nxs_as_entry,
+                                     scan_type,
+                                     xrd_dict = None,
+                                     ):
     '''
     Uses the archive to generate the NeXus section and .nxs file.
 
     Args:
         archive (EntryArchive): The archive containing the section.
         logger (BoundLogger): A structlog logger.
-        generate_nexus_file (boolean): If True, the function will generate a .nxs file.
+        nx_file (str): The name of the .nxs file to be generated
         nxs_as_entry (boolean): If True, the function will generate a .nxs file
                 as a nomad entry.
+        scan_type (str): The type of scan, either 'line' or 'rsm'
+        xrd_dict (dict): A dictionary containing the data from experiment file and 
+                eln data under the key 'eln_dict
     '''
     entry_type = archive.metadata.entry_type
     nxdl_root, _ = dataconverter.helpers.get_nxdl_root_and_path("NXxrd_pan")
     template = dataconverter.template.Template()
     dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
-    connect_concepts(template, archive, scan_type='line')
-    archive_name = archive.metadata.mainfile.split('.')[0]
-    nexus_output = f'{archive_name}_output.nxs'
+    # connect_concepts_from_archive(archive, template, scan_type='line')
+    connect_concepts_from_dict(xrd_dict=xrd_dict,
+                               archive=archive, 
+                               template=template, 
+                               scan_type=scan_type)
 
     populate_nexus_subsection(
         template=template,
         app_def="NXxrd_pan",
         archive=archive,
         logger=logger,
-        output_file_path=nexus_output,
-        on_temp_file=generate_nexus_file,
+        output_file_path=nx_file,
+        on_temp_file=False,
         nxs_as_entry=nxs_as_entry
     )
     archive.metadata.entry_type = entry_type
-    
