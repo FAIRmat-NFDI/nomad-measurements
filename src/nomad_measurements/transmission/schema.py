@@ -19,7 +19,6 @@ import json
 import os
 import re
 from typing import TYPE_CHECKING
-
 from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
