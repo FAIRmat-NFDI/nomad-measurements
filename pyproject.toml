@@ -37,6 +37,9 @@ dependencies = [
 "Homepage" = "https://github.com/FAIRmat-NFDI/nomad-measurements"
 "Bug Tracker" = "https://github.com/FAIRmat-NFDI/nomad-measurements/issues"
 
+[tool.uv]
+index-url = "https://gitlab.mpcdf.mpg.de/api/v4/projects/2187/packages/pypi/simple"
+
 [project.optional-dependencies]
 dev = [
     "pytest",
@@ -45,6 +48,7 @@ dev = [
 ]
 
 [tool.ruff]
+include = ["src/*.py", "tests/*.py"]
 # Exclude a variety of commonly ignored directories.
 exclude = [
     ".bzr",
@@ -124,3 +128,5 @@ xrd_schema = "nomad_measurements.xrd:xrd_schema"
 xrd_parser = "nomad_measurements.xrd.parser:xrd_parser"
 transmission_schema = "nomad_measurements.transmission:transmission_schema"
 transmission_parser = "nomad_measurements.transmission:transmission_parser"
+
+[tool.setuptools_scm]
