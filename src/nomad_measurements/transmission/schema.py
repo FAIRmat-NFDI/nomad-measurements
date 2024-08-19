@@ -24,7 +24,7 @@ from nomad.datamodel.metainfo.basesections import (
     ReadableIdentifiers,
 )
 from nomad.metainfo import (
-    Package,
+    SchemaPackage,
     Quantity,
     Section,
     SubSection,
@@ -38,7 +38,7 @@ from nomad.datamodel.metainfo.annotations import (
     ELNComponentEnum,
 )
 
-from nomad_measurements import NOMADMeasurementsCategory
+from nomad_measurements.general.schema import NOMADMeasurementsCategory
 
 from pynxtools.dataconverter.convert import convert
 
@@ -50,8 +50,14 @@ if TYPE_CHECKING:
         BoundLogger,
     )
 
+from nomad.config import config
 
-m_package = Package(name='nomad-measurements Transmission')
+configuration = config.get_plugin_entry_point(
+    'nomad_measurements.transmission:transmission_schema'
+)
+
+m_package = SchemaPackage(name='nomad-measurements Transmission')
+
 
 
 class Operator(ArchiveSection):

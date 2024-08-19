@@ -32,7 +32,7 @@ from nomad.datamodel.metainfo.basesections import (
     ReadableIdentifiers,
 )
 from nomad.metainfo import (
-    Package,
+    SchemaPackage,
     Quantity,
     Section,
     SubSection,
@@ -61,7 +61,7 @@ from nomad.datamodel.metainfo.plot import (
 )
 
 # from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
-from nomad_measurements import (
+from nomad_measurements.general.schema import (
     NOMADMeasurementsCategory,
 )
 from fairmat_readers_xrd import (
@@ -81,7 +81,14 @@ if TYPE_CHECKING:
     import pint
     from pynxtools.dataconverter.template import Template
 
-m_package = Package(name='nomad_xrd')
+from nomad.config import config
+
+configuration = config.get_plugin_entry_point(
+    'nomad_measurements.xrd:xrd_schema'
+)
+
+m_package = SchemaPackage(name='nomad_xrd')
+
 
 
 def populate_nexus_subsection(**kwargs):

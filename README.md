@@ -24,15 +24,16 @@ pip install nomad-measurements --index-url https://gitlab.mpcdf.mpg.de/api/v4/pr
 Read the [NOMAD plugin documentation](https://nomad-lab.eu/prod/v1/staging/docs/plugins/plugins.html#add-a-plugin-to-your-nomad) for all details on how to deploy the plugin on your NOMAD instance.
 
 You need to modify the ```nomad.yaml``` configuration file of your NOMAD instance.
-To include, for example, the XRD plugin you need to add the following lines: .
+To include, for example, the XRD plugin you need to add the following lines, that correspond to loading the netry points available in this package: 
 
 ```yaml
 plugins:
   include:
-  - 'parsers/nomad_measurements/xrd'
-  options:
-    parsers/nomad_measurements/xrd:
-      python_package: nomad_measurements.xrd.parser
+    - "nomad_measurements.general:general_schema"
+    - "nomad_measurements.xrd:xrd_schema"
+    - "nomad_measurements.xrd.parser:xrd_parser"
+    - "nomad_measurements.transmission:transmission_schema"
+    - "nomad_measurements.transmission:transmission_parser"
  ```
 
 ### Development
