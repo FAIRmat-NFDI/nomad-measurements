@@ -42,6 +42,12 @@ if TYPE_CHECKING:
         BoundLogger,
     )
 
+from nomad.config import config
+
+configuration = config.get_plugin_entry_point(
+    'nomad_measurements.general:schema'
+)
+
 
 class NOMADMeasurementsCategory(EntryDataCategory):
     """
