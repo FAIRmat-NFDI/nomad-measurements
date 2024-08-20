@@ -17,26 +17,17 @@
 #
 from typing import (
     TYPE_CHECKING,
-    Dict,
     Any,
     Callable,
+    Dict,
 )
+
 import numpy as np
 import plotly.express as px
-from scipy.interpolate import griddata
-
-from nomad.datamodel.metainfo.basesections import (
-    Measurement,
-    MeasurementResult,
-    CompositeSystemReference,
-    ReadableIdentifiers,
-)
-from nomad.metainfo import (
-    SchemaPackage,
-    Quantity,
-    Section,
-    SubSection,
-    MEnum,
+from fairmat_readers_xrd import (
+    read_bruker_brml,
+    read_panalytical_xrdml,
+    read_rigaku_rasx,
 )
 from nomad.datamodel.data import (
     ArchiveSection,
@@ -46,40 +37,49 @@ from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
     ELNComponentEnum,
 )
-from nomad.datamodel.results import (
-    Results,
-    Properties,
-    StructuralProperties,
-    DiffractionPattern,
-    Method,
-    MeasurementMethod,
-    XRDMethod,
+from nomad.datamodel.metainfo.basesections import (
+    CompositeSystemReference,
+    Measurement,
+    MeasurementResult,
+    ReadableIdentifiers,
 )
 from nomad.datamodel.metainfo.plot import (
-    PlotSection,
     PlotlyFigure,
+    PlotSection,
 )
+from nomad.datamodel.results import (
+    DiffractionPattern,
+    MeasurementMethod,
+    Method,
+    Properties,
+    Results,
+    StructuralProperties,
+    XRDMethod,
+)
+from nomad.metainfo import (
+    MEnum,
+    Quantity,
+    SchemaPackage,
+    Section,
+    SubSection,
+)
+from scipy.interpolate import griddata
 
 # from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
 from nomad_measurements.general.schema import (
     NOMADMeasurementsCategory,
 )
-from fairmat_readers_xrd import (
-    read_panalytical_xrdml,
-    read_rigaku_rasx,
-    read_bruker_brml,
-)
-from nomad_measurements.utils import merge_sections, get_bounding_range_2d
+from nomad_measurements.utils import get_bounding_range_2d, merge_sections
 
 if TYPE_CHECKING:
+    import pint
     from nomad.datamodel.datamodel import (
         EntryArchive,
     )
+    from pynxtools.dataconverter.template import Template
     from structlog.stdlib import (
         BoundLogger,
     )
-    import pint
-    from pynxtools.dataconverter.template import Template
 
 from nomad.config import config
 

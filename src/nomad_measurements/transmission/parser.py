@@ -16,19 +16,20 @@
 # limitations under the License.
 #
 from typing import TYPE_CHECKING
+
+from nomad.datamodel.data import (
+    EntryData,
+)
+from nomad.datamodel.metainfo.annotations import (
+    ELNAnnotation,
+)
 from nomad.metainfo import (
     Quantity,
 )
 from nomad.parsing import MatchingParser
-from nomad.datamodel.metainfo.annotations import (
-    ELNAnnotation,
-)
-from nomad.datamodel.data import (
-    EntryData,
-)
 
-from nomad_measurements.utils import create_archive
 from nomad_measurements.transmission.schema import ELNTransmission
+from nomad_measurements.utils import create_archive
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (

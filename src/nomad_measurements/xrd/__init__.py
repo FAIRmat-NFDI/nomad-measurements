@@ -1,6 +1,7 @@
 
 from nomad.config.models.plugins import SchemaPackageEntryPoint
 
+
 class XRDSchemaPackageEntryPoint(SchemaPackageEntryPoint):
 
     def load(self):

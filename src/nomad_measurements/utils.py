@@ -16,10 +16,11 @@
 # limitations under the License.
 #
 import os.path
-import numpy as np
 from typing import (
     TYPE_CHECKING,
 )
+
+import numpy as np
 
 if TYPE_CHECKING:
     from nomad.datamodel.data import (
@@ -49,6 +50,7 @@ def create_archive(
     file_name: str,
 ) -> str:
     import json
+
     from nomad.datamodel.context import ClientContext
 
     entity_entry = entity.m_to_dict(with_root_def=True)

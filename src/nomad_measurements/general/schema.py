@@ -16,25 +16,26 @@
 # limitations under the License.
 #
 from typing import TYPE_CHECKING
-from nomad.metainfo.metainfo import (
-    Category,
-)
+
 from nomad.datamodel.data import (
     EntryDataCategory,
 )
+from nomad.datamodel.metainfo.annotations import (
+    ELNAnnotation,
+    ELNComponentEnum,
+)
 from nomad.datamodel.metainfo.basesections import (
-    SectionReference,
     Activity,
-    Process,
     Measurement,
+    Process,
+    SectionReference,
 )
 from nomad.metainfo import (
     Quantity,
     SubSection,
 )
-from nomad.datamodel.metainfo.annotations import (
-    ELNAnnotation,
-    ELNComponentEnum,
+from nomad.metainfo.metainfo import (
+    Category,
 )
 
 if TYPE_CHECKING:
@@ -92,7 +93,7 @@ class ActivityReference(SectionReference):
         """
         super(ActivityReference, self).normalize(archive, logger)
         if self.reference is None and self.lab_id is not None:
-            from nomad.search import search, MetadataPagination
+            from nomad.search import MetadataPagination, search
 
             query = {'results.eln.lab_ids': self.lab_id}
             search_result = search(

@@ -15,20 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import re
-import os
 import json
+import os
+import re
 from typing import TYPE_CHECKING
-from nomad.datamodel.metainfo.basesections import (
-    Measurement,
-    ReadableIdentifiers,
-)
-from nomad.metainfo import (
-    SchemaPackage,
-    Quantity,
-    Section,
-    SubSection,
-)
+
 from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
@@ -37,10 +28,19 @@ from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
     ELNComponentEnum,
 )
+from nomad.datamodel.metainfo.basesections import (
+    Measurement,
+    ReadableIdentifiers,
+)
+from nomad.metainfo import (
+    Quantity,
+    SchemaPackage,
+    Section,
+    SubSection,
+)
+from pynxtools.dataconverter.convert import convert
 
 from nomad_measurements.general.schema import NOMADMeasurementsCategory
-
-from pynxtools.dataconverter.convert import convert
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
