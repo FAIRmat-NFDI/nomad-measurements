@@ -1,7 +1,6 @@
 from nomad.config.models.plugins import ParserEntryPoint, SchemaPackageEntryPoint
 
 
-
 class XRDSchemaPackageEntryPoint(SchemaPackageEntryPoint):
     def load(self):
         from nomad_measurements.xrd.schema import m_package
