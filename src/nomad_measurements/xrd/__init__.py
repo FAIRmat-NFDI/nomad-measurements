@@ -9,7 +9,7 @@ class XRDSchemaPackageEntryPoint(SchemaPackageEntryPoint):
         return m_package
 
 
-xrd_schema = XRDSchemaPackageEntryPoint(
+schema = XRDSchemaPackageEntryPoint(
     name='XRDSchema',
     description='Schema package defined using the new plugin mechanism.',
 )

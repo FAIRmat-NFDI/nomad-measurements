@@ -26,7 +26,7 @@ class XRDParserEntryPoint(ParserEntryPoint):
         return XRDParser(**self.dict())
 
 
-xrd_parser = XRDParserEntryPoint(
+parser = XRDParserEntryPoint(
     name='XRD Parser',
     description='Parser defined using the new plugin mechanism.',
     mainfile_name_re=r'^.*\.xrdml$|^.*\.rasx$|^.*\.brml$',

@@ -124,10 +124,10 @@ where = ["src"]
 
 [project.entry-points.'nomad.plugin']
 
-general_schema = "nomad_measurements.general:general_schema"
-xrd_schema = "nomad_measurements.xrd:xrd_schema"
-xrd_parser = "nomad_measurements.xrd.parser:xrd_parser"
-transmission_schema = "nomad_measurements.transmission:transmission_schema"
-transmission_parser = "nomad_measurements.transmission:transmission_parser"
+general_schema = "nomad_measurements.general:schema"
+xrd_schema = "nomad_measurements.xrd:schema"
+xrd_parser = "nomad_measurements.xrd.parser:parser"
+transmission_schema = "nomad_measurements.transmission:schema"
+transmission_parser = "nomad_measurements.transmission:parser"
 
 [tool.setuptools_scm]

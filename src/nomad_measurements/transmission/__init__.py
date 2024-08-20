@@ -25,7 +25,7 @@ class TransmissionSchemaPackageEntryPoint(SchemaPackageEntryPoint):
         return m_package
 
 
-transmission_schema = TransmissionSchemaPackageEntryPoint(
+schema = TransmissionSchemaPackageEntryPoint(
     name='TransmissionSchema',
     description='Schema package defined using the new plugin mechanism.',
 )
@@ -38,7 +38,7 @@ class TransmissionParserEntryPoint(ParserEntryPoint):
         return TransmissionParser(**self.dict())
 
 
-transmission_parser = TransmissionParserEntryPoint(
+parser = TransmissionParserEntryPoint(
     name='Transmission Parser',
     description='Parser defined using the new plugin mechanism.',
     mainfile_name_re=r'^.*\.asc$',
