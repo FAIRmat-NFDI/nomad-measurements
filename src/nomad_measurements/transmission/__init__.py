@@ -26,7 +26,7 @@ class TransmissionSchemaPackageEntryPoint(SchemaPackageEntryPoint):
 
 
 schema = TransmissionSchemaPackageEntryPoint(
-    name='TransmissionSchema',
+    name='Transmission Schema',
     description='Schema package defined using the new plugin mechanism.',
 )
 
