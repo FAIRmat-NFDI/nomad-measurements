@@ -19,7 +19,6 @@ from nomad.config.models.plugins import ParserEntryPoint, SchemaPackageEntryPoin
 
 
 class TransmissionSchemaPackageEntryPoint(SchemaPackageEntryPoint):
-
     def load(self):
         from nomad_measurements.transmission.schema import m_package
 

@@ -54,6 +54,7 @@ class XRDParser(MatchingParser):
     """
     Parser for matching XRD files and creating instances of ELNXRayDiffraction
     """
+
     def parse(
         self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None
     ) -> None:

@@ -1,7 +1,7 @@
 {
     "python.defaultInterpreterPath": ".pyenv/bin/python",
     "editor.rulers": [
-        90
+        88
     ],
     "editor.renderWhitespace": "all",
     "editor.tabSize": 4

@@ -52,12 +52,9 @@ if TYPE_CHECKING:
 
 from nomad.config import config
 
-configuration = config.get_plugin_entry_point(
-    'nomad_measurements.transmission:schema'
-)
+configuration = config.get_plugin_entry_point('nomad_measurements.transmission:schema')
 
 m_package = SchemaPackage(name='nomad-measurements Transmission')
-
 
 
 class Operator(ArchiveSection):
@@ -100,7 +97,7 @@ class Transmission(Measurement):
     )
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger') -> None:
-        super(Transmission, self).normalize(archive, logger)
+        super().normalize(archive, logger)
         raw_path = archive.m_context.raw_path()
         eln_filename = '_transmission_eln_temp.json'
         pattern = re.compile(r'(?P<file_name>.*)\.archive\.json$')

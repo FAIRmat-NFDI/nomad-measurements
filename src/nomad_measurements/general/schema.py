@@ -45,9 +45,7 @@ if TYPE_CHECKING:
 
 from nomad.config import config
 
-configuration = config.get_plugin_entry_point(
-    'nomad_measurements.general:schema'
-)
+configuration = config.get_plugin_entry_point('nomad_measurements.general:schema')
 
 
 class NOMADMeasurementsCategory(EntryDataCategory):
@@ -91,7 +89,7 @@ class ActivityReference(SectionReference):
             normalized.
             logger ('BoundLogger'): A structlog logger.
         """
-        super(ActivityReference, self).normalize(archive, logger)
+        super().normalize(archive, logger)
         if self.reference is None and self.lab_id is not None:
             from nomad.search import MetadataPagination, search
 

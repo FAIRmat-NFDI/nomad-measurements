@@ -19,7 +19,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
 )
 
 import numpy as np
@@ -65,7 +64,6 @@ from nomad.metainfo import (
 )
 from scipy.interpolate import griddata
 
-# from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
 from nomad_measurements.general.schema import (
     NOMADMeasurementsCategory,
 )
@@ -83,12 +81,9 @@ if TYPE_CHECKING:
 
 from nomad.config import config
 
-configuration = config.get_plugin_entry_point(
-    'nomad_measurements.xrd:schema'
-)
+configuration = config.get_plugin_entry_point('nomad_measurements.xrd:schema')
 
 m_package = SchemaPackage(name='nomad_xrd')
-
 
 
 def populate_nexus_subsection(**kwargs):
@@ -145,10 +140,12 @@ def calculate_two_theta_or_q(
     Args:
         wavelength (pint.Quantity): Wavelength of the X-ray source.
         q (pint.Quantity, optional): Array of scattering vectors. Defaults to None.
-        two_theta (pint.Quantity, optional): Array of two-theta angles. Defaults to None.
+        two_theta (pint.Quantity, optional): Array of two-theta angles.
+            Defaults to None.
 
     Returns:
-       tuple[pint.Quantity, pint.Quantity]: Tuple of scattering vector, two-theta angles.
+        tuple[pint.Quantity, pint.Quantity]: Tuple of scattering vector, two-theta
+            angles.
     """
     if q is not None and two_theta is None:
         return q, 2 * np.arcsin(q * wavelength / (4 * np.pi))
@@ -212,8 +209,8 @@ def estimate_kalpha_wavelengths(source_material):
         Tuple[float, float]: Estimated K-alpha1 and K-alpha2 wavelengths of the X-ray
         source, in angstroms.
     """
-    # Dictionary of K-alpha1 and K-alpha2 wavelengths for various X-ray source materials,
-    # in angstroms
+    # Dictionary of K-alpha1 and K-alpha2 wavelengths for various X-ray source
+    # materials, in angstroms
     kalpha_wavelengths = {
         'Cr': (2.2910, 2.2936),
         'Fe': (1.9359, 1.9397),
@@ -818,7 +815,7 @@ class XRayDiffraction(Measurement):
         | **X-ray Reflectivity (XRR)**                               | Used to study thin film layers, interfaces, and multilayers. Provides info on film thickness, density, and roughness.                                                                                       |
         | **Grazing Incidence X-ray Diffraction (GIXRD)**            | Primarily used for the analysis of thin films with the incident beam at a fixed shallow angle.                                                                                                              |
         | **Reciprocal Space Mapping (RSM)**                         | High-resolution XRD method to measure diffracted intensity in a 2-dimensional region of reciprocal space. Provides information about the real-structure (lattice mismatch, domain structure, stress and defects) in single-crystalline and epitaxial samples.|
-        """,
+        """,  # noqa: E501
     )
     results = Measurement.results.m_copy()
     results.section_def = XRDResult
@@ -912,7 +909,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
         """
-        Method for getting the correct read and write functions for the current data file.
+        Method for getting the correct read and write functions for the current data
+        file.
 
         Returns:
             tuple[Callable, Callable]: The read, write functions.
@@ -927,7 +925,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
 
     def write_xrd_data(
         self,
-        xrd_dict: Dict[str, Any],
+        xrd_dict: dict[str, Any],
         archive: 'EntryArchive',
         logger: 'BoundLogger',
     ) -> None:

@@ -67,7 +67,7 @@ def create_archive(
     )
 
 
-def merge_sections(
+def merge_sections(  # noqa: PLR0912
     section: 'ArchiveSection',
     update: 'ArchiveSection',
     logger: 'BoundLogger' = None,
