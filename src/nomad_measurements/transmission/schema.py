@@ -53,7 +53,7 @@ if TYPE_CHECKING:
 from nomad.config import config
 
 configuration = config.get_plugin_entry_point(
-    'nomad_measurements.transmission:transmission_schema'
+    'nomad_measurements.transmission:schema'
 )
 
 m_package = SchemaPackage(name='nomad-measurements Transmission')

@@ -84,7 +84,7 @@ if TYPE_CHECKING:
 from nomad.config import config
 
 configuration = config.get_plugin_entry_point(
-    'nomad_measurements.xrd:xrd_schema'
+    'nomad_measurements.xrd:schema'
 )
 
 m_package = SchemaPackage(name='nomad_xrd')

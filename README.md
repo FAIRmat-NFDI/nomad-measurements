@@ -29,11 +29,11 @@ To include, for example, the XRD plugin you need to add the following lines, tha
 ```yaml
 plugins:
   include:
-    - "nomad_measurements.general:general_schema"
-    - "nomad_measurements.xrd:xrd_schema"
-    - "nomad_measurements.xrd.parser:xrd_parser"
-    - "nomad_measurements.transmission:transmission_schema"
-    - "nomad_measurements.transmission:transmission_parser"
+    - "nomad_measurements.general:schema"
+    - "nomad_measurements.xrd:schema"
+    - "nomad_measurements.xrd.parser:parser"
+    - "nomad_measurements.transmission:schema"
+    - "nomad_measurements.transmission:parser"
  ```
 
 ### Development
