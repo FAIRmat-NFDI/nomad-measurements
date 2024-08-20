@@ -1,6 +1,7 @@
 
 from nomad.config.models.plugins import SchemaPackageEntryPoint
 
+
 class GeneralSchemaPackageEntryPoint(SchemaPackageEntryPoint):
 
     def load(self):

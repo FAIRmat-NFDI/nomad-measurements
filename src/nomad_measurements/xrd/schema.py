@@ -19,6 +19,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
 )
 
 import numpy as np
@@ -75,10 +76,10 @@ if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
         EntryArchive,
     )
+    from pynxtools.dataconverter.template import Template
     from structlog.stdlib import (
         BoundLogger,
     )
-
 
 from nomad.config import config
 
