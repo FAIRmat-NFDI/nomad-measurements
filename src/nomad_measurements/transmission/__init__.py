@@ -26,8 +26,8 @@ class TransmissionSchemaPackageEntryPoint(SchemaPackageEntryPoint):
 
 
 schema = TransmissionSchemaPackageEntryPoint(
-    name='Transmission Schema',
-    description='Schema for transmission techniques FAIR data.',
+    name="Transmission Schema",
+    description="Schema for transmission techniques FAIR data.",
 )
 
 
@@ -39,7 +39,7 @@ class TransmissionParserEntryPoint(ParserEntryPoint):
 
 
 parser = TransmissionParserEntryPoint(
-    name='Transmission Parser',
-    description='Parser for raw files from XRD measurements.',
-    mainfile_name_re=r'^.*\.asc$',
+    name="Transmission Parser",
+    description="Parser for raw files from XRD measurements.",
+    mainfile_name_re=r"^.*\.asc$",
 )
