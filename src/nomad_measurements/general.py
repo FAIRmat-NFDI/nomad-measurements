@@ -48,7 +48,11 @@ from nomad.config import config
 
 configuration = config.get_plugin_entry_point('nomad_measurements:schema')
 
-m_package = SchemaPackage()
+m_package = SchemaPackage(
+    aliases=[
+        'nomad_measurements',
+    ],
+)
 
 
 class NOMADMeasurementsCategory(EntryDataCategory):
