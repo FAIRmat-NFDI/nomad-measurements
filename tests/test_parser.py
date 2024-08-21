@@ -48,8 +48,8 @@ def parsed_archive(request):
     yield measurement_archive
 
     for file_path in [measurement, measurement.replace('archive.json', 'nxs')]:
-            if os.path.exists(file_path):
-                os.remove(file_path)
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 
 def test_normalize_all(parsed_archive):
