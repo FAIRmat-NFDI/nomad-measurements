@@ -126,7 +126,7 @@ where = ["src"]
 
 general_schema = "nomad_measurements.general:schema"
 xrd_schema = "nomad_measurements.xrd:schema"
-xrd_parser = "nomad_measurements.xrd.parser:parser"
+xrd_parser = "nomad_measurements.xrd:parser"
 transmission_schema = "nomad_measurements.transmission:schema"
 transmission_parser = "nomad_measurements.transmission:parser"
 

@@ -1,4 +1,4 @@
-from nomad.config.models.plugins import SchemaPackageEntryPoint
+from nomad.config.models.plugins import ParserEntryPoint, SchemaPackageEntryPoint
 
 
 class XRDSchemaPackageEntryPoint(SchemaPackageEntryPoint):
@@ -11,4 +11,19 @@ class XRDSchemaPackageEntryPoint(SchemaPackageEntryPoint):
 schema = XRDSchemaPackageEntryPoint(
     name='XRDSchema',
     description='Schema package defined using the new plugin mechanism.',
+)
+
+
+class XRDParserEntryPoint(ParserEntryPoint):
+    def load(self):
+        from nomad_measurements.xrd.parser import XRDParser
+
+        return XRDParser(**self.dict())
+
+
+parser = XRDParserEntryPoint(
+    name='XRD Parser',
+    description='Parser defined using the new plugin mechanism.',
+    mainfile_name_re=r'^.*\.xrdml$|^.*\.rasx$|^.*\.brml$',
+    mainfile_mime_re='text/.*|application/zip',
 )
