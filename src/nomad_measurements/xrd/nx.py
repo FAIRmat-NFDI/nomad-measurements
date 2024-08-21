@@ -220,4 +220,3 @@ def write_nx_section_and_create_file(archive: 'EntryArchive',
         output_file_path=nexus_output,
     )
     archive.metadata.entry_type = entry_type
-    
