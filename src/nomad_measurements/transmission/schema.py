@@ -40,7 +40,7 @@ from nomad.metainfo import (
 )
 from pynxtools.dataconverter.convert import convert
 
-from nomad_measurements.general.schema import NOMADMeasurementsCategory
+from nomad_measurements.general import NOMADMeasurementsCategory
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (

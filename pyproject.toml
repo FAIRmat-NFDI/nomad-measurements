@@ -124,7 +124,7 @@ where = ["src"]
 
 [project.entry-points.'nomad.plugin']
 
-general_schema = "nomad_measurements.general:schema"
+general_schema = "nomad_measurements:schema"
 xrd_schema = "nomad_measurements.xrd:schema"
 xrd_parser = "nomad_measurements.xrd:parser"
 transmission_schema = "nomad_measurements.transmission:schema"

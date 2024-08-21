@@ -64,7 +64,7 @@ from nomad.metainfo import (
 )
 from scipy.interpolate import griddata
 
-from nomad_measurements.general.schema import (
+from nomad_measurements.general import (
     NOMADMeasurementsCategory,
 )
 from nomad_measurements.utils import get_bounding_range_2d, merge_sections
