@@ -21,13 +21,6 @@ import pytest
 from nomad.client import parse, normalize_all
 
 
-def delete_nx_file(parent_folder):
-    for root, _, files in os.walk(parent_folder):
-        for file in files:
-            if file.endswith('nxs'):
-                os.remove(os.path.join(root, file))
-
-
 @pytest.fixture(
     params=[
         'XRD-918-16_10.xrdml',
@@ -54,9 +47,9 @@ def parsed_archive(request):
 
     yield measurement_archive
 
-    if os.path.exists(measurement):
-        os.remove(measurement)
-    delete_nx_file('tests/data')   
+    for file_path in [measurement, measurement.replace('archive.json', 'nxs')]:
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
 
 def test_normalize_all(parsed_archive):

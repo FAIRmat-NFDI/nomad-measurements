@@ -86,11 +86,11 @@ m_package = Package(name='nomad_xrd')
 
 
 def calculate_two_theta_or_q(
-        wavelength: 'pint.Quantity',
-        q: 'pint.Quantity'=None,
-        two_theta: 'pint.Quantity'=None
-    ) -> tuple['pint.Quantity', 'pint.Quantity']:
-    '''
+    wavelength: 'pint.Quantity',
+    q: 'pint.Quantity'=None,
+    two_theta: 'pint.Quantity'=None
+) -> tuple['pint.Quantity', 'pint.Quantity']:
+    """
     Calculate the two-theta array from the scattering vector (q) or vice-versa,
     given the wavelength of the X-ray source.
 
@@ -101,7 +101,7 @@ def calculate_two_theta_or_q(
 
     Returns:
        tuple[pint.Quantity, pint.Quantity]: Tuple of scattering vector, two-theta angles.
-    '''
+    """
     if q is not None and two_theta is None:
         return q, 2 * np.arcsin(q * wavelength / (4 * np.pi))
     if two_theta is not None and q is None:

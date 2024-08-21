@@ -26,127 +26,89 @@ if TYPE_CHECKING:
 
 # source_peak_wavelength
 def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
-    """Connect the concepts between ELNXrayDiffraction and NXxrd_pan schema."""
+    """Connect the concepts between ELNXrayDiffraction and NXxrd_pan schema.
+    
+    Args:
+        template (Template): The pynxtools template, a inherited class from python dict.
+        archive (EntryArchive): Nomad archive contains secttions, subsections and quantities.
+        scan_type (str): Name of the scan type such as line and RSM.
+    """
 
     # Genneral concepts
-    try:
-        template['/ENTRY[entry]/definition'] = 'NXxrd_pan'
-    except AttributeError as e:
-        pass
+    template['/ENTRY[entry]/definition'] = 'NXxrd_pan'
 
     try:
         template['/ENTRY[entry]/method'] = archive.data.method
-    except AttributeError as e:
+    except AttributeError:
         pass
 
     try:
         template['/ENTRY[entry]/measurement_type'] = (
             archive.data.diffraction_method_name
         )
-    except AttributeError as e:
+    except AttributeError:
         pass
 
     # Technique specific concepts
     if scan_type == 'line':
         try:
             template['/ENTRY[entry]/experiment_result/intensity'] = archive.data.results[0].intensity.magnitude
-        except AttributeError as e:
+        except AttributeError:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_result/two_theta'] = archive.data.results[0].two_theta.magnitude
             template['/ENTRY[entry]/experiment_result/two_theta/@units'] = archive.data.results[0].two_theta.units.__str__()
-        except AttributeError as e:
+        except AttributeError:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_result/omega'] = archive.data.results[0].omega.magnitude
             template['/ENTRY[entry]/experiment_result/omega/@units'] = archive.data.results[0].omega.units.__str__()
-        except AttributeError as e:
+        except AttributeError:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_result/chi'] = archive.data.results[0].chi.magnitude
             template['/ENTRY[entry]/experiment_result/chi/@units'] = archive.data.results[0].chi.units.__str__()
-        except AttributeError as e:
+        except AttributeError:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_result/phi'] = archive.data.results[0].phi.magnitude
             template['/ENTRY[entry]/experiment_result/phi/@units'] = archive.data.results[0].phi.units.__str__()
-        except AttributeError as e:
+        except AttributeError:
             pass
 
         try:
             template[
                 '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis'
             ] = archive.data.results[0].scan_axis
-        except AttributeError as e:
+        except AttributeError:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_config/count_time'] = archive.data.results[0].count_time.magnitude
-        except AttributeError as e:
+        except AttributeError:
             pass
     # rsm
     elif scan_type == 'rsm':
         try:
-            template['/ENTRY[entry]/experiment_result/intensity'] = archive.data.results[0].intensity.magnitude
-        except AttributeError as e:
-            pass
-
-        try:
-            template['/ENTRY[entry]/experiment_result/two_theta'] = archive.data.results[0].two_theta.magnitude
-            template['/ENTRY[entry]/experiment_result/two_theta/@units'] = archive.data.results[0].two_theta.units.__str__()
-        except AttributeError as e:
-            pass
-
-        try:
-            template['/ENTRY[entry]/experiment_result/omega'] = archive.data.results[0].omega.magnitude
-            template['/ENTRY[entry]/experiment_result/omega/@units'] = archive.data.results[0].omega.units.__str__()
-        except AttributeError as e:
-            pass
-
-        try:
-            template['/ENTRY[entry]/experiment_result/chi'] = archive.data.results[0].chi.magnitude
-            template['/ENTRY[entry]/experiment_result/chi/@units'] = archive.data.results[0].chi.units.__str__()
-        except AttributeError as e:
-            pass
-
-        try:
-            template['/ENTRY[entry]/experiment_result/phi'] = archive.data.results[0].phi.magnitude
-            template['/ENTRY[entry]/experiment_result/phi/@units'] = archive.data.results[0].phi.units.__str__()
-        except AttributeError as e:
-            pass
-
-        try:
-            template[
-                '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis'
-            ] = archive.data.results[0].scan_axis
-        except AttributeError as e:
-            pass
-
-        try:
-            template['/ENTRY[entry]/experiment_config/count_time'] = archive.data.results[0].count_time.magnitude
-        except AttributeError as e:
-            pass
-
-        try:
             template['/ENTRY[entry]/experiment_result/q_parallel'] = archive.data.results[0].q_parallel,
             template['/ENTRY[entry]/experiment_result/q_parallel/@units'] = archive.data.results[0].q_parallel.units.__str__()
-        except AttributeError as e:
+        except AttributeError:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_result/q_perpendicular'] = archive.data.results[0].q_perpendicular.magnitude
             template['/ENTRY[entry]/experiment_result/q_perpendicular/@units'] = archive.data.results[0].q_perpendicular.units.__str__()
-        except AttributeError as e:
+        except AttributeError:
             pass
 
         try:
             template['/ENTRY[entry]/experiment_result/q_norm'] = archive.data.results[0].q_norm.magnitude
             template['/ENTRY[entry]/experiment_result/q_norm/@units'] = archive.data.results[0].q_norm.units.__str__()
-        except AttributeError as e:
+        except AttributeError:
             pass
 
     # Source
@@ -154,7 +116,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material'
         ] = archive.data.xrd_settings.source.xray_tube_material
-    except AttributeError as e:
+    except AttributeError:
         pass
 
     try:
@@ -164,7 +126,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current/@units'
         ] = archive.data.xrd_settings.source.xray_tube_current.units.__str__()
-    except AttributeError as e:
+    except AttributeError:
         pass
 
     try:
@@ -174,7 +136,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage/@units'
         ] = archive.data.xrd_settings.source.xray_tube_voltage.units.__str__()
-    except AttributeError as e:
+    except AttributeError:
         pass
 
     try:
@@ -184,7 +146,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one/@units'
         ] = archive.data.xrd_settings.source.kalpha_one.units.__str__()
-    except AttributeError as e:
+    except AttributeError:
         pass
 
     try:
@@ -194,14 +156,14 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two/@units'
         ] = archive.data.xrd_settings.source.kalpha_two.units.__str__()
-    except AttributeError as e:
+    except AttributeError:
         pass
 
     try:
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone'
         ] = archive.data.xrd_settings.source.ratio_kalphatwo_kalphaone
-    except AttributeError as e:
+    except AttributeError:
         pass
 
     try:
@@ -209,7 +171,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta/@units'
         ] = archive.data.xrd_settings.source.kbeta.units.__str__()
-    except AttributeError as e:
+    except AttributeError:
         pass
     
     # Links to the data and concepts
