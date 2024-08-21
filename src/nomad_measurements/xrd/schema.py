@@ -970,9 +970,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         super().normalize(archive, logger)
         if not self.results:
             return
-        write_nx_section_and_create_file(
-            archive, logger, self.generate_nexus_file, nxs_as_entry=True
-        )
+
+        if self.generate_nexus_file:
+            write_nx_section_and_create_file(archive, logger)
         self.figures = self.results[0].generate_plots(archive, logger)
 
 

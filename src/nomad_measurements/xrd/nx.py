@@ -193,9 +193,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
     }
 
 def write_nx_section_and_create_file(archive: 'EntryArchive',
-                                     logger: 'BoundLogger',
-                                     generate_nexus_file,
-                                     nxs_as_entry):
+                                     logger: 'BoundLogger'):
     '''
     Uses the archive to generate the NeXus section and .nxs file.
 
@@ -220,8 +218,6 @@ def write_nx_section_and_create_file(archive: 'EntryArchive',
         archive=archive,
         logger=logger,
         output_file_path=nexus_output,
-        on_temp_file=not generate_nexus_file,
-        nxs_as_entry=nxs_as_entry
     )
     archive.metadata.entry_type = entry_type
     
