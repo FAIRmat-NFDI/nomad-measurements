@@ -31,8 +31,8 @@ from nomad.datamodel.metainfo.basesections import (
     SectionReference,
 )
 from nomad.metainfo import (
-    SchemaPackage,
     Quantity,
+    SchemaPackage,
     SubSection,
 )
 from nomad.metainfo.metainfo import (
