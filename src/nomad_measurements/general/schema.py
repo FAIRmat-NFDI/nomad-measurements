@@ -31,6 +31,7 @@ from nomad.datamodel.metainfo.basesections import (
     SectionReference,
 )
 from nomad.metainfo import (
+    SchemaPackage,
     Quantity,
     SubSection,
 )
@@ -46,6 +47,8 @@ if TYPE_CHECKING:
 from nomad.config import config
 
 configuration = config.get_plugin_entry_point('nomad_measurements.general:schema')
+
+m_package = SchemaPackage()
 
 
 class NOMADMeasurementsCategory(EntryDataCategory):
