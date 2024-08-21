@@ -3,7 +3,7 @@ from nomad.config.models.plugins import SchemaPackageEntryPoint
 
 class GeneralSchemaPackageEntryPoint(SchemaPackageEntryPoint):
     def load(self):
-        from nomad_measurements.general.schema import m_package
+        from nomad_measurements.general import m_package
 
         return m_package
 
