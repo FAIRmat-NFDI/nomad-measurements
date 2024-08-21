@@ -24,6 +24,7 @@ from typing import (
 import numpy as np
 import plotly.express as px
 from scipy.interpolate import griddata
+from traitlets import default
 
 from nomad.datamodel.metainfo.basesections import (
     Measurement,
@@ -852,6 +853,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     generate_nexus_file = Quantity(
         type=bool,
         description='Whether or not to generate a NeXus output file (if possible).',
+        default=True,
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.BoolEditQuantity,
             label='Generate NeXus file',
