@@ -9,8 +9,8 @@ class XRDSchemaPackageEntryPoint(SchemaPackageEntryPoint):
 
 
 schema = XRDSchemaPackageEntryPoint(
-    name='XRDSchema',
-    description='Schema package defined using the new plugin mechanism.',
+    name='XRD Schema',
+    description='Schema for XRD FAIR data.',
 )
 
 
@@ -23,7 +23,7 @@ class XRDParserEntryPoint(ParserEntryPoint):
 
 parser = XRDParserEntryPoint(
     name='XRD Parser',
-    description='Parser defined using the new plugin mechanism.',
+    description='Parser for several kinds of raw files from XRD measurements.',
     mainfile_name_re=r'^.*\.xrdml$|^.*\.rasx$|^.*\.brml$',
     mainfile_mime_re='text/.*|application/zip',
 )

@@ -23,8 +23,8 @@ pip install nomad-measurements --index-url https://gitlab.mpcdf.mpg.de/api/v4/pr
 ### Setting up your OASIS
 Read the [NOMAD plugin documentation](https://nomad-lab.eu/prod/v1/staging/docs/plugins/plugins.html#add-a-plugin-to-your-nomad) for all details on how to deploy the plugin on your NOMAD instance.
 
-You need to modify the ```nomad.yaml``` configuration file of your NOMAD instance.
-To include, for example, the XRD plugin you need to add the following lines, that correspond to loading the entry points available in this package: 
+You don't need to modify the ```nomad.yaml``` configuration file of your NOMAD instance, beacuse the package is pip installed and all the available modules (entry points) are loaded.
+To include, instead, only some of the entry points, you need to specify them in the ```include``` section of the ```nomad.yaml```. In the following lines, a list of all the available entry points:  
 
 ```yaml
 plugins:
