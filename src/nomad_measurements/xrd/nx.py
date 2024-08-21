@@ -49,48 +49,49 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
     except AttributeError:
         pass
 
+    try:
+        template['/ENTRY[entry]/experiment_result/intensity'] = archive.data.results[0].intensity.magnitude
+    except AttributeError:
+        pass
+
+    try:
+        template['/ENTRY[entry]/experiment_result/two_theta'] = archive.data.results[0].two_theta.magnitude
+        template['/ENTRY[entry]/experiment_result/two_theta/@units'] = archive.data.results[0].two_theta.units.__str__()
+    except AttributeError:
+        pass
+
+    try:
+        template['/ENTRY[entry]/experiment_result/omega'] = archive.data.results[0].omega.magnitude
+        template['/ENTRY[entry]/experiment_result/omega/@units'] = archive.data.results[0].omega.units.__str__()
+    except AttributeError:
+        pass
+
+    try:
+        template['/ENTRY[entry]/experiment_result/chi'] = archive.data.results[0].chi.magnitude
+        template['/ENTRY[entry]/experiment_result/chi/@units'] = archive.data.results[0].chi.units.__str__()
+    except AttributeError:
+        pass
+
+    try:
+        template['/ENTRY[entry]/experiment_result/phi'] = archive.data.results[0].phi.magnitude
+        template['/ENTRY[entry]/experiment_result/phi/@units'] = archive.data.results[0].phi.units.__str__()
+    except AttributeError:
+        pass
+
+    try:
+        template[
+            '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis'
+        ] = archive.data.results[0].scan_axis
+    except AttributeError:
+        pass
+
+    try:
+        template['/ENTRY[entry]/experiment_config/count_time'] = archive.data.results[0].count_time.magnitude
+    except AttributeError:
+        pass
     # Technique specific concepts
-    if scan_type == 'line':
-        try:
-            template['/ENTRY[entry]/experiment_result/intensity'] = archive.data.results[0].intensity.magnitude
-        except AttributeError:
-            pass
-
-        try:
-            template['/ENTRY[entry]/experiment_result/two_theta'] = archive.data.results[0].two_theta.magnitude
-            template['/ENTRY[entry]/experiment_result/two_theta/@units'] = archive.data.results[0].two_theta.units.__str__()
-        except AttributeError:
-            pass
-
-        try:
-            template['/ENTRY[entry]/experiment_result/omega'] = archive.data.results[0].omega.magnitude
-            template['/ENTRY[entry]/experiment_result/omega/@units'] = archive.data.results[0].omega.units.__str__()
-        except AttributeError:
-            pass
-
-        try:
-            template['/ENTRY[entry]/experiment_result/chi'] = archive.data.results[0].chi.magnitude
-            template['/ENTRY[entry]/experiment_result/chi/@units'] = archive.data.results[0].chi.units.__str__()
-        except AttributeError:
-            pass
-
-        try:
-            template['/ENTRY[entry]/experiment_result/phi'] = archive.data.results[0].phi.magnitude
-            template['/ENTRY[entry]/experiment_result/phi/@units'] = archive.data.results[0].phi.units.__str__()
-        except AttributeError:
-            pass
-
-        try:
-            template[
-                '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis'
-            ] = archive.data.results[0].scan_axis
-        except AttributeError:
-            pass
-
-        try:
-            template['/ENTRY[entry]/experiment_config/count_time'] = archive.data.results[0].count_time.magnitude
-        except AttributeError:
-            pass
+    if scan_type == 'line': # For future implementation
+        pass
     # rsm
     elif scan_type == 'rsm':
         try:
@@ -211,7 +212,7 @@ def write_nx_section_and_create_file(archive: 'EntryArchive',
     dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
     connect_concepts(template, archive, scan_type='line')
     archive_name = archive.metadata.mainfile.split('.')[0]
-    nexus_output = f'{archive_name}_output.nxs'
+    nexus_output = f'{archive_name}.nxs'
 
     populate_nexus_subsection(
         template=template,
