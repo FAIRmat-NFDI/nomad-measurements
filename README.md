@@ -45,5 +45,5 @@ cd nomad-measurements
 
 And install the package in editable mode with the development ('dev') dependencies:
 ```sh
-pip install -e .[dev]
+pip install -e .[dev] --index-url https://gitlab.mpcdf.mpg.de/api/v4/projects/2187/packages/pypi/simple
 ```
