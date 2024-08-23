@@ -25,7 +25,8 @@ if TYPE_CHECKING:
 
 
 def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
-    """Connect the concepts between ELNXrayDiffraction and NXxrd_pan schema.
+    """
+    Connect the concepts between `ELNXrayDiffraction` and `NXxrd_pan` schema.
 
     Args:
         template (Template): The pynxtools template, a inherited class from python dict.
