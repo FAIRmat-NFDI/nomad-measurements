@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from nomad.datamodel.datamodel import EntryArchive
 
 
-# source_peak_wavelength
 def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
     """Connect the concepts between ELNXrayDiffraction and NXxrd_pan schema.
 
@@ -34,7 +33,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         scan_type (str): Name of the scan type such as line and RSM.
     """
 
-    # Genneral concepts
+    # General concepts
     template['/ENTRY[entry]/definition'] = 'NXxrd_pan'
 
     try:
