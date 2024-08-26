@@ -972,8 +972,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         if not self.results:
             return
 
-        if self.generate_nexus_file:
-            write_nx_section_and_create_file(archive, logger)
+        scan_type = xrd_dict.get('metadata', {}).get('scan_type', None)
+        if self.generate_nexus_file and self.data_file is not None:
+            write_nx_section_and_create_file(archive, logger, scan_type=scan_type)
         self.figures = self.results[0].generate_plots(archive, logger)
 
 

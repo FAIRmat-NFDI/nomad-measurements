@@ -227,7 +227,9 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
     }
 
 
-def write_nx_section_and_create_file(archive: 'EntryArchive', logger: 'BoundLogger'):
+def write_nx_section_and_create_file(
+    archive: 'EntryArchive', logger: 'BoundLogger', scan_type: str = 'line'
+):
     """
     Uses the archive to generate the NeXus section and .nxs file.
 
@@ -238,11 +240,11 @@ def write_nx_section_and_create_file(archive: 'EntryArchive', logger: 'BoundLogg
         nxs_as_entry (boolean): If True, the function will generate a .nxs file
                 as a nomad entry.
     """
-    entry_type = archive.metadata.entry_type
+    #### entry_type = archive.metadata.entry_type
     nxdl_root, _ = dataconverter.helpers.get_nxdl_root_and_path('NXxrd_pan')
     template = dataconverter.template.Template()
     dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
-    connect_concepts(template, archive, scan_type='line')
+    connect_concepts(template, archive, scan_type=scan_type)
     archive_name = archive.metadata.mainfile.split('.')[0]
     nexus_output = f'{archive_name}.nxs'
 
@@ -253,4 +255,4 @@ def write_nx_section_and_create_file(archive: 'EntryArchive', logger: 'BoundLogg
         logger=logger,
         output_file_path=nexus_output,
     )
-    archive.metadata.entry_type = entry_type
+    #### archive.metadata.entry_type = entry_type
