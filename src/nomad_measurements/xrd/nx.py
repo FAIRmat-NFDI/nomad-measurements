@@ -60,9 +60,9 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         template['/ENTRY[entry]/experiment_result/two_theta'] = archive.data.results[
             0
         ].two_theta.magnitude
-        template[
-            '/ENTRY[entry]/experiment_result/two_theta/@units'
-        ] = archive.data.results[0].two_theta.units.__str__()
+        template['/ENTRY[entry]/experiment_result/two_theta/@units'] = str(
+            archive.data.results[0].two_theta.units
+        )
     except AttributeError:
         pass
 
@@ -70,9 +70,9 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         template['/ENTRY[entry]/experiment_result/omega'] = archive.data.results[
             0
         ].omega.magnitude
-        template['/ENTRY[entry]/experiment_result/omega/@units'] = archive.data.results[
-            0
-        ].omega.units.__str__()
+        template['/ENTRY[entry]/experiment_result/omega/@units'] = str(
+            archive.data.results[0].omega.units
+        )
     except AttributeError:
         pass
 
@@ -80,9 +80,9 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         template['/ENTRY[entry]/experiment_result/chi'] = archive.data.results[
             0
         ].chi.magnitude
-        template['/ENTRY[entry]/experiment_result/chi/@units'] = archive.data.results[
-            0
-        ].chi.units.__str__()
+        template['/ENTRY[entry]/experiment_result/chi/@units'] = str(
+            archive.data.results[0].chi.units
+        )
     except AttributeError:
         pass
 
@@ -90,9 +90,9 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         template['/ENTRY[entry]/experiment_result/phi'] = archive.data.results[
             0
         ].phi.magnitude
-        template['/ENTRY[entry]/experiment_result/phi/@units'] = archive.data.results[
-            0
-        ].phi.units.__str__()
+        template['/ENTRY[entry]/experiment_result/phi/@units'] = str(
+            archive.data.results[0].phi.units
+        )
     except AttributeError:
         pass
 
@@ -118,9 +118,9 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
             template['/ENTRY[entry]/experiment_result/q_parallel'] = (
                 archive.data.results[0].q_parallel,
             )
-            template[
-                '/ENTRY[entry]/experiment_result/q_parallel/@units'
-            ] = archive.data.results[0].q_parallel.units.__str__()
+            template['/ENTRY[entry]/experiment_result/q_parallel/@units'] = str(
+                archive.data.results[0].q_parallel.units
+            )
         except AttributeError:
             pass
 
@@ -128,9 +128,9 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
             template[
                 '/ENTRY[entry]/experiment_result/q_perpendicular'
             ] = archive.data.results[0].q_perpendicular.magnitude
-            template[
-                '/ENTRY[entry]/experiment_result/q_perpendicular/@units'
-            ] = archive.data.results[0].q_perpendicular.units.__str__()
+            template['/ENTRY[entry]/experiment_result/q_perpendicular/@units'] = str(
+                archive.data.results[0].q_perpendicular.units
+            )
         except AttributeError:
             pass
 
@@ -138,9 +138,9 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
             template['/ENTRY[entry]/experiment_result/q_norm'] = archive.data.results[
                 0
             ].q_norm.magnitude
-            template[
-                '/ENTRY[entry]/experiment_result/q_norm/@units'
-            ] = archive.data.results[0].q_norm.units.__str__()
+            template['/ENTRY[entry]/experiment_result/q_norm/@units'] = str(
+                archive.data.results[0].q_norm.units
+            )
         except AttributeError:
             pass
 
@@ -158,7 +158,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         ] = archive.data.xrd_settings.source.xray_tube_current.magnitude
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current/@units'
-        ] = archive.data.xrd_settings.source.xray_tube_current.units.__str__()
+        ] = str(archive.data.xrd_settings.source.xray_tube_current.units)
     except AttributeError:
         pass
 
@@ -168,7 +168,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         ] = archive.data.xrd_settings.source.xray_tube_voltage.magnitude
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage/@units'
-        ] = archive.data.xrd_settings.source.xray_tube_voltage.units.__str__()
+        ] = str(archive.data.xrd_settings.source.xray_tube_voltage.units)
     except AttributeError:
         pass
 
@@ -178,7 +178,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         ] = archive.data.xrd_settings.source.kalpha_one.magnitude
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one/@units'
-        ] = archive.data.xrd_settings.source.kalpha_one.units.__str__()
+        ] = str(archive.data.xrd_settings.source.kalpha_one.units)
     except AttributeError:
         pass
 
@@ -188,7 +188,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         ] = archive.data.xrd_settings.source.kalpha_two.magnitude
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two/@units'
-        ] = archive.data.xrd_settings.source.kalpha_two.units.__str__()
+        ] = str(archive.data.xrd_settings.source.kalpha_two.units)
     except AttributeError:
         pass
 
@@ -205,7 +205,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         ] = archive.data.xrd_settings.source.kbeta.magnitude
         template[
             '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta/@units'
-        ] = archive.data.xrd_settings.source.kbeta.units.__str__()
+        ] = str(archive.data.xrd_settings.source.kbeta.units)
     except AttributeError:
         pass
 
