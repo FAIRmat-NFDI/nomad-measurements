@@ -240,7 +240,6 @@ def write_nx_section_and_create_file(
         nxs_as_entry (boolean): If True, the function will generate a .nxs file
                 as a nomad entry.
     """
-    #### entry_type = archive.metadata.entry_type
     nxdl_root, _ = dataconverter.helpers.get_nxdl_root_and_path('NXxrd_pan')
     template = dataconverter.template.Template()
     dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
@@ -255,4 +254,3 @@ def write_nx_section_and_create_file(
         logger=logger,
         output_file_path=nexus_output,
     )
-    #### archive.metadata.entry_type = entry_type
