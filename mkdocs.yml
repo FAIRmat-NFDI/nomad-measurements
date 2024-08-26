@@ -12,6 +12,8 @@ nav:
     - Use this Plugin: how_to/use_this_plugin.md
   - References: reference/references.md
   - Tutorials: tutorial/tutorial.md
+  - Contact: contact.md
+
 plugins:
  - search
 theme:
