@@ -16,19 +16,20 @@
 # limitations under the License.
 #
 from typing import TYPE_CHECKING
+
+from nomad.datamodel.data import (
+    EntryData,
+)
+from nomad.datamodel.metainfo.annotations import (
+    ELNAnnotation,
+)
 from nomad.metainfo import (
     Quantity,
 )
 from nomad.parsing import MatchingParser
-from nomad.datamodel.metainfo.annotations import (
-    ELNAnnotation,
-)
-from nomad.datamodel.data import (
-    EntryData,
-)
 
 from nomad_measurements.utils import create_archive
-from nomad_measurements.xrd import ELNXRayDiffraction
+from nomad_measurements.xrd.schema import ELNXRayDiffraction
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -53,11 +54,6 @@ class XRDParser(MatchingParser):
     """
     Parser for matching XRD files and creating instances of ELNXRayDiffraction
     """
-
-    def __init__(self):
-        super().__init__(
-            code_name='XRD Parser',
-        )
 
     def parse(
         self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None

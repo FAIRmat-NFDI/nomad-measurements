@@ -1,3 +1,0 @@
-description: A NOMAD plugin containing base sections for measurements.
-name: schemas/nomad_measurements
-plugin_type: schema

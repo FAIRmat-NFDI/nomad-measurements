@@ -16,19 +16,20 @@
 # limitations under the License.
 #
 from typing import TYPE_CHECKING
+
+from nomad.datamodel.data import (
+    EntryData,
+)
+from nomad.datamodel.metainfo.annotations import (
+    ELNAnnotation,
+)
 from nomad.metainfo import (
     Quantity,
 )
 from nomad.parsing import MatchingParser
-from nomad.datamodel.metainfo.annotations import (
-    ELNAnnotation,
-)
-from nomad.datamodel.data import (
-    EntryData,
-)
 
+from nomad_measurements.transmission.schema import ELNTransmission
 from nomad_measurements.utils import create_archive
-from nomad_measurements.transmission import ELNTransmission
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -46,11 +47,6 @@ class RawFileTransmissionData(EntryData):
 
 
 class TransmissionParser(MatchingParser):
-    def __init__(self):
-        super().__init__(
-            code_name='XRD Parser',
-        )
-
     def parse(self, mainfile: str, archive: 'EntryArchive', logger) -> None:
         data_file = mainfile.split('/')[-1]
         entry = ELNTransmission.m_from_dict(ELNTransmission.m_def.a_template)

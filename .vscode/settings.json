@@ -1,8 +1,12 @@
 {
     "python.defaultInterpreterPath": ".pyenv/bin/python",
     "editor.rulers": [
-        90
+        88
     ],
     "editor.renderWhitespace": "all",
-    "editor.tabSize": 4
+    "editor.tabSize": 4,
+    "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true
+  }
 }
