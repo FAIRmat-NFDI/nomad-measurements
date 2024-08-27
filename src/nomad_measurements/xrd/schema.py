@@ -80,7 +80,7 @@ if TYPE_CHECKING:
     )
     import pint
 
-from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
+from pynxtools.nomad.dataconverter import populate_nexus_subsection
 from pynxtools import dataconverter
 
 
