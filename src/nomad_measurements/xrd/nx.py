@@ -16,12 +16,15 @@
 # limitations under the License.
 #
 from typing import TYPE_CHECKING
-from pynxtools.nomad.dataconverter import populate_nexus_subsection
-from pynxtools import dataconverter
 
+from pynxtools import dataconverter
+from pynxtools.nomad.dataconverter import populate_nexus_subsection
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import EntryArchive
+    from structlog.stdlib import (
+        BoundLogger,
+    )
 
 
 def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
@@ -30,7 +33,8 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
 
     Args:
         template (Template): The pynxtools template, a inherited class from python dict.
-        archive (EntryArchive): Nomad archive contains secttions, subsections and quantities.
+        archive (EntryArchive): Nomad archive contains secttions, subsections and
+            quantities.
         scan_type (str): Name of the scan type such as line and RSM.
     """
 

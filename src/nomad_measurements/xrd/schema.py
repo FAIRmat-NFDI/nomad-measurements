@@ -67,28 +67,25 @@ from scipy.interpolate import griddata
 from nomad_measurements.general import (
     NOMADMeasurementsCategory,
 )
-from nomad_measurements.xrd.nx import write_nx_section_and_create_file
 from nomad_measurements.utils import get_bounding_range_2d, merge_sections
+from nomad_measurements.xrd.nx import write_nx_section_and_create_file
 
 if TYPE_CHECKING:
     import pint
     from nomad.datamodel.datamodel import (
         EntryArchive,
     )
-    from pynxtools.dataconverter.template import Template
     from structlog.stdlib import (
         BoundLogger,
     )
-    import pint
 
-from pynxtools.nomad.dataconverter import populate_nexus_subsection
-from pynxtools import dataconverter
 
 from nomad.config import config
 
 configuration = config.get_plugin_entry_point('nomad_measurements.xrd:schema')
 
 m_package = SchemaPackage(name='nomad_xrd')
+
 
 def calculate_two_theta_or_q(
     wavelength: 'pint.Quantity',
