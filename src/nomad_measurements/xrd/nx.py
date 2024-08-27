@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     )
 
 
-def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
+def connect_concepts(template, archive: 'EntryArchive', scan_type: str):  # noqa: PLR0915, PLR0912
     """
     Connect the concepts between `ELNXrayDiffraction` and `NXxrd_pan` schema.
 
@@ -214,7 +214,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
         pass
 
     # Links to the data and concepts
-    template['//ENTRY[entry]/@default'] = 'experiment_result'
+    template['/ENTRY[entry]/@default'] = 'experiment_result'
     template['/ENTRY[entry]/experiment_result/@signal'] = 'intensity'
     template['/ENTRY[entry]/experiment_result/@axes'] = 'two_theta'
     template['/ENTRY[entry]/q_data/q'] = {
