@@ -51,9 +51,17 @@ def parsed_archive(request):
         os.remove(measurement)
 
 
-def test_normalize_all(parsed_archive):
+def test_normalize_all(parsed_archive, capture_error_from_logger):
+    """
+    Tests the normalization of the parsed archive.
+
+    Args:
+        parsed_archive (pytest.fixture): Fixture to handle the parsing of archive.
+        capture_error_from_logger (capture_error_from_logger): Fixture to capture
+            errors from the logger.
+    """
     normalize_all(parsed_archive)
-    print(parsed_archive.data)
+
     assert parsed_archive.data.xrd_settings.source.xray_tube_material == 'Cu'
     assert parsed_archive.data.results[
         0
