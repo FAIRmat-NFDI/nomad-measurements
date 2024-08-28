@@ -51,8 +51,9 @@ def fixture_parsed_archive(request):
 
     yield measurement_archive
 
-    if os.path.exists(measurement):
-        os.remove(measurement)
+    for file_path in [measurement, measurement.replace('archive.json', 'nxs')]:
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 
 @pytest.mark.parametrize(
