@@ -982,7 +982,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         if self.generate_nexus_file and self.data_file is not None:
             write_nx_section_and_create_file(archive, logger, scan_type=scan_type)
 
-            self.figures = self.results[0].generate_plots(archive, logger)
+        self.figures = self.results[0].generate_plots(archive, logger)
 
 
 m_package.__init_metainfo__()
