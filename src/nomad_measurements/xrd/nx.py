@@ -53,7 +53,7 @@ def walk_through_object(parent_obj, attr_chain, default=None):
             return getattr(parent_obj, attr_chain, default)
 
 
-def connect_concepts(template, archive: 'EntryArchive', scan_type: str):  # noqa: PLR0915, PLR0912
+def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
     """
     Connect the concepts between `ELNXrayDiffraction` and `NXxrd_pan` schema.
 
