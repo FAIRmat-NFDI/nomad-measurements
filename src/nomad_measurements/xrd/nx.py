@@ -27,6 +27,32 @@ if TYPE_CHECKING:
     )
 
 
+def walk_through_object(parent_obj, attr_chain, default=None):
+    """
+    Walk though the object until reach the leaf.
+
+    Args:
+        parent_obj: This is a python obj.
+        attr_chain: Dot separated obj chain.
+        default: A value to be returned by default, if not data is found.
+    """
+    expected_parts = 2
+    if isinstance(attr_chain, str):
+        parts = attr_chain.split('.', 1)
+
+        if len(parts) == expected_parts:
+            child_nm, rest_part = parts
+            if '[' in child_nm:
+                child_nm, index = child_nm.split('[')
+                index = int(index[:-1])
+                child_obj = getattr(parent_obj, child_nm)[index]
+            else:
+                child_obj = getattr(parent_obj, child_nm)
+            return walk_through_object(child_obj, rest_part, default=default)
+        else:
+            return getattr(parent_obj, attr_chain, default)
+
+
 def connect_concepts(template, archive: 'EntryArchive', scan_type: str):  # noqa: PLR0915, PLR0912
     """
     Connect the concepts between `ELNXrayDiffraction` and `NXxrd_pan` schema.
@@ -39,179 +65,73 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):  # noqa
     """
 
     # General concepts
+    # ruff: noqa: E501
+    concept_map = {
+        '/ENTRY[entry]/method': 'archive.data.method',
+        '/ENTRY[entry]/measurement_type': 'archive.data.diffraction_method_name',
+        '/ENTRY[entry]/experiment_result/intensity': 'archive.data.results[0].intensity.magnitude',
+        '/ENTRY[entry]/experiment_result/two_theta': 'archive.data.results[0].two_theta.magnitude',
+        '/ENTRY[entry]/experiment_result/two_theta/@units': 'archive.data.results[0].two_theta.units',
+        '/ENTRY[entry]/experiment_result/omega': 'archive.data.results[0].omega.magnitude',
+        '/ENTRY[entry]/experiment_result/omega/@units': 'archive.data.results[0].omega.units',
+        '/ENTRY[entry]/experiment_result/chi': 'archive.data.results[0].chi.magnitude',
+        '/ENTRY[entry]/experiment_result/chi/@units': 'archive.data.results[0].chi.units',
+        '/ENTRY[entry]/experiment_result/phi': 'archive.data.results[0].phi.magnitude',
+        '/ENTRY[entry]/experiment_result/phi/@units': 'archive.data.results[0].phi.units',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis': 'archive.data.results[0].scan_axis',
+        '/ENTRY[entry]/experiment_config/count_time': 'archive.data.results[0].count_time.magnitude',
+        'line': '',  # For future implementation
+        'rsm': {
+            '/ENTRY[entry]/experiment_result/q_parallel': 'archive.data.results[0].q_parallel',
+            '/ENTRY[entry]/experiment_result/q_parallel/@units': 'archive.data.results[0].q_parallel.units',
+            '/ENTRY[entry]/experiment_result/q_perpendicular': 'archive.data.results[0].q_perpendicular.magnitude',
+            '/ENTRY[entry]/experiment_result/q_perpendicular/@units': 'archive.data.results[0].q_perpendicular.units',
+            '/ENTRY[entry]/experiment_result/q_norm': 'archive.data.results[0].q_norm.magnitude',
+            '/ENTRY[entry]/experiment_result/q_norm/@units': 'archive.data.results[0].q_norm.units',
+        },
+        # Source
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material': 'archive.data.xrd_settings.source.xray_tube_material',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current': 'archive.data.xrd_settings.source.xray_tube_current.magnitude',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current/@units': 'archive.data.xrd_settings.source.xray_tube_current.units',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage': 'archive.data.xrd_settings.source.xray_tube_voltage.magnitude',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage/@units': 'archive.data.xrd_settings.source.xray_tube_voltage.units',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one': 'archive.data.xrd_settings.source.kalpha_one.magnitude',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one/@units': 'archive.data.xrd_settings.source.kalpha_one.units',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two': 'archive.data.xrd_settings.source.kalpha_two.magnitude',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two/@units': 'archive.data.xrd_settings.source.kalpha_two.units',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone': 'archive.data.xrd_settings.source.ratio_kalphatwo_kalphaone',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta': 'archive.data.xrd_settings.source.kbeta.magnitude',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta/@units': 'archive.data.xrd_settings.source.kbeta.units',
+    }
+
+    for key, archive_concept in concept_map.items():
+        if isinstance(archive_concept, dict):
+            if key == scan_type:
+                for sub_key, sub_archive_concept in archive_concept.items():
+                    _, arch_attr = sub_archive_concept.split('.', 1)
+                    value = None
+                    try:
+                        value = walk_through_object(archive, arch_attr)
+                    except (AttributeError, IndexError, KeyError, ValueError):
+                        pass
+                    finally:
+                        if value:
+                            template[sub_key] = value
+            else:
+                continue
+        elif archive_concept:
+            _, arch_attr = archive_concept.split('.', 1)
+            value = None
+            try:
+                value = walk_through_object(archive, arch_attr)
+            # Use multiple excepts to avoid catching all exceptions
+            except (AttributeError, IndexError, KeyError, ValueError):
+                pass
+            finally:
+                if value:
+                    template[key] = value
+
     template['/ENTRY[entry]/definition'] = 'NXxrd_pan'
-
-    try:
-        template['/ENTRY[entry]/method'] = archive.data.method
-    except AttributeError:
-        pass
-
-    try:
-        template[
-            '/ENTRY[entry]/measurement_type'
-        ] = archive.data.diffraction_method_name
-    except AttributeError:
-        pass
-
-    try:
-        template['/ENTRY[entry]/experiment_result/intensity'] = archive.data.results[
-            0
-        ].intensity.magnitude
-    except AttributeError:
-        pass
-
-    try:
-        template['/ENTRY[entry]/experiment_result/two_theta'] = archive.data.results[
-            0
-        ].two_theta.magnitude
-        template['/ENTRY[entry]/experiment_result/two_theta/@units'] = str(
-            archive.data.results[0].two_theta.units
-        )
-    except AttributeError:
-        pass
-
-    try:
-        template['/ENTRY[entry]/experiment_result/omega'] = archive.data.results[
-            0
-        ].omega.magnitude
-        template['/ENTRY[entry]/experiment_result/omega/@units'] = str(
-            archive.data.results[0].omega.units
-        )
-    except AttributeError:
-        pass
-
-    try:
-        template['/ENTRY[entry]/experiment_result/chi'] = archive.data.results[
-            0
-        ].chi.magnitude
-        template['/ENTRY[entry]/experiment_result/chi/@units'] = str(
-            archive.data.results[0].chi.units
-        )
-    except AttributeError:
-        pass
-
-    try:
-        template['/ENTRY[entry]/experiment_result/phi'] = archive.data.results[
-            0
-        ].phi.magnitude
-        template['/ENTRY[entry]/experiment_result/phi/@units'] = str(
-            archive.data.results[0].phi.units
-        )
-    except AttributeError:
-        pass
-
-    try:
-        template[
-            '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis'
-        ] = archive.data.results[0].scan_axis
-    except AttributeError:
-        pass
-
-    try:
-        template['/ENTRY[entry]/experiment_config/count_time'] = archive.data.results[
-            0
-        ].count_time.magnitude
-    except AttributeError:
-        pass
-    # Technique specific concepts
-    if scan_type == 'line':  # For future implementation
-        pass
-    # rsm
-    elif scan_type == 'rsm':
-        try:
-            template['/ENTRY[entry]/experiment_result/q_parallel'] = (
-                archive.data.results[0].q_parallel,
-            )
-            template['/ENTRY[entry]/experiment_result/q_parallel/@units'] = str(
-                archive.data.results[0].q_parallel.units
-            )
-        except AttributeError:
-            pass
-
-        try:
-            template[
-                '/ENTRY[entry]/experiment_result/q_perpendicular'
-            ] = archive.data.results[0].q_perpendicular.magnitude
-            template['/ENTRY[entry]/experiment_result/q_perpendicular/@units'] = str(
-                archive.data.results[0].q_perpendicular.units
-            )
-        except AttributeError:
-            pass
-
-        try:
-            template['/ENTRY[entry]/experiment_result/q_norm'] = archive.data.results[
-                0
-            ].q_norm.magnitude
-            template['/ENTRY[entry]/experiment_result/q_norm/@units'] = str(
-                archive.data.results[0].q_norm.units
-            )
-        except AttributeError:
-            pass
-
-    # Source
-    try:
-        template[
-            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material'
-        ] = archive.data.xrd_settings.source.xray_tube_material
-    except AttributeError:
-        pass
-
-    try:
-        template[
-            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current'
-        ] = archive.data.xrd_settings.source.xray_tube_current.magnitude
-        template[
-            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current/@units'
-        ] = str(archive.data.xrd_settings.source.xray_tube_current.units)
-    except AttributeError:
-        pass
-
-    try:
-        template[
-            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage'
-        ] = archive.data.xrd_settings.source.xray_tube_voltage.magnitude
-        template[
-            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage/@units'
-        ] = str(archive.data.xrd_settings.source.xray_tube_voltage.units)
-    except AttributeError:
-        pass
-
-    try:
-        template[
-            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one'
-        ] = archive.data.xrd_settings.source.kalpha_one.magnitude
-        template[
-            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one/@units'
-        ] = str(archive.data.xrd_settings.source.kalpha_one.units)
-    except AttributeError:
-        pass
-
-    try:
-        template[
-            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two'
-        ] = archive.data.xrd_settings.source.kalpha_two.magnitude
-        template[
-            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two/@units'
-        ] = str(archive.data.xrd_settings.source.kalpha_two.units)
-    except AttributeError:
-        pass
-
-    try:
-        template[
-            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone'
-        ] = archive.data.xrd_settings.source.ratio_kalphatwo_kalphaone
-    except AttributeError:
-        pass
-
-    try:
-        template[
-            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta'
-        ] = archive.data.xrd_settings.source.kbeta.magnitude
-        template[
-            '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta/@units'
-        ] = str(archive.data.xrd_settings.source.kbeta.units)
-    except AttributeError:
-        pass
 
     # Links to the data and concepts
     template['/ENTRY[entry]/@default'] = 'experiment_result'
