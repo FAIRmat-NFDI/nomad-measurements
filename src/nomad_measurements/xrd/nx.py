@@ -53,7 +53,7 @@ def walk_through_object(parent_obj, attr_chain, default=None):
             return getattr(parent_obj, attr_chain, default)
 
 
-def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
+def connect_concepts(template, archive: 'EntryArchive', scan_type: str):  # noqa: PLR0912
     """
     Connect the concepts between `ELNXrayDiffraction` and `NXxrd_pan` schema.
 
@@ -117,9 +117,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
                     finally:
                         if value is not None:
                             template[sub_key] = (
-                                str(value)
-                                if sub_key.endswith('units')
-                                else value
+                                str(value) if sub_key.endswith('units') else value
                             )
             else:
                 continue
