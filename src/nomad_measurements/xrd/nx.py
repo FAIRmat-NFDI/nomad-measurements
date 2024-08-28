@@ -118,7 +118,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):
                         if value is not None:
                             template[sub_key] = (
                                 str(value)
-                                if archive_concept.endswith('units')
+                                if sub_key.endswith('units')
                                 else value
                             )
             else:
