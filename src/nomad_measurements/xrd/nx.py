@@ -115,8 +115,12 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):  # noqa
                     except (AttributeError, IndexError, KeyError, ValueError):
                         pass
                     finally:
-                        if value:
-                            template[sub_key] = value
+                        if value is not None:
+                            template[sub_key] = (
+                                str(value)
+                                if archive_concept.endswith('units')
+                                else value
+                            )
             else:
                 continue
         elif archive_concept:
@@ -128,8 +132,8 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):  # noqa
             except (AttributeError, IndexError, KeyError, ValueError):
                 pass
             finally:
-                if value:
-                    template[key] = value
+                if value is not None:
+                    template[key] = str(value) if key.endswith('units') else value
 
     template['/ENTRY[entry]/definition'] = 'NXxrd_pan'
 
