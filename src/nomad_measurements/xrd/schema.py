@@ -23,12 +23,14 @@ from typing import (
 )
 
 import numpy as np
+import pint
 import plotly.express as px
 from fairmat_readers_xrd import (
     read_bruker_brml,
     read_panalytical_xrdml,
     read_rigaku_rasx,
 )
+from nomad.config import config
 from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
@@ -73,7 +75,6 @@ from nomad_measurements.utils import get_bounding_range_2d, merge_sections
 from nomad_measurements.xrd.nx import write_nx_section_and_create_file
 
 if TYPE_CHECKING:
-    import pint
     from nomad.datamodel.datamodel import (
         EntryArchive,
     )
@@ -98,8 +99,8 @@ xrd_dict = {}
 
 def calculate_two_theta_or_q(
     wavelength: 'pint.Quantity',
-    q: Optional[np.ndarray] = None,
-    two_theta: Optional[np.ndarray] = None,
+    q: Optional['pint.Quantity'] = None,
+    two_theta: Optional['pint.Quantity'] = None,
 ) -> tuple['pint.Quantity', 'pint.Quantity']:
     """
     Calculate the two-theta array from the scattering vector (q) or vice-versa,
@@ -122,10 +123,10 @@ def calculate_two_theta_or_q(
     return q, two_theta
 
 
-def calculate_q_vectors_RSM(
+def calculate_q_vectors(
     wavelength: 'pint.Quantity',
-    two_theta: np.ndarray,
-    omega: np.ndarray,
+    two_theta: 'pint.Quantity',
+    omega: 'pint.Quantity',
 ):
     """
     Calculate the q-vectors for RSM scans in coplanar configuration.
@@ -136,22 +137,27 @@ def calculate_q_vectors_RSM(
     Returns:
         tuple[pint.Quantity, pint.Quantity]: Tuple of q-vectors.
     """
-    omega = omega[:, None] * np.ones_like(two_theta)
+    omega = omega[:, None] * np.ones_like(two_theta.magnitude)
     qx = (
         2
         * np.pi
-        / wavelength.magnitude
-        * (np.cos((two_theta - omega) * np.pi / 180.0) - np.cos(omega * np.pi / 180.0))
+        / wavelength
+        * (
+            np.cos(two_theta.to('radian') - omega.to('radian'))
+            - np.cos(omega.to('radian'))
+        ).magnitude
     )
     qz = (
         2
         * np.pi
         / wavelength
-        * (np.sin((two_theta - omega) * np.pi / 180.0) + np.sin(omega * np.pi / 180.0))
+        * (
+            np.sin(two_theta.to('radian') - omega.to('radian'))
+            + np.sin(omega.to('radian'))
+        ).magnitude
     )
-
-    q_parallel = qx
-    q_perpendicular = qz
+    q_parallel = qx.to('1/angstrom')
+    q_perpendicular = qz.to('1/angstrom')
     return q_parallel, q_perpendicular
 
 
@@ -279,26 +285,21 @@ class XRDResult(MeasurementResult):
     two_theta = Quantity(
         type=HDF5Reference,
         description='The 2-theta range of the diffractogram',
-        unit='deg',
     )
     q_norm = Quantity(
         type=HDF5Reference,
-        unit='meter**(-1)',
         description='The norm of scattering vector *Q* of the diffractogram',
     )
     omega = Quantity(
         type=HDF5Reference,
-        unit='deg',
         description='The omega range of the diffractogram',
     )
     phi = Quantity(
         type=HDF5Reference,
-        unit='deg',
         description='The phi range of the diffractogram',
     )
     chi = Quantity(
         type=HDF5Reference,
-        unit='deg',
         description='The chi range of the diffractogram',
     )
     source_peak_wavelength = Quantity(
@@ -514,18 +515,11 @@ class XRDResultRSM(XRDResult):
     m_def = Section()
     q_parallel = Quantity(
         type=HDF5Reference,
-        unit='meter**(-1)',
         description='The scattering vector *Q_parallel* of the diffractogram',
     )
     q_perpendicular = Quantity(
         type=HDF5Reference,
-        unit='meter**(-1)',
         description='The scattering vector *Q_perpendicular* of the diffractogram',
-    )
-    intensity = Quantity(
-        type=HDF5Reference,
-        unit='dimensionless',
-        description='The count at each position, dimensionless',
     )
 
     def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
@@ -617,8 +611,8 @@ class XRDResultRSM(XRDResult):
 
         # Plot for RSM in Q-vectors
         if self.q_parallel is not None and self.q_perpendicular is not None:
-            x = self.q_parallel.to('1/angstrom').magnitude.flatten()
-            y = self.q_perpendicular.to('1/angstrom').magnitude.flatten()
+            x = HDF5Reference.read_dataset(archive, self.q_parallel).flatten()
+            y = HDF5Reference.read_dataset(archive, self.q_perpendicular).flatten()
             # q_vectors lead to irregular grid
             # generate a regular grid using interpolation
             x_regular = np.linspace(x.min(), x.max(), z.shape[0])
@@ -699,26 +693,38 @@ class XRDResultRSM(XRDResult):
 
         return plots
 
-    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-        super().normalize(archive, logger)
-        if self.name is None:
-            self.name = 'RSM Scan Result'
+    def calculate_q_components_for_RSM(self):
+        """
+        Calculate the q-vectors for RSM scans in coplanar configuration.
+        """
         if self.source_peak_wavelength is not None:
+            source_peak_wavelength = self.source_peak_wavelength
+        else:
+            source_peak_wavelength = xrd_dict.get('eln_dict').get('kalpha_one', None)
+            source_peak_wavelength = source_peak_wavelength * ureg(
+                xrd_dict.get('eln_dict').get('kalpha_one/units', None)
+            )
+        if source_peak_wavelength is not None:
             for var_axis in ['Omega', 'Chi', 'Phi']:
                 if (
                     xrd_dict[var_axis] is not None
-                    and len(np.unique(xrd_dict[var_axis])) > 1
+                    and len(np.unique(xrd_dict[var_axis].magnitude)) > 1
                 ):
                     (
                         xrd_dict['q_parallel'],
                         xrd_dict['q_perpendicular'],
-                    ) = calculate_q_vectors_RSM(
-                        wavelength=self.source_peak_wavelength,
+                    ) = calculate_q_vectors(
+                        wavelength=source_peak_wavelength.to('angstrom'),
                         two_theta=xrd_dict['2Theta']
                         * np.ones_like(xrd_dict['intensity']),
                         omega=xrd_dict[var_axis],
                     )
                     break
+
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+        super().normalize(archive, logger)
+        if self.name is None:
+            self.name = 'RSM Scan Result'
 
 
 class XRayDiffraction(Measurement):
@@ -909,9 +915,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         eln_dict['kalpha_one/units'] = str(source.kalpha_one.units)
         eln_dict['kalpha_two'] = source.kalpha_two.magnitude
         eln_dict['kalpha_two/units'] = str(source.kalpha_two.units)
-        eln_dict[
-            'ratio_kalphatwo_kalphaone'
-        ] = source.ratio_kalphatwo_kalphaone.magnitude
+        eln_dict['ratio_kalphatwo_kalphaone'] = (
+            source.ratio_kalphatwo_kalphaone.magnitude
+        )
         eln_dict['kbeta'] = source.kbeta.magnitude
         eln_dict['kbeta/units'] = str(source.kbeta.units)
 
@@ -930,13 +936,16 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         elif scan_type == 'rsm':
             result = XRDResultRSM(
                 intensity=f'{nx_out_f}#/entry/experiment_result/intensity',
-                two_theta=f'{nx_out_f}#/entry/experiment_result/intensity',
+                two_theta=f'{nx_out_f}#/entry/experiment_result/two_theta',
                 omega=f'{nx_out_f}#/entry/experiment_result/omega',
                 chi=f'{nx_out_f}#/entry/experiment_result/chi',
                 phi=f'{nx_out_f}#/entry/experiment_result/phi',
+                q_parallel=f'{nx_out_f}#/entry/experiment_result/q_parallel',
+                q_perpendicular=f'{nx_out_f}#/entry/experiment_result/q_perpendicular',
                 scan_axis=metadata_dict.get('scan_axis', None),
                 integration_time=xrd_dict.get('countTime', None),
             )
+            result.calculate_q_components_for_RSM()
         else:
             raise NotImplementedError(f'Scan type `{scan_type}` is not supported.')
         xrd = ELNXRayDiffraction(
@@ -944,7 +953,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             xrd_settings=xrd_settings,
             samples=samples,
         )
-
         write_nx_section_and_create_file(
             archive,
             logger,

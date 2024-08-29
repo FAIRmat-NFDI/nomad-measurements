@@ -130,6 +130,9 @@ def connect_concepts_from_dict(xrd_dict, template, scan_type: str):
 
     for key, value in concept_links_from_xrd_dict.items():
         if key in ['line', 'rsm'] and isinstance(value, dict):
+            # run for provided scan_type
+            if key != scan_type:
+                continue
             for k, v in value.items():
                 __set_data_and_units(k, xrd_dict, **v)
         elif isinstance(value, dict):
@@ -174,7 +177,6 @@ def write_nx_section_and_create_file(
         scan_type (str): The type of scan, either 'line' or 'rsm'
     """
     app_def = 'NXxrd_pan'
-    entry_type = archive.metadata.entry_type
     nxdl_root, _ = dataconverter.helpers.get_nxdl_root_and_path(app_def)
     template = dataconverter.template.Template()
     dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
@@ -190,4 +192,3 @@ def write_nx_section_and_create_file(
         output_file_path=nx_file,
         on_temp_file=False,
     )
-    archive.metadata.entry_type = entry_type
