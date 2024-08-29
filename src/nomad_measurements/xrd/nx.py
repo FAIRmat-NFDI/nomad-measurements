@@ -27,156 +27,167 @@ if TYPE_CHECKING:
     )
 
 
-def walk_through_object(parent_obj, attr_chain, default=None):
-    """
-    Walk though the object until reach the leaf.
-
-    Args:
-        parent_obj: This is a python obj.
-        attr_chain: Dot separated obj chain.
-        default: A value to be returned by default, if not data is found.
-    """
-    expected_parts = 2
-    if isinstance(attr_chain, str):
-        parts = attr_chain.split('.', 1)
-
-        if len(parts) == expected_parts:
-            child_nm, rest_part = parts
-            if '[' in child_nm:
-                child_nm, index = child_nm.split('[')
-                index = int(index[:-1])
-                child_obj = getattr(parent_obj, child_nm)[index]
-            else:
-                child_obj = getattr(parent_obj, child_nm)
-            return walk_through_object(child_obj, rest_part, default=default)
-        else:
-            return getattr(parent_obj, attr_chain, default)
-
-
-def connect_concepts(template, archive: 'EntryArchive', scan_type: str):  # noqa: PLR0912
+def connect_concepts_from_dict(xrd_dict, template, scan_type: str):
     """
     Connect the concepts between `ELNXrayDiffraction` and `NXxrd_pan` schema.
 
     Args:
-        template (Template): The pynxtools template, a inherited class from python dict.
-        archive (EntryArchive): Nomad archive contains secttions, subsections and
-            quantities.
-        scan_type (str): Name of the scan type such as line and RSM.
+        archive (EntryArchive): The Nomad archive object.
+        xrd_dict (dict): A dictionary containing the data from experiment file and
+                eln data under the key `eln_dict`.
+        template (Template): A template object containing the NXxrd_pan schema.
+        scan_type (str): The type of scan, either 'line' or 'rsm'
     """
 
-    # General concepts
+    def __set_data_and_units(
+        temp_key, data_dict, data_path=None, units=None, units_path=None, **kwargs
+    ):
+        data = data_dict.get(data_path, None)
+        if data is not None:
+            template[temp_key] = data
+            if units:
+                pass
+            elif units_path is not None:
+                units = data_dict.get(units_path, None)
+            if units:
+                template[temp_key + '/@units'] = units
+
+    eln_dict = xrd_dict['eln_dict']
+
     # ruff: noqa: E501
-    concept_map = {
-        '/ENTRY[entry]/method': 'archive.data.method',
-        '/ENTRY[entry]/measurement_type': 'archive.data.diffraction_method_name',
-        '/ENTRY[entry]/experiment_result/intensity': 'archive.data.results[0].intensity.magnitude',
-        '/ENTRY[entry]/experiment_result/two_theta': 'archive.data.results[0].two_theta.magnitude',
-        '/ENTRY[entry]/experiment_result/two_theta/@units': 'archive.data.results[0].two_theta.units',
-        '/ENTRY[entry]/experiment_result/omega': 'archive.data.results[0].omega.magnitude',
-        '/ENTRY[entry]/experiment_result/omega/@units': 'archive.data.results[0].omega.units',
-        '/ENTRY[entry]/experiment_result/chi': 'archive.data.results[0].chi.magnitude',
-        '/ENTRY[entry]/experiment_result/chi/@units': 'archive.data.results[0].chi.units',
-        '/ENTRY[entry]/experiment_result/phi': 'archive.data.results[0].phi.magnitude',
-        '/ENTRY[entry]/experiment_result/phi/@units': 'archive.data.results[0].phi.units',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis': 'archive.data.results[0].scan_axis',
-        '/ENTRY[entry]/experiment_config/count_time': 'archive.data.results[0].count_time.magnitude',
-        'line': '',  # For future implementation
-        'rsm': {
-            '/ENTRY[entry]/experiment_result/q_parallel': 'archive.data.results[0].q_parallel',
-            '/ENTRY[entry]/experiment_result/q_parallel/@units': 'archive.data.results[0].q_parallel.units',
-            '/ENTRY[entry]/experiment_result/q_perpendicular': 'archive.data.results[0].q_perpendicular.magnitude',
-            '/ENTRY[entry]/experiment_result/q_perpendicular/@units': 'archive.data.results[0].q_perpendicular.units',
-            '/ENTRY[entry]/experiment_result/q_norm': 'archive.data.results[0].q_norm.magnitude',
-            '/ENTRY[entry]/experiment_result/q_norm/@units': 'archive.data.results[0].q_norm.units',
+    # Genneral concepts
+    concept_links_from_eln_dict = {
+        '/ENTRY[entry]/method': {'data_path': 'method', 'units': ''},
+        '/ENTRY[entry]/measurement_type': {
+            'data_path': 'diffraction_method_name',
+            'units': '',
         },
         # Source
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material': 'archive.data.xrd_settings.source.xray_tube_material',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current': 'archive.data.xrd_settings.source.xray_tube_current.magnitude',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current/@units': 'archive.data.xrd_settings.source.xray_tube_current.units',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage': 'archive.data.xrd_settings.source.xray_tube_voltage.magnitude',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage/@units': 'archive.data.xrd_settings.source.xray_tube_voltage.units',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one': 'archive.data.xrd_settings.source.kalpha_one.magnitude',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one/@units': 'archive.data.xrd_settings.source.kalpha_one.units',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two': 'archive.data.xrd_settings.source.kalpha_two.magnitude',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two/@units': 'archive.data.xrd_settings.source.kalpha_two.units',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone': 'archive.data.xrd_settings.source.ratio_kalphatwo_kalphaone',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta': 'archive.data.xrd_settings.source.kbeta.magnitude',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta/@units': 'archive.data.xrd_settings.source.kbeta.units',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material': {
+            'data_path': 'xray_tube_material',
+            'units': '',
+        },
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current': {
+            'data_path': 'xray_tube_current',
+            'units_path': 'xray_tube_current/units',
+        },
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage': {
+            'data_path': 'xray_tube_voltage',
+            'units_path': 'xray_tube_voltage/units',
+        },
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one': {
+            'data_path': 'kalpha_one',
+            'units_path': 'kalpha_one/units',
+        },
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two': {
+            'data_path': 'kalpha_two',
+            'units_path': 'kalpha_two/units',
+        },
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone': {
+            'data_path': 'ratio_kalphatwo_kalphaone',
+            'units_path': '',
+        },
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta': {
+            'data_path': 'kbeta',
+            'units_path': 'kbeta/units',
+        },
     }
 
-    for key, archive_concept in concept_map.items():
-        if isinstance(archive_concept, dict):
-            if key == scan_type:
-                for sub_key, sub_archive_concept in archive_concept.items():
-                    _, arch_attr = sub_archive_concept.split('.', 1)
-                    value = None
-                    try:
-                        value = walk_through_object(archive, arch_attr)
-                    except (AttributeError, IndexError, KeyError, ValueError):
-                        pass
-                    finally:
-                        if value is not None:
-                            template[sub_key] = (
-                                str(value) if sub_key.endswith('units') else value
-                            )
-            else:
-                continue
-        elif archive_concept:
-            _, arch_attr = archive_concept.split('.', 1)
-            value = None
-            try:
-                value = walk_through_object(archive, arch_attr)
-            # Use multiple excepts to avoid catching all exceptions
-            except (AttributeError, IndexError, KeyError, ValueError):
-                pass
-            finally:
-                if value is not None:
-                    template[key] = str(value) if key.endswith('units') else value
+    concept_links_from_xrd_dict = {
+        '/ENTRY[entry]/experiment_result/intensity': {
+            'data_path': 'intensity',
+            'units': 'counts per second',
+        },
+        '/ENTRY[entry]/experiment_result/two_theta': {
+            'data_path': '2Theta',
+            'units': 'deg',
+        },
+        '/ENTRY[entry]/experiment_result/omega': {'data_path': 'Omega', 'units': 'deg'},
+        '/ENTRY[entry]/experiment_result/chi': {'data_path': 'Chi', 'units': 'deg'},
+        '/ENTRY[entry]/experiment_result/phi': {'data_path': 'Phi', 'units': 'deg'},
+        '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis': scan_type,
+        '/ENTRY[entry]/experiment_config/count_time': {
+            'data_path': 'countTime',
+            'units': 's',
+        },
+        '/ENTRY[entry]/experiment_result/q_norm': {
+            'data_path': 'q_norm',
+            'units': '1/m',
+        },
+        # Scan type specific concepts
+        'line': '',  # for future implementation
+        'rsm': {
+            '/ENTRY[entry]/experiment_result/q_parallel': {
+                'data_path': 'q_parallel',
+                'units': '1/m',
+            },
+            '/ENTRY[entry]/experiment_result/q_perpendicular': {
+                'data_path': 'q_perpendicular',
+                'units': '1/m',
+            },
+        },
+    }
+
+    for key, value in concept_links_from_xrd_dict.items():
+        if key in ['line', 'rsm'] and isinstance(value, dict):
+            for k, v in value.items():
+                __set_data_and_units(k, xrd_dict, **v)
+        elif isinstance(value, dict):
+            __set_data_and_units(key, xrd_dict, **value)
+        elif value not in ['', None]:
+            template[key] = value
+
+    for key, value in concept_links_from_eln_dict.items():
+        if isinstance(value, dict):
+            __set_data_and_units(key, eln_dict, **value)
+        elif value not in ['', None]:
+            template[key] = value
 
     template['/ENTRY[entry]/definition'] = 'NXxrd_pan'
-
-    # Links to the data and concepts
     template['/ENTRY[entry]/@default'] = 'experiment_result'
+    # Links to the data and concepts
     template['/ENTRY[entry]/experiment_result/@signal'] = 'intensity'
     template['/ENTRY[entry]/experiment_result/@axes'] = 'two_theta'
-    template['/ENTRY[entry]/q_data/q'] = {
-        'link': '/ENTRY[entry]/experiment_result/q_norm'
-    }
+    template['/ENTRY[entry]/q_data/q'] = {'link': '/entry/experiment_result/q_norm'}
     template['/ENTRY[entry]/q_data/intensity'] = {
-        'link': '/ENTRY[entry]/experiment_result/intensity'
+        'link': '/entry/experiment_result/intensity'
     }
     template['/ENTRY[entry]/q_data/q_parallel'] = {
-        'link': '/ENTRY[entry]/experiment_result/q_parallel'
+        'link': '/entry/experiment_result/q_parallel'
     }
     template['/ENTRY[entry]/q_data/q_perpendicular'] = {
-        'link': '/ENTRY[entry]/experiment_result/q_perpendicular'
+        'link': '/entry/experiment_result/q_perpendicular'
     }
 
 
 def write_nx_section_and_create_file(
-    archive: 'EntryArchive', logger: 'BoundLogger', scan_type: str = 'line'
+    archive: 'EntryArchive', logger: 'BoundLogger', nx_file, xrd_dict, scan_type='line'
 ):
     """
     Uses the archive to generate the NeXus section and .nxs file.
-
     Args:
-        archive (EntryArchive): The archive containing the section.
+        archive (EntryArchive): The Nomad archive containing the root section.
         logger (BoundLogger): A structlog logger.
-        generate_nexus_file (boolean): If True, the function will generate a .nxs file.
-        nxs_as_entry (boolean): If True, the function will generate a .nxs file
-                as a nomad entry.
+        nx_file (str): The name of the .nxs file to be generated
+        xrd_dict (dict): A dictionary containing the data from experiment file and
+                eln data under the key 'eln_dict
+        scan_type (str): The type of scan, either 'line' or 'rsm'
     """
-    nxdl_root, _ = dataconverter.helpers.get_nxdl_root_and_path('NXxrd_pan')
+    app_def = 'NXxrd_pan'
+    entry_type = archive.metadata.entry_type
+    nxdl_root, _ = dataconverter.helpers.get_nxdl_root_and_path(app_def)
     template = dataconverter.template.Template()
     dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
-    connect_concepts(template, archive, scan_type=scan_type)
-    archive_name = archive.metadata.mainfile.split('.')[0]
-    nexus_output = f'{archive_name}.nxs'
+    connect_concepts_from_dict(
+        xrd_dict=xrd_dict, template=template, scan_type=scan_type
+    )
 
     populate_nexus_subsection(
         template=template,
-        app_def='NXxrd_pan',
+        app_def=app_def,
         archive=archive,
         logger=logger,
-        output_file_path=nexus_output,
+        output_file_path=nx_file,
+        on_temp_file=False,
     )
+    archive.metadata.entry_type = entry_type
