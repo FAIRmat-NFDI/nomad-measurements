@@ -29,24 +29,14 @@ from nomad.metainfo import (
 from nomad.parsing import MatchingParser
 
 from nomad_measurements.utils import create_archive
-from nomad_measurements.xrd.schema import ELNXRayDiffraction
+from nomad_measurements.xrd.schema import (
+    ELNXRayDiffraction,
+    RawFileXRDData,
+)
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
         EntryArchive,
-    )
-
-
-class RawFileXRDData(EntryData):
-    """
-    Section for a XRD data file.
-    """
-
-    measurement = Quantity(
-        type=ELNXRayDiffraction,
-        a_eln=ELNAnnotation(
-            component='ReferenceEditQuantity',
-        ),
     )
 
 

@@ -83,7 +83,7 @@ from nomad.config import config
 
 configuration = config.get_plugin_entry_point('nomad_measurements.xrd:schema')
 
-m_package = SchemaPackage(name='nomad_xrd')
+m_package = SchemaPackage(aliases=['nomad_measurements.xrd.parser.parser'])
 
 
 def populate_nexus_subsection(**kwargs):
@@ -1123,6 +1123,19 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         if not self.results:
             return
         self.figures = self.results[0].generate_plots(archive, logger)
+
+
+class RawFileXRDData(EntryData):
+    """
+    Section for an XRD data file.
+    """
+
+    measurement = Quantity(
+        type=ELNXRayDiffraction,
+        a_eln=ELNAnnotation(
+            component='ReferenceEditQuantity',
+        ),
+    )
 
 
 m_package.__init_metainfo__()
