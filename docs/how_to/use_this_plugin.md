@@ -1,31 +1,3 @@
-# How to Use This Plugin
+# Usage in user schemas
 
-This plugin can be used in a NOMAD Oasis installation..
-
-## Installation
-
-### Add This Plugin to Your NOMAD installation
-
-Read the [NOMAD plugin documentation](https://nomad-lab.eu/prod/v1/staging/docs/plugins/plugins.html#add-a-plugin-to-your-nomad) for all details on how to deploy the plugin on your NOMAD instance.
-
-You need to modify the ```nomad.yaml``` configuration file of your NOMAD instance. Add the following lines: .
-
-```yaml
-keycloak:
-  realm_name: fairdi_nomad_test
-plugins:
-  # We only include our schema here. Without the explicit include, all plugins will be
-  # loaded. Many build in plugins require more dependencies. Install nomad-lab[parsing]
-  # to make all default plugins work.
-  include:
-  - 'schemas/nomad_measurements/xrd'
-  options:
-    schemas/nomad_measurements/xrd:
-      python_package: nomad_measurements.xrd
-```
-### local installation
-
-## Usage in user schemas
-
-# Plugin development
-
+!!! Todo: here we have to describe how you inherit from the general classes and then specialize to the users need
