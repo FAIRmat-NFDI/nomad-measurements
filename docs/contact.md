@@ -18,4 +18,3 @@ Alternatively, you can also:
 
 - Open an [**issue**](https://github.com/nomad-coe/nomad-simulations/issues) in the [Github project](https://github.com/nomad-coe/nomad-simulations/), and tag any of us.
 - Join the [Discord channel](https://discord.gg/Gyzx3ukUw8) and ask us there directly.
-- If you are included as a contributor in the Github project, you can open new [**discussions**](https://github.com/nomad-coe/nomad-simulations/discussions) regarding a new data schema or modelling you want to see covered.

@@ -1,4 +1,3 @@
-## Levels of schemas in NOMAD
 
 It is important to understand the structure and relationship of different types of schemas in NOMAD. Here we break down the levels of schemas and how they interact. For detailed information, please visit the [official NOMAD documentation](https://nomad-lab.eu/prod/v1/staging/docs/explanation/data.html#schema).
 
@@ -39,11 +38,5 @@ The figure below illustrates these schema levels and the recommended workflow fo
 
 ![Levels of schema](../assets/levelsschema.png)
 
-
-## Schemas and File Readers
-
-The NOMAD Measurements Plugin contains schemas and file readers for different measurement methods. 
-
-!!! Todo list methods and details
 
 

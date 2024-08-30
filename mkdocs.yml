@@ -7,9 +7,13 @@ edit_uri: ""
 
 nav:
   - Home: index.md
-  - Explanation: explanation/explanation.md
+  - Explanation: 
+    - Levles of Schema: explanation/levelsofschema.md
+    - Schemas and Readers: explanation/schemas_and_readers.md
   - How-To Guides:
+    - Install this Plugin: how_to/install.md
     - Use this Plugin: how_to/use_this_plugin.md
+    - Develop this Plugin: how_to/develop.md
   - References: reference/references.md
   - Tutorials: tutorial/tutorial.md
   - Contact: contact.md
