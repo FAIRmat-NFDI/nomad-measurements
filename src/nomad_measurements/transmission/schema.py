@@ -96,7 +96,7 @@ class Transmission(Measurement):
         section_def=Operator,
     )
 
-    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger') -> None:
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger') -> None:  # noqa: PLR0912
         super().normalize(archive, logger)
         raw_path = archive.m_context.raw_path()
         eln_filename = '_transmission_eln_temp.json'
@@ -172,3 +172,6 @@ class RawFileTransmissionData(EntryData):
             component='ReferenceEditQuantity',
         ),
     )
+
+
+m_package.__init_metainfo__()
