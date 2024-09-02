@@ -190,5 +190,4 @@ def write_nx_section_and_create_file(
         archive=archive,
         logger=logger,
         output_file_path=nx_file,
-        on_temp_file=False,
     )
