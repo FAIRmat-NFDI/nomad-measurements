@@ -54,7 +54,7 @@ from nomad.config import config
 
 configuration = config.get_plugin_entry_point('nomad_measurements.transmission:schema')
 
-m_package = SchemaPackage(name='nomad-measurements Transmission')
+m_package = SchemaPackage(aliases=['nomad_measurements.transmission.parser.parser'])
 
 
 class Operator(ArchiveSection):
@@ -162,4 +162,13 @@ class ELNTransmission(Transmission, EntryData):
     )
     measurement_identifiers = SubSection(
         section_def=ReadableIdentifiers,
+    )
+
+
+class RawFileTransmissionData(EntryData):
+    measurement = Quantity(
+        type=ELNTransmission,
+        a_eln=ELNAnnotation(
+            component='ReferenceEditQuantity',
+        ),
     )

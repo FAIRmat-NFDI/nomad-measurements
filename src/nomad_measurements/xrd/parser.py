@@ -17,15 +17,6 @@
 #
 from typing import TYPE_CHECKING
 
-from nomad.datamodel.data import (
-    EntryData,
-)
-from nomad.datamodel.metainfo.annotations import (
-    ELNAnnotation,
-)
-from nomad.metainfo import (
-    Quantity,
-)
 from nomad.parsing import MatchingParser
 
 from nomad_measurements.utils import create_archive
