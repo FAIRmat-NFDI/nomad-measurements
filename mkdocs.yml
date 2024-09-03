@@ -8,7 +8,7 @@ edit_uri: ""
 nav:
   - Home: index.md
   - Explanation: 
-    - Levles of Schema: explanation/levelsofschema.md
+    - Levels of Schema: explanation/levelsofschema.md
     - Schemas and Readers: explanation/schemas_and_readers.md
   - How-To Guides:
     - Install this Plugin: how_to/install.md
