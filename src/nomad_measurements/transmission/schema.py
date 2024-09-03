@@ -19,6 +19,7 @@ import json
 import os
 import re
 from typing import TYPE_CHECKING
+
 from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
@@ -107,9 +108,9 @@ class Transmission(Measurement):
             if self.operator.name:
                 eln_dict['/ENTRY[entry]/operator/name'] = self.name
             if self.operator.affiliation:
-                eln_dict[
-                    '/ENTRY[entry]/operator/affiliation'
-                ] = self.operator.affiliation
+                eln_dict['/ENTRY[entry]/operator/affiliation'] = (
+                    self.operator.affiliation
+                )
             if self.operator.address:
                 eln_dict['/ENTRY[entry]/operator/address'] = self.operator.address
             if self.operator.email:

@@ -22,6 +22,7 @@ from nomad.datamodel.metainfo.basesections import (
     PureSubstanceComponent,
     PureSubstanceSection,
 )
+
 from nomad_measurements.utils import (
     merge_sections,
 )
