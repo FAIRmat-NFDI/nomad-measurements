@@ -6,9 +6,9 @@ This plugin can be used in a NOMAD Oasis installation. Please visit the NOMAD do
 
 ## Add This Plugin to Your NOMAD Oasis installation
 
-Read the [NOMAD plugin documentation](https://nomad-lab.eu/prod/v1/staging/docs/plugins/plugins.html#add-a-plugin-to-your-nomad) for all details on how to deploy the plugin on your NOMAD instance.
+Read the [NOMAD plugin documentation](https://nomad-lab.eu/prod/v1/staging/docs/howto/oasis/plugins_install.html) for all details on how to deploy the plugin on your NOMAD instance.
 
-We recommend writing your own NOMAD docker image which includes the NOMAD plugins you want to deploy. Please follow [part 4 of FAIRmat Tutorial 13]() to set up your own NOMAD image writing workflow.
+We recommend writing your own NOMAD docker image which includes the NOMAD plugins you want to deploy. Please follow these [instructions](https://nomad-lab.eu/prod/v1/staging/docs/howto/oasis/plugins_install.html) to set up your own NOMAD image writing workflow.
 
 You need to modify the `plugins.txt` file and add the following lines:
 

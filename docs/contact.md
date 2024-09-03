@@ -16,5 +16,5 @@ You can reach us by different channels. You can send as directly an email to the
 
 Alternatively, you can also:
 
-- Open an [**issue**](https://github.com/nomad-coe/nomad-simulations/issues) in the [Github project](https://github.com/nomad-coe/nomad-simulations/), and tag any of us.
+- Open an [**issue**](https://github.com/FAIRmat-NFDI/nomad-measurements/issues) in the [Github project](https://github.com/FAIRmat-NFDI/nomad-measurements/), and tag any of us.
 - Join the [Discord channel](https://discord.gg/Gyzx3ukUw8) and ask us there directly.
