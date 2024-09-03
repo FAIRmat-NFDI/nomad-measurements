@@ -15,20 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import re
-import os
 import json
+import os
+import re
 from typing import TYPE_CHECKING
-from nomad.datamodel.metainfo.basesections import (
-    Measurement,
-    ReadableIdentifiers,
-)
-from nomad.metainfo import (
-    Package,
-    Quantity,
-    Section,
-    SubSection,
-)
+
 from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
@@ -37,10 +28,19 @@ from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
     ELNComponentEnum,
 )
-
-from nomad_measurements import NOMADMeasurementsCategory
-
+from nomad.datamodel.metainfo.basesections import (
+    Measurement,
+    ReadableIdentifiers,
+)
+from nomad.metainfo import (
+    Quantity,
+    SchemaPackage,
+    Section,
+    SubSection,
+)
 from pynxtools.dataconverter.convert import convert
+
+from nomad_measurements.general import NOMADMeasurementsCategory
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -50,8 +50,11 @@ if TYPE_CHECKING:
         BoundLogger,
     )
 
+from nomad.config import config
 
-m_package = Package(name='nomad-measurements Transmission')
+configuration = config.get_plugin_entry_point('nomad_measurements.transmission:schema')
+
+m_package = SchemaPackage(aliases=['nomad_measurements.transmission.parser.parser'])
 
 
 class Operator(ArchiveSection):
@@ -93,8 +96,8 @@ class Transmission(Measurement):
         section_def=Operator,
     )
 
-    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger') -> None:
-        super(Transmission, self).normalize(archive, logger)
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger') -> None:  # noqa: PLR0912
+        super().normalize(archive, logger)
         raw_path = archive.m_context.raw_path()
         eln_filename = '_transmission_eln_temp.json'
         pattern = re.compile(r'(?P<file_name>.*)\.archive\.json$')
@@ -160,3 +163,15 @@ class ELNTransmission(Transmission, EntryData):
     measurement_identifiers = SubSection(
         section_def=ReadableIdentifiers,
     )
+
+
+class RawFileTransmissionData(EntryData):
+    measurement = Quantity(
+        type=ELNTransmission,
+        a_eln=ELNAnnotation(
+            component='ReferenceEditQuantity',
+        ),
+    )
+
+
+m_package.__init_metainfo__()
