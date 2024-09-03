@@ -10,5 +10,5 @@ class GeneralSchemaPackageEntryPoint(SchemaPackageEntryPoint):
 
 schema = GeneralSchemaPackageEntryPoint(
     name='General Schema',
-    description='Schema package defined using the new plugin mechanism.',
+    description='Schema package containing basic classes used around in the plugin.',
 )

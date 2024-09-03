@@ -23,7 +23,6 @@ from typing import (
 )
 
 import numpy as np
-import pint
 import plotly.express as px
 from fairmat_readers_xrd import (
     read_bruker_brml,
@@ -66,6 +65,7 @@ from nomad.metainfo import (
     Section,
     SubSection,
 )
+from nomad.units import ureg
 from scipy.interpolate import griddata
 
 from nomad_measurements.general import (
@@ -75,19 +75,14 @@ from nomad_measurements.utils import get_bounding_range_2d, merge_sections
 from nomad_measurements.xrd.nx import write_nx_section_and_create_file
 
 if TYPE_CHECKING:
+    import pint
     from nomad.datamodel.datamodel import (
         EntryArchive,
     )
-    from pynxtools.dataconverter.template import Template
     from structlog.stdlib import (
         BoundLogger,
     )
-    import pint
 
-from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
-from pynxtools import dataconverter
-
-from nomad.config import config
 
 configuration = config.get_plugin_entry_point('nomad_measurements.xrd:schema')
 
