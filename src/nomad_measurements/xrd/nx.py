@@ -20,7 +20,11 @@ from typing import TYPE_CHECKING
 import os
 
 from pynxtools.dataconverter import writer as pynxtools_writer
-from pynxtools import dataconverter
+from pynxtools.dataconverter.helpers import (
+    get_nxdl_root_and_path,
+    generate_template_from_nxdl,
+)
+from pynxtools.dataconverter.template import Template
 # from pynxtools.nomad.dataconverter import populate_nexus_subsection
 
 if TYPE_CHECKING:
@@ -180,9 +184,9 @@ def write_nx_section_and_create_file(
         scan_type (str): The type of scan, either 'line' or 'rsm'
     """
     app_def = 'NXxrd_pan'
-    nxdl_root, nxdl_f_path = dataconverter.helpers.get_nxdl_root_and_path(app_def)
-    template = dataconverter.template.Template()
-    dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
+    nxdl_root, nxdl_f_path = get_nxdl_root_and_path(app_def)
+    template = Template()
+    generate_template_from_nxdl(nxdl_root, template)
     connect_concepts_from_dict(
         xrd_dict=xrd_dict, template=template, scan_type=scan_type
     )
