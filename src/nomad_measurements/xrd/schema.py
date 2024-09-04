@@ -916,7 +916,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         eln_dict['kbeta'] = source.kbeta.magnitude
         eln_dict['kbeta/units'] = str(source.kbeta.units)
 
-        nx_out_f = archive.metadata.mainfile.split('.')[0] + '.h5'
+        nx_out_f = archive.metadata.mainfile.split('.')[0] + '.nxs'
         result = None
         if scan_type == 'line':
             result = XRDResult1D(
