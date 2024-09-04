@@ -17,8 +17,11 @@
 #
 from typing import TYPE_CHECKING
 
+import os
+
+from pynxtools.dataconverter import writer as pynxtools_writer
 from pynxtools import dataconverter
-from pynxtools.nomad.dataconverter import populate_nexus_subsection
+# from pynxtools.nomad.dataconverter import populate_nexus_subsection
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import EntryArchive
@@ -177,17 +180,23 @@ def write_nx_section_and_create_file(
         scan_type (str): The type of scan, either 'line' or 'rsm'
     """
     app_def = 'NXxrd_pan'
-    nxdl_root, _ = dataconverter.helpers.get_nxdl_root_and_path(app_def)
+    nxdl_root, nxdl_f_path = dataconverter.helpers.get_nxdl_root_and_path(app_def)
     template = dataconverter.template.Template()
     dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
     connect_concepts_from_dict(
         xrd_dict=xrd_dict, template=template, scan_type=scan_type
     )
 
-    populate_nexus_subsection(
-        template=template,
-        app_def=app_def,
-        archive=archive,
-        logger=logger,
-        output_file_path=nx_file,
-    )
+    # populate_nexus_subsection(
+    #     template=template,
+    #     app_def=app_def,
+    #     archive=archive,
+    #     logger=logger,
+    #     output_file_path=nx_file,
+    #     write_entry_type=False,
+    # )
+
+    archive.data.output = os.path.join(archive.m_context.raw_path(), nx_file)
+    pynxtools_writer.Writer(
+        data=template, nxdl_f_path=nxdl_f_path, output_path=archive.data.output
+    ).write()
