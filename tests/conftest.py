@@ -1,6 +1,7 @@
+import json
+
 import pytest
 from nomad.utils import structlogging
-import json
 
 
 @pytest.fixture(scope='function')
