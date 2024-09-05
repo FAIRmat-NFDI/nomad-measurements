@@ -937,15 +937,19 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
     )
-    generate_nexus_file = Quantity(
+    use_nexus_file = Quantity(
         type=bool,
-        description='Whether or not to generate a NeXus output file (if possible).',
-        default=True,
+        description="""
+        Whether or not to generate a NeXus output file and use it to store array data.
+        Once set to True, it cannot be set back to False.
+        """,
+        default=False,
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.BoolEditQuantity,
             label='Generate NeXus file',
         ),
     )
+    state_use_nexus_file = False
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
         """
@@ -1045,6 +1049,12 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             normalized.
             logger (BoundLogger): A structlog logger.
         """
+        # lock the decision of using nexus file references once it is set True
+        if self.state_use_nexus_file:
+            self.use_nexus_file = True
+        if self.use_nexus_file:
+            self.state_use_nexus_file = True
+
         if self.data_file is not None:
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:
