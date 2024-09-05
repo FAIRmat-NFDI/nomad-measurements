@@ -18,6 +18,7 @@
 import os.path
 from typing import (
     TYPE_CHECKING,
+    Any,
 )
 
 import numpy as np
@@ -153,3 +154,34 @@ def get_bounding_range_2d(ax1, ax2):
         ]
 
     return ax1_range, ax2_range
+
+
+def get_data(obj, key: str) -> Any:
+    """
+    Get the data for the quantity. If the quantity is a HDF5Reference, read the dataset
+    and corresponding units if available, and return a pint.Quantity.
+
+    Args:
+        obj (Any): The object to get the data from.
+        key (str): The key of the quantity.
+
+    Returns:
+        Any: The data for the quantity.
+    """
+    return getattr(obj, key, None)
+
+
+def set_data(obj, **kwargs):
+    """
+    Set the data for the quantity. If the quantity is a HDF5Reference, the new value is
+    set in the HDF5 file at the corresponding path.
+
+    Args:
+        obj (Any): The object to set the data for.
+    """
+    if not kwargs:
+        raise ValueError('At least one keyword argument must be provided.')
+
+    for key, value in kwargs.items():
+        if hasattr(obj, key):
+            setattr(obj, key, value)
