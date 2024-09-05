@@ -985,31 +985,29 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         source_dict: dict = metadata_dict.get('source', {})
 
         scan_type = metadata_dict.get('scan_type', None)
-        if scan_type == 'line':
-            result = XRDResult1D(
-                intensity=xrd_dict.get('intensity', None),
-                two_theta=xrd_dict.get('2Theta', None),
-                omega=xrd_dict.get('Omega', None),
-                chi=xrd_dict.get('Chi', None),
-                phi=xrd_dict.get('Phi', None),
-                scan_axis=metadata_dict.get('scan_axis', None),
-                integration_time=xrd_dict.get('countTime', None),
-            )
-            result.normalize(archive, logger)
-
-        elif scan_type == 'rsm':
-            result = XRDResultRSM(
-                intensity=xrd_dict.get('intensity', None),
-                two_theta=xrd_dict.get('2Theta', None),
-                omega=xrd_dict.get('Omega', None),
-                chi=xrd_dict.get('Chi', None),
-                phi=xrd_dict.get('Phi', None),
-                scan_axis=metadata_dict.get('scan_axis', None),
-                integration_time=xrd_dict.get('countTime', None),
-            )
-            result.normalize(archive, logger)
-        else:
+        if scan_type not in ['line', 'rsm']:
             raise NotImplementedError(f'Scan type `{scan_type}` is not supported.')
+        if self.state_use_nexus_file:
+            # Create a new result section
+            if self.results:
+                self.results = []
+            if scan_type == 'line':
+                result = XRDResult1D_HDF5()
+            elif scan_type == 'rsm':
+                result = XRDResultRSM_HDF5()
+            result.scan_axis = metadata_dict.get('scan_axis', None)
+            result.integration_time = xrd_dict.get('countTime', None)
+        if not self.state_use_nexus_file:
+            if scan_type == 'line':
+                result = XRDResult1D()
+            elif scan_type == 'rsm':
+                result = XRDResultRSM()
+            result.intensity = xrd_dict.get('intensity', None)
+            result.two_theta = xrd_dict.get('2Theta', None)
+            result.omega = xrd_dict.get('Omega', None)
+            result.chi = xrd_dict.get('Chi', None)
+            result.phi = xrd_dict.get('Phi', None)
+        result.normalize(archive, logger)
 
         source = XRayTubeSource(
             xray_tube_material=source_dict.get('anode_material', None),
