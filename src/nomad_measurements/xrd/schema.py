@@ -738,6 +738,68 @@ class XRDResultRSM(XRDResult):
                     break
 
 
+class XRDResult1D_HDF5(XRDResult1D):
+    intensity = Quantity(
+        type=HDF5Reference,
+        description='The count at each 2-theta value, dimensionless',
+    )
+    two_theta = Quantity(
+        type=HDF5Reference,
+        description='The 2-theta range of the diffractogram',
+    )
+    q_norm = Quantity(
+        type=HDF5Reference,
+        description='The norm of scattering vector *Q* of the diffractogram',
+    )
+    omega = Quantity(
+        type=HDF5Reference,
+        description='The omega range of the diffractogram',
+    )
+    phi = Quantity(
+        type=HDF5Reference,
+        description='The phi range of the diffractogram',
+    )
+    chi = Quantity(
+        type=HDF5Reference,
+        description='The chi range of the diffractogram',
+    )
+
+
+class XRDResultRSM_HDF5(XRDResultRSM):
+    intensity = Quantity(
+        type=HDF5Reference,
+        description='The count at each 2-theta value, dimensionless',
+    )
+    two_theta = Quantity(
+        type=HDF5Reference,
+        description='The 2-theta range of the diffractogram',
+    )
+    q_norm = Quantity(
+        type=HDF5Reference,
+        description='The norm of scattering vector *Q* of the diffractogram',
+    )
+    omega = Quantity(
+        type=HDF5Reference,
+        description='The omega range of the diffractogram',
+    )
+    phi = Quantity(
+        type=HDF5Reference,
+        description='The phi range of the diffractogram',
+    )
+    chi = Quantity(
+        type=HDF5Reference,
+        description='The chi range of the diffractogram',
+    )
+    q_parallel = Quantity(
+        type=HDF5Reference,
+        description='The scattering vector *Q_parallel* of the diffractogram',
+    )
+    q_perpendicular = Quantity(
+        type=HDF5Reference,
+        description='The scattering vector *Q_perpendicular* of the diffractogram',
+    )
+
+
 class XRayDiffraction(Measurement):
     """
     Generic X-ray diffraction measurement.
