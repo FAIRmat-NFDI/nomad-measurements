@@ -22,6 +22,7 @@ from nomad.client import normalize_all, parse
 
 
 @pytest.fixture(
+    name='parsed_archive',
     params=[
         'XRD-918-16_10.xrdml',
         'm54313_om2th_10.xrdml',
@@ -31,9 +32,9 @@ from nomad.client import normalize_all, parse
         'Omega-2Theta_scan_high_temperature.rasx',
         'RSM_111_sdd=350.rasx',
         'TwoTheta_scan_powder.rasx',
-    ]
+    ],
 )
-def parsed_archive(request):
+def fixture_parsed_archive(request):
     """
     Sets up data for testing and cleans up after the test.
     """
@@ -51,7 +52,13 @@ def parsed_archive(request):
         os.remove(measurement)
 
 
-def test_normalize_all(parsed_archive, capture_error_from_logger):
+@pytest.mark.usefixtures('caplog')
+@pytest.mark.parametrize(
+    'caplog',
+    ['error', 'critical'],
+    indirect=True,
+)
+def test_normalize_all(parsed_archive):
     """
     Tests the normalization of the parsed archive.
 
