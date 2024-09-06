@@ -1,21 +1,36 @@
-import json
+import logging
 
 import pytest
+import structlog
 from nomad.utils import structlogging
+from structlog.testing import LogCapture
+
+structlogging.ConsoleFormatter.short_format = True
+setattr(logging, 'Formatter', structlogging.ConsoleFormatter)
 
 
-@pytest.fixture(scope='function')
-def capture_error_from_logger(caplog):
+@pytest.fixture(
+    name='caplog',
+    scope='function',
+)
+def fixture_caplog(request):
     """
-    Extracts log messages from the logger and raises an assertion error if any
-    ERROR messages are found.
+    Extracts log messages from the logger and raises an assertion error if the specified
+    log levels in the `request.param` are found.
     """
-    caplog.handler.formatter = structlogging.ConsoleFormatter()
-    yield caplog
-    for record in caplog.get_records(when='call'):
-        if record.levelname in ['ERROR']:
-            try:
-                msg = structlogging.ConsoleFormatter.serialize(json.loads(record.msg))
-            except Exception:
-                msg = record.msg
-            assert False, msg
+    caplog = LogCapture()
+    processors = structlog.get_config()['processors']
+    old_processors = processors.copy()
+
+    try:
+        processors.clear()
+        processors.append(caplog)
+        structlog.configure(processors=processors)
+        yield caplog
+        for record in caplog.entries:
+            if record['log_level'] in request.param:
+                assert False, record
+    finally:
+        processors.clear()
+        processors.extend(old_processors)
+        structlog.configure(processors=processors)
