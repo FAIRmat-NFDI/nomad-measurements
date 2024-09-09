@@ -39,6 +39,7 @@ dev = [
     "pytest",
     "ruff",
     "structlog",
+    "nomad-lab[infrastructure]>=1.3.4dev",
 ]
 [project.urls]
 "Homepage" = "https://github.com/FAIRmat-NFDI/nomad-measurements"
