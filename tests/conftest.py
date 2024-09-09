@@ -1,6 +1,12 @@
+import logging
+
 import pytest
 import structlog
+from nomad.utils import structlogging
 from structlog.testing import LogCapture
+
+structlogging.ConsoleFormatter.short_format = True
+setattr(logging, 'Formatter', structlogging.ConsoleFormatter)
 
 
 @pytest.fixture(
