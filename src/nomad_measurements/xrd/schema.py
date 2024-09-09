@@ -1123,6 +1123,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         if not self.results:
             return
         self.figures = self.results[0].generate_plots(archive, logger)
+        logger.error('Error in XRD normalization. Testing the conftest fixture.')
 
 
 class RawFileXRDData(EntryData):
