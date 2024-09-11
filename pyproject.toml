@@ -32,6 +32,8 @@ dependencies = [
     "nomad-lab>=1.3.4dev", 
     "xmltodict==0.13.0",
     "fairmat-readers-xrd~=0.0.3",
+    "nomad-material-processing",
+    "fairmat-readers-transmission",
     "pynxtools", 
 ]
 [project.urls]
@@ -127,5 +129,7 @@ where = ["src"]
 general_schema = "nomad_measurements:schema"
 xrd_schema = "nomad_measurements.xrd:schema"
 xrd_parser = "nomad_measurements.xrd:parser"
+transmission_schema = "nomad_measurements.transmission:schema"
+transmission_parser = "nomad_measurements.transmission:parser"
 
 [tool.setuptools_scm]
