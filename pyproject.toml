@@ -38,6 +38,8 @@ dependencies = [
     "nomad-lab>=1.3.6", 
     "xmltodict==0.13.0",
     "fairmat-readers-xrd>=0.0.3",
+    "nomad-material-processing",
+    "fairmat-readers-transmission",
 ]
 [project.urls]
 "Homepage" = "https://github.com/FAIRmat-NFDI/nomad-measurements"
@@ -137,5 +139,7 @@ xrd_parser = "nomad_measurements.xrd:parser"
 ppms_schema = "nomad_measurements.ppms:ppms_schema"
 ppms_data_parser = "nomad_measurements.ppms:ppms_data_parser"
 ppms_sequence_parser = "nomad_measurements.ppms:ppms_sequence_parser"
+transmission_schema = "nomad_measurements.transmission:schema"
+transmission_parser = "nomad_measurements.transmission:parser"
 
 [tool.setuptools_scm]
