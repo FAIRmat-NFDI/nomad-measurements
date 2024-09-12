@@ -13,13 +13,14 @@ We recommend writing your own NOMAD docker image which includes the NOMAD plugin
 You need to modify the `plugins.txt` file and add the following lines:
 
 ```
-git+https://github.com/FAIRmat-NFDI/nomad-measurements.git
+nomad-measurements
 ``` 
 
 This will add the latest version of the NOMAD-Measurements Plugin to your NOMAD Oasis image. 
-If you want to add a specific version of the plugin you will need to provide the commit sha, for example:
+If you want to add a specific version of the plugin you will need to provide the specific version tag or commit sha, for example:
 
 ```
+nomad-measurements==0.1.0
 git+https://github.com/FAIRmat-NFDI/nomad-measurements.git@f19c0e3b175613ec026ef36c849af3474c42cf52
 ```
 
