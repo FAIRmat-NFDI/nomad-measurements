@@ -1,16 +1,43 @@
-# Schemas
+# NOMAD Measurements: a Community plugin
 
-!!! This page is currently under construction.
+The NOMAD Measurements plugin contains schemas for different measurement methods. 
+An overview of the package structure is shown below.
 
-The NOMAD Measurements Plugin contains schemas and file readers for different measurement methods. 
+## Technical description
 
-!!! Todo: list methods and details
+There are some technical aspects to understand the Python package built for this plugin, they are not crucial for the data model understanding itself:
 
-## nomad_measurements.general
+- It is structured according to the [src layout](https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/).
+- It is a [regular Python package](https://docs.python.org/3/reference/import.html#regular-packages), i. e., the structure is defined by the presence of `__init__.py` files. Each of these files contains one or multiple [entry points](https://nomad-lab.eu/prod/v1/staging/docs/howto/plugins/plugins.html#plugin-entry-points). These are used to load a portion of the code within your NOMAD through a specific section in the `nomad.yaml` file.
+- It is pip installable. The `project.toml` file defines what will be installed, the dependencies, further details. The **entry points** included are listed in this file.
+
+```text
+nomad-measurements/
+├── docs
+├── pyproject.toml
+├── README.md
+├── src
+│   └── nomad_measurements
+│       ├── general.py
+│       ├── __init__.py
+│       ├── utils.py
+│       └── xrd
+│           ├── __init__.py
+│           ├── parser.py
+│           └── schema.py
+└── tests
+```
+
+## Data model description
+
+Each method has a dedicated [module](https://docs.python.org/3/tutorial/modules.html), i. e., a python file.
+
+### General
+`nomad_measurements.general` module includes --.
 
 ### X-Ray Diffraction
 
-`nomad_measurements.xrd.schema` includes the sections for modeling measurement data
+`nomad_measurements.xrd.schema` module includes the sections for modeling measurement data
 from X-Ray diffraction (XRD). These sections model both the metadata associated with the
 setting of the measurement, as well as its results.
 
