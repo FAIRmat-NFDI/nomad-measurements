@@ -1,4 +1,4 @@
-## Schemas and File Readers
+# Schemas
 
 !!! This page is currently under construction.
 
@@ -6,9 +6,7 @@ The NOMAD Measurements Plugin contains schemas and file readers for different me
 
 !!! Todo: list methods and details
 
-### XRD
+## XRD
 
-#### Schema
-
-#### Readers
+### Schema
 

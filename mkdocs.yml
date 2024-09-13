@@ -9,7 +9,7 @@ nav:
   - Home: index.md
   - Explanation: 
     - Levels of Schema: explanation/levelsofschema.md
-    - Schemas and Readers: explanation/schemas_and_readers.md
+    - Schemas: explanation/schemas.md
   - How-To Guides:
     - Install this Plugin: how_to/install.md
     - Use this Plugin: how_to/use_this_plugin.md
