@@ -51,6 +51,52 @@ based on the data from the measurement file. Open it by clicking on the right ar
 
 Here, we will guide you through how to extend and specialize the built-in schemas using custom YAML schemas. This approach allows you to tailor the schema to your specific requirements while still leveraging the standardized base provided by the plugin.
 
+Let's assume that you want to extend the [`XRDResult`](../explanation/schemas.md#xrdresult)
+section and include the position where the X-ray impinges the sample. For this, you
+want to add two array quantities *x_position* and *y_position*. Based on this new
+result section, let's call it `MyXRDResult`, you want to create modified entry section
+`MyELNXRayDiffraction`. You can write a YAML schema to define these custom section.
+Here's an example code:
+
+```yaml
+definitions:
+  name: 'XRayDiffraction customization'
+  sections:
+    MyXRDResult:
+      base_sections:
+        - nomad_measurements.xrd.schema.XRDResult
+      quantities:
+        x_position:
+          type: np.float64
+          shape: ['*']
+          unit: meter
+          description: "x-coordinate of the point of X-ray incidence in sample holder coordinate system."
+        y_position:
+          type: np.float64
+          shape: ['*']
+          unit: meter
+          description: "y-coordinate of the point of X-ray incidence in sample holder coordinate system."
+    MyELNXRayDiffraction:
+      base_sections:
+        - nomad_measurements.xrd.schema.ELNXRayDiffraction
+        - nomad.datamodel.data.EntryData
+      sub_sections:
+        results:
+          repeats: True
+          section: '#/MyXRDResult'
+```
+Save the file as `<file_name>.archive.yaml` (or download it from 
+[here](../assets/custom_schema.archive.yaml)
+) and add it in your
+upload folder to access the custom schemas.
+
+You can learn in detail how to create your own YAML schemas in our previous 
+[tutorial 8](https://youtu.be/5VXGZNlz9rc?feature=shared) and 
+[tutorial 13](https://github.com/FAIRmat-NFDI/AreaA-Examples/tree/main/tutorial13/part2#22a-yaml-schema).
+You can navigate in the 
+[tutorial 8 repository](https://github.com/FAIRmat-NFDI/AreaA-Examples/tree/main/tutorial8) 
+to see some other examples of YAML files that inherit and extend existing classes.
+
 ## Inheriting and Specializing Using Python Schema Plugins
 
 For users needing more advanced customization, we will show you how to inherit and specialize schemas using Python schema plugins. This method allows for dynamic, programmatic extensions of the standard schemas to accommodate complex use cases.
