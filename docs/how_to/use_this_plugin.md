@@ -12,7 +12,40 @@ This guide will walk you through the different ways to use the NOMAD-measurement
 
 ## Using "Built-in Schemas"
 
-In this section, we will demonstrate how to use the standard, built-in schemas provided by the plugin without any specialization. These schemas can be directly instantiated to create entries in NOMAD.
+In this section, we will demonstrate how to use the standard, built-in **entry** schemas
+provided by the plugin without any specialization. These schemas can be directly
+instantiated to create entries in a NOMAD Oasis.
+
+1. Start a new upload and click on the **CREATE FROM SCHEMA** button.
+2. Select the schema from the drop-down menu, add the name for the entry, and
+hit **CREATE**.
+
+    <img src="../assets/use-built-in-schema-1.png" alt="How to use built-in schemas: picture 1" width="80%"/>
+
+    <img src="../assets/use-built-in-schema-2.png" alt="How to use built-in schemas: picture 2" width="80%"/>
+
+The user can also simply drop their measurement files into the Upload folder. The plugin
+comes with matching parsers that can automatically parse specific file types, create
+corresponding measurement entry section and populate it. Let's see an example for 
+XRD measurement file of file type `.xrdml` coming from Panalytical X-ray Diffractometer. 
+You can also 
+[download this file](../assets/XRD-918-16_10.xrdml)
+and perform the following steps.
+
+!!! info
+    Supported measurements and file types can be found 
+    [here](../index.md#supported-measurement-techniques).
+
+1. Start a new upload.
+2. Click on **DROP FILES HERE** button and select the XRD file. Or simply drag and drop
+the file on the button.
+
+    <img src="../assets/use-built-in-schema-3.png" alt="How to use built-in schemas: picture 3" width="80%"/>
+
+3. An entry using `ELNXRayDiffraction` section is automatically created and populated
+based on the data from the measurement file. Open it by clicking on the right arrow.
+
+    <img src="../assets/use-built-in-schema-4.png" alt="How to use built-in schemas: picture 4" width="80%"/>
 
 ## Inheriting and Specializing Using Custom YAML Schemas
 
