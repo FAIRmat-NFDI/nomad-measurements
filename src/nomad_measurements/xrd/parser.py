@@ -16,19 +16,14 @@
 # limitations under the License.
 #
 from typing import TYPE_CHECKING
-from nomad.metainfo import (
-    Quantity,
-)
+
 from nomad.parsing import MatchingParser
-from nomad.datamodel.metainfo.annotations import (
-    ELNAnnotation,
-)
-from nomad.datamodel.data import (
-    EntryData,
-)
 
 from nomad_measurements.utils import create_archive
-from nomad_measurements.transmission import ELNTransmission
+from nomad_measurements.xrd.schema import (
+    ELNXRayDiffraction,
+    RawFileXRDData,
+)
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -36,27 +31,19 @@ if TYPE_CHECKING:
     )
 
 
-class RawFileTransmissionData(EntryData):
-    measurement = Quantity(
-        type=ELNTransmission,
-        a_eln=ELNAnnotation(
-            component='ReferenceEditQuantity',
-        ),
-    )
+class XRDParser(MatchingParser):
+    """
+    Parser for matching XRD files and creating instances of ELNXRayDiffraction
+    """
 
-
-class TransmissionParser(MatchingParser):
-    def __init__(self):
-        super().__init__(
-            code_name='XRD Parser',
-        )
-
-    def parse(self, mainfile: str, archive: 'EntryArchive', logger) -> None:
+    def parse(
+        self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None
+    ) -> None:
         data_file = mainfile.split('/')[-1]
-        entry = ELNTransmission.m_from_dict(ELNTransmission.m_def.a_template)
+        entry = ELNXRayDiffraction.m_from_dict(ELNXRayDiffraction.m_def.a_template)
         entry.data_file = data_file
-        file_name = f'{data_file[:-6]}.archive.json'
-        archive.data = RawFileTransmissionData(
+        file_name = f'{"".join(data_file.split(".")[:-1])}.archive.json'
+        archive.data = RawFileXRDData(
             measurement=create_archive(entry, archive, file_name)
         )
-        archive.metadata.entry_name = data_file[:-4] + ' data file'
+        archive.metadata.entry_name = f'{data_file} data file'

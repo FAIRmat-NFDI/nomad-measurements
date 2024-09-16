@@ -17,26 +17,16 @@
 #
 from typing import (
     TYPE_CHECKING,
-    Dict,
     Any,
     Callable,
 )
+
 import numpy as np
 import plotly.express as px
-from scipy.interpolate import griddata
-
-from nomad.datamodel.metainfo.basesections import (
-    Measurement,
-    MeasurementResult,
-    CompositeSystemReference,
-    ReadableIdentifiers,
-)
-from nomad.metainfo import (
-    Package,
-    Quantity,
-    Section,
-    SubSection,
-    MEnum,
+from fairmat_readers_xrd import (
+    read_bruker_brml,
+    read_panalytical_xrdml,
+    read_rigaku_rasx,
 )
 from nomad.datamodel.data import (
     ArchiveSection,
@@ -46,42 +36,54 @@ from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
     ELNComponentEnum,
 )
-from nomad.datamodel.results import (
-    Results,
-    Properties,
-    StructuralProperties,
-    DiffractionPattern,
-    Method,
-    MeasurementMethod,
-    XRDMethod,
+from nomad.datamodel.metainfo.basesections import (
+    CompositeSystemReference,
+    Measurement,
+    MeasurementResult,
+    ReadableIdentifiers,
 )
 from nomad.datamodel.metainfo.plot import (
-    PlotSection,
     PlotlyFigure,
+    PlotSection,
 )
+from nomad.datamodel.results import (
+    DiffractionPattern,
+    MeasurementMethod,
+    Method,
+    Properties,
+    Results,
+    StructuralProperties,
+    XRDMethod,
+)
+from nomad.metainfo import (
+    MEnum,
+    Quantity,
+    SchemaPackage,
+    Section,
+    SubSection,
+)
+from scipy.interpolate import griddata
 
-# from nomad.datamodel.metainfo.eln.nexus_data_converter import populate_nexus_subsection
-from nomad_measurements import (
+from nomad_measurements.general import (
     NOMADMeasurementsCategory,
 )
-from fairmat_readers_xrd import (
-    read_panalytical_xrdml,
-    read_rigaku_rasx,
-    read_bruker_brml,
-)
-from nomad_measurements.utils import merge_sections, get_bounding_range_2d
+from nomad_measurements.utils import get_bounding_range_2d, merge_sections
 
 if TYPE_CHECKING:
+    import pint
     from nomad.datamodel.datamodel import (
         EntryArchive,
     )
+    from pynxtools.dataconverter.template import Template
     from structlog.stdlib import (
         BoundLogger,
     )
-    import pint
-    from pynxtools.dataconverter.template import Template
 
-m_package = Package(name='nomad_xrd')
+from nomad.config import config
+
+configuration = config.get_plugin_entry_point('nomad_measurements.xrd:schema')
+
+m_package = SchemaPackage(aliases=['nomad_measurements.xrd.parser.parser'])
 
 
 def populate_nexus_subsection(**kwargs):
@@ -138,10 +140,12 @@ def calculate_two_theta_or_q(
     Args:
         wavelength (pint.Quantity): Wavelength of the X-ray source.
         q (pint.Quantity, optional): Array of scattering vectors. Defaults to None.
-        two_theta (pint.Quantity, optional): Array of two-theta angles. Defaults to None.
+        two_theta (pint.Quantity, optional): Array of two-theta angles.
+            Defaults to None.
 
     Returns:
-       tuple[pint.Quantity, pint.Quantity]: Tuple of scattering vector, two-theta angles.
+        tuple[pint.Quantity, pint.Quantity]: Tuple of scattering vector, two-theta
+            angles.
     """
     if q is not None and two_theta is None:
         return q, 2 * np.arcsin(q * wavelength / (4 * np.pi))
@@ -205,8 +209,8 @@ def estimate_kalpha_wavelengths(source_material):
         Tuple[float, float]: Estimated K-alpha1 and K-alpha2 wavelengths of the X-ray
         source, in angstroms.
     """
-    # Dictionary of K-alpha1 and K-alpha2 wavelengths for various X-ray source materials,
-    # in angstroms
+    # Dictionary of K-alpha1 and K-alpha2 wavelengths for various X-ray source
+    # materials, in angstroms
     kalpha_wavelengths = {
         'Cr': (2.2910, 2.2936),
         'Fe': (1.9359, 1.9397),
@@ -811,7 +815,7 @@ class XRayDiffraction(Measurement):
         | **X-ray Reflectivity (XRR)**                               | Used to study thin film layers, interfaces, and multilayers. Provides info on film thickness, density, and roughness.                                                                                       |
         | **Grazing Incidence X-ray Diffraction (GIXRD)**            | Primarily used for the analysis of thin films with the incident beam at a fixed shallow angle.                                                                                                              |
         | **Reciprocal Space Mapping (RSM)**                         | High-resolution XRD method to measure diffracted intensity in a 2-dimensional region of reciprocal space. Provides information about the real-structure (lattice mismatch, domain structure, stress and defects) in single-crystalline and epitaxial samples.|
-        """,
+        """,  # noqa: E501
     )
     results = Measurement.results.m_copy()
     results.section_def = XRDResult
@@ -905,7 +909,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
         """
-        Method for getting the correct read and write functions for the current data file.
+        Method for getting the correct read and write functions for the current data
+        file.
 
         Returns:
             tuple[Callable, Callable]: The read, write functions.
@@ -920,7 +925,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
 
     def write_xrd_data(
         self,
-        xrd_dict: Dict[str, Any],
+        xrd_dict: dict[str, Any],
         archive: 'EntryArchive',
         logger: 'BoundLogger',
     ) -> None:
@@ -1118,6 +1123,19 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         if not self.results:
             return
         self.figures = self.results[0].generate_plots(archive, logger)
+
+
+class RawFileXRDData(EntryData):
+    """
+    Section for an XRD data file.
+    """
+
+    measurement = Quantity(
+        type=ELNXRayDiffraction,
+        a_eln=ELNAnnotation(
+            component='ReferenceEditQuantity',
+        ),
+    )
 
 
 m_package.__init_metainfo__()

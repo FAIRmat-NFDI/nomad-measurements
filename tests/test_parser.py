@@ -16,9 +16,9 @@
 # limitations under the License.
 #
 import os
-import pytest
 
-from nomad.client import parse, normalize_all
+import pytest
+from nomad.client import normalize_all, parse
 
 
 @pytest.fixture(

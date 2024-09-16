@@ -1,7 +1,8 @@
+# Levels of Schema
 
 It is important to understand the structure and relationship of different types of schemas in NOMAD. Here we break down the levels of schemas and how they interact. For detailed information, please visit the [official NOMAD documentation](https://nomad-lab.eu/prod/v1/staging/docs/explanation/data.html#schema).
 
-### Types of Schemas in NOMAD
+## Types of Schemas in NOMAD
   
 NOMAD categorizes its schemas into multiple levels, each serving distinct purposes while ensuring consistent data organization and interoperability:  
   
@@ -18,7 +19,7 @@ NOMAD categorizes its schemas into multiple levels, each serving distinct purpos
 4. **Community/Standard Plugins**: FAIRmat offers standardized schemas for common methods, processes, and instruments that are generalized and not tied to any specific lab or setup. These schemas are derived from recurring patterns identified across user schemas. Users can inherit from these standard plugins in a similar manner as the base sections, further specializing them as needed while still maintaining a consistent structure for broader community use. 
 FAIRmat's Area A for synthesis data provides two community plugins, NOMAD Measurements and NOMAD Materials Processing.
 
-### How These Schemas Relate to Each Other
+## How These Schemas Relate to Each Other
   
 The relationships between these schema levels can be visualized as a layered model:  
 
@@ -28,7 +29,7 @@ The relationships between these schema levels can be visualized as a layered mod
 
 - **User Schemas**: Inherit and specialize a Community/Standard Plugins, if availbale, or the base sections according to specific requirements.
 
-### Encouraged Usage
+## Encouraged Usage
   
 NOMAD encourages users to first explore the available community/standard plugins and base sections before developing their own schemas. By doing so, they can maximize interoperability and benefit from established structures, while still retaining the flexibility to adapt the schema to their unique needs.  
   
