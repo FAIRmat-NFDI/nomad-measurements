@@ -70,7 +70,6 @@ from nomad.metainfo import (
     SubSection,
 )
 from nomad.units import ureg
-from nomad_material_processing.general import Sample
 
 from nomad_measurements.utils import create_archive, merge_sections
 
@@ -108,8 +107,8 @@ class TransmissionSpectrophotometer(Instrument, EntryData):
 
 class TransmissionSampleReference(CompositeSystemReference):
     """
-    Reference to the sample used in the transmission measurement. Additionally,
-    contains the thickness and orientation of the sample.
+    Extends `CompositeSystemReference` to include contains the thickness and orientation
+    of the sample used in the transmission.
     """
 
     m_def = Section(
@@ -124,16 +123,6 @@ class TransmissionSampleReference(CompositeSystemReference):
                 ]
             )
         )
-    )
-    reference = Quantity(
-        type=Sample,
-        description="""
-        A reference to the sample used.
-        """,
-        a_eln=ELNAnnotation(
-            component='ReferenceEditQuantity',
-            label='sample reference',
-        ),
     )
     thickness = Quantity(
         type=np.float64,
