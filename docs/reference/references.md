@@ -1,1 +1,2 @@
+# Technical References
 The **NOMAD Metainfo Browser** allows users to explore all available schemas, including their sections, values, and references, in a detailed and interactive manner. It can be accessed through the *Analyze* tab in any NOMAD instance. To explore the schemas specific to the NOMAD-measurement plugin, you can visit the [Metainfo Browser on the Example Oasis](https://nomad-lab.eu/prod/v1/oasis/gui/analyze/metainfo/nomad_measurements) and review all the details of the plugin's structures and components.

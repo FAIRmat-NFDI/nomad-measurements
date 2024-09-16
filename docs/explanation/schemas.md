@@ -1,6 +1,6 @@
-# NOMAD Measurements: a Community plugin
+# NOMAD-measurements: a Community plugin
 
-The NOMAD Measurements plugin contains schemas for different measurement methods. 
+The NOMAD-measurements plugin contains schemas for different measurement methods. 
 An overview of the package structure is shown below.
 
 ## Technical description
