@@ -78,7 +78,7 @@ The section also provides methods to generate plots for XRD patterns.
 In this documentation, we go over some of the important sections of this module.
 Alternatively, you can access all the section definitions by using the 
 [metainfo browser](https://nomad-lab.eu/prod/v1/oasis/gui/analyze/metainfo/nomad_measurements)
-and seaching for: `"nomad_measurements.xrd"`
+and searching for: `"nomad_measurements.xrd"`
 
 #### `XRayDiffraction`
 

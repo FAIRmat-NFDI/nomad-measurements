@@ -8,7 +8,7 @@ You can reach us by different channels. You can send as directly an email to the
 |------|------------|-----------------|
 | Dr. Andrea Albino | [andrea.albino@physik.hu-berlin.de](mailto:andrea.albino@physik.hu-berlin.de) |  [@aalbino2](https://github.com/aalbino2) |
 | Dr. Hampus Näsström | [hampus.naesstroem@physik.hu-berlin.de](mailto:hampus.naesstroem@physik.hu-berlin.de) | [@hampusnasstrom](https://github.com/hampusnasstrom) |
-| Sarthak Kapoor | [sarthak.kapoor@physik.hu-berlin.de](mailto:sarthak.kapoor@physik.hu-berlin.de) | [@ka-sarthak](https://github.com/ka-sarthak) |
+| Sarthak Kapoor, MSc. | [sarthak.kapoor@physik.hu-berlin.de](mailto:sarthak.kapoor@physik.hu-berlin.de) | [@ka-sarthak](https://github.com/ka-sarthak) |
 | Rubel Mozumder | [rubel.mozumder@physik.hu-berlin.de](mailto:rubel.mozumder@physik.hu-berlin.de) | [@RubelMozumder](https://github.com/RubelMozumder) |
 | Dr. José Marquez | [josemarquez@physik.hu-berlin.de](mailto:josemarquez@physik.hu-berlin.de) | [@Pepe-Marquez](https://github.com/Pepe-Marquez) |
 | Dr. Sebastian Brückner (**Coordinator**) | [sebastian.brueckner@physik.hu-berlin.de](mailto:sebastian.brueckner@physik.hu-berlin.de) | [@budschi](https://github.com/budschi) |

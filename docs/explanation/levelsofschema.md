@@ -30,7 +30,7 @@ The relationships between these schema levels can be visualized as a layered mod
 
 - **Community/Standard Plugins**: Inherit and specialize the base sections and provide generalized versions of common user schemas, making them broadly applicable across the community while still allowing further specialization.
 
-- **User Schemas**: Inherit and specialize a Community/Standard Plugins, if availbale, or the base sections according to specific requirements.
+- **User Schemas**: Inherit and specialize a Community/Standard Plugins, if available, or the base sections according to specific requirements.
 
 ## Encouraged Usage
   
