@@ -6,12 +6,15 @@ It is important to understand the structure and relationship of different types 
   
 NOMAD categorizes its schemas into multiple levels, each serving distinct purposes while ensuring consistent data organization and interoperability:  
   
-1. **General Sections** (how dow we call them officially?): These define the overall structure of any entry within NOMAD, regardless of the specific data type. They provide a shared, high-level framework applicable across different use cases, ensuring that every entry adheres to a consistent format.  
+1. **Basic Architecture Sections**: These define the overall structure of any entry within NOMAD, regardless of the specific data type. They provide a shared, high-level framework applicable across different use cases, ensuring that every entry adheres to a consistent format. `EntryData` and `ArchiveSection` are the two relevant classes to be mentioned here.
+Every entry in NOMAD must inherit from `EntryData`, whenever a class is only used as a subsection composed within a more general one, inheriting from `ArchiveSection` is enough.
 
 2. **Base Sections**: These are central to NOMAD's data model and are designed to maintain interoperability between different database entries. The base sections follow an entity-activity model tailored for materials science, capturing essential relationships between key entities like samples, instruments, processes, measurements, analyses, experiments, and simulations. The goal is to provide standardized structures for data representation.
 
 
-	- **Important Note**: Base sections in NOMAD are abstract and should not be instantiated directly. Instead, users must implement these sections in their own schemas (referred to as user schemas) by inheriting from a base section and `nomad.datamodel.EntryData`. Users are strongly encouraged to use the most specialized section available for their use case.
+
+	!!! Note
+        Base sections in NOMAD are abstract and should not be instantiated directly. Instead, users must implement these sections in their own schemas (referred to as user schemas) by inheriting from a base section and `nomad.datamodel.EntryData`. Users are strongly encouraged to use the most specialized section available for their use case.
 
 
 3. **User Schemas**: These schemas are developed by users and are specific to a lab, method, or instrument. They build upon the base sections, tailoring them to meet specific research needs. In this level, users can define more specialized structures that directly reflect the specific characteristics of their experiments or simulations.
@@ -38,6 +41,8 @@ In summary, the schema architecture in NOMAD is designed to support both special
 The figure below illustrates these schema levels and the recommended workflow for schema development within NOMAD.  
 
 ![Levels of schema](../assets/levelsschema.png)
+
+In next documentation sections, an overview of the available methods will be provided.
 
 
 

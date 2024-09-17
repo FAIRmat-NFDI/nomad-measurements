@@ -1,6 +1,6 @@
-# Welcome to the NOMAD Measurements Plugin Documentation
+# Welcome to the NOMAD-measurements Plugin Documentation
 
-Welcome to the official documentation for the **NOMAD Measurements Plugin**! This plugin is designed to provide structured data schemas for storing experimental measurement data in alignment with the FAIR (Findable, Accessible, Interoperable, and Reusable) principles. It serves as a community or standard plugin, offering commonly used schemas and classes/sections for measurement data that can be shared across a community.
+Welcome to the official documentation for the **NOMAD-measurements Plugin**! This plugin is designed to provide structured data schemas for storing experimental measurement data in alignment with the FAIR (Findable, Accessible, Interoperable, and Reusable) principles. It serves as a community or standard plugin, offering commonly used schemas and classes/sections for measurement data that can be shared across a community.
 
 ## Supported Measurement Techniques
 
