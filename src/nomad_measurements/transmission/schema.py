@@ -118,17 +118,15 @@ class TransmissionSampleReference(CompositeSystemReference):
                     'name',
                     'lab_id',
                     'reference',
-                    'thickness',
+                    'path_length',
                     'orientation',
                 ]
             )
         )
     )
-    thickness = Quantity(
+    path_length = Quantity(
         type=np.float64,
-        description="""
-        Thickness of the sample along the direction of the light beam. 
-        Also referred to as path length of the beam.""",
+        description='Length of the sample along the direction of the light beam.',
         a_eln={
             'component': 'NumberEditQuantity',
             'defaultDisplayUnit': 'millimeter',
