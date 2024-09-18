@@ -7,7 +7,7 @@ edit_uri: ""
 
 nav:
   - Home: index.md
-  - Explanation: 
+  - Explanation:
     - Levels of Schema: explanation/levelsofschema.md
     - Schemas: explanation/schemas.md
   - How-To Guides:
@@ -27,7 +27,7 @@ theme:
     accent: '#008A67'
   font:
     text: 'Titillium Web'
-  logo: assets/nomad-logo.png
+  logo: assets/nomad-plugin-logo.png
   favicon: assets/favicon.png
   features:
     - navigation.instant
@@ -51,7 +51,7 @@ markdown_extensions:
   - pymdownx.extra
 extra:
   generator: false
-  homepage: https://nomad-lab.eu
+  homepage: https://fairmat-nfdi.github.io/nomad-measurements/
 use_directory_urls: false
 extra_css:
   - stylesheets/extra.css
