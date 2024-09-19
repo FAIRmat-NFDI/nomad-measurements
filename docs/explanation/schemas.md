@@ -117,8 +117,8 @@ being a 2D array. Together, these can be used to describe intensity values in a
 #### `XRDSettings`
 `nomad_measurements.schema.XRDSettings` section defines the settings related to the 
 X-ray source. It composes `XRDTubeSource` section which describes tube material, current
-, voltage, $k_{{\alpha}_{1}}$, $k_{{\alpha}_{2}}$, $k_{\beta}$, and 
-$\frac{k_{{\alpha}_{1}}}{k_{{\alpha}_{2}}}$.
+, voltage, *k*<sub>&alpha;<sub>1</sub></sub>, *k*<sub>&alpha;<sub>2</sub></sub>, *k*<sub>&beta;</sub>, and 
+*k*<sub>&alpha;<sub>1</sub></sub>/*k*<sub>&alpha;<sub>2</sub></sub>
 
 #### `ELNXRayDiffraction`
 
