@@ -23,6 +23,7 @@ authors:
   - given-names: Hampus
     family-names: Näsström
     orcid: 'https://orcid.org/0000-0002-3264-1692'
+doi: 10.5281/zenodo.13789632
 repository-code: 'https://github.com/FAIRmat-NFDI/nomad-measurements'
 url: 'https://fairmat-nfdi.github.io/nomad-measurements/'
 abstract: >-
