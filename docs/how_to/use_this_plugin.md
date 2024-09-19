@@ -99,6 +99,51 @@ to see some other examples of YAML files that inherit and extend existing classe
 
 ## Inheriting and Specializing Using Python Schema Plugins
 
-For users needing more advanced customization, we will show you how to inherit and specialize schemas using Python schema plugins. This method allows for dynamic, programmatic extensions of the standard schemas to accommodate complex use cases.
+The most customizable way of using the sections defined in the `nomad-measurements`
+plugin is to extend the sections in another NOMAD schema plugin.
 
-By following these steps, you can seamlessly integrate the NOMAD-measurement plugin into your workflows and adapt it to meet your specific needs.
+For a detailed tutorial on how to setup and develop a plugin we refer you to the
+tutorial on [Developing a NOMAD Plugin](https://nomad-lab.eu/prod/v1/staging/docs/tutorial/develop_plugin.html).
+
+Once your plugin is setup you can include the required `nomad-measurements` version
+as a dependency in your `pyproject.toml`:
+```toml
+dependencies = [
+    "nomad-measurements>=1.0.0",
+]
+```
+
+In your schema packages you can then import the desired section definitions and specialize
+them to your need by adding any additional quantities or [subsections](../reference/references.md#subsection) that you require:
+```py
+from nomad_measurements.xrd.schema import (
+    XRayDiffraction,
+    XRDResult,
+)
+from nomad.metainfo import Quantity
+
+
+class MyXRDResult(XRDResult):
+    my_additional_quantity = Quantity(
+        type=str,
+        description='My additional string quantity`
+    )
+
+
+class MyXRayDiffraction(XRayDiffraction):
+    results = SubSection(
+        description="""
+        Specialized results of my X-ray diffraction measurement.
+        """,
+        section_def=MyXRDResult,
+        repeats=True,
+    )
+```
+
+By using existing [subsection](../reference/references.md#subsection) names (see `results` in the example above) you can specialize
+the [subsections](../reference/references.md#subsection). Please keep in mind that the specialized [subsection](../reference/references.md#subsection) should always
+inherit the original one. In the example above the `results` [subsection](../reference/references.md#subsection) used to be of type
+`XRDResult` but we specialized it to `MyXRDResult` results but made sure
+that this section inherits `XRDResult`. By doing this we ensure the
+[polymorphism](https://en.wikipedia.org/wiki/Polymorphism_(computer_science)) and that we
+will always find results of (sub)type `XRDResult` in an `XRayDiffraction`.
