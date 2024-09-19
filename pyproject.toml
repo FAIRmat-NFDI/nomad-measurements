@@ -22,10 +22,19 @@ description = "A plugin for NOMAD containing base sections for material processi
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [
-    { name = "Hampus Näsström", email = 'hampus.naesstroem@physik.hu-berlin.de' },
-    { name = "Andrea Albino", email = 'andrea.albino@physik.hu-berlin.de' },
-    { name = "Sebastian Brückner", email = 'sebastian.brueckner@ikz-berlin.de' },
-    { name = "Sarthak Kapoor", email = 'sarthak.kapoor@physik.hu-berlin.de' },
+    { name = "Andrea Albino" },
+    { name = "Sebastian Brückner" },
+    { name = "Sarthak Kapoor" },
+    { name = "José A. Márquez" },
+    { name = "Rubel Mozumber" },
+    { name = "Hampus Näsström" },
+    { email = "fairmat@physik.hu-berlin.de" },
+]
+maintainers = [
+    { name = "Hampus Näsström", email = "hampus.naesstroem@physik.hu-berlin.de" },
+    { name = "Andrea Albino", email = "andrea.albino@physik.hu-berlin.de" },
+    { name = "Sebastian Brückner", email = "sebastian.brueckner@ikz-berlin.de" },
+    { name = "Sarthak Kapoor", email = "sarthak.kapoor@physik.hu-berlin.de" },
 ]
 license = { file = "LICENSE" }
 dependencies = [
