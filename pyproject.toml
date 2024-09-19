@@ -18,7 +18,7 @@ classifiers = [
 ]
 name = "nomad-measurements"
 dynamic = ["version"]
-description = "A plugin for NOMAD containing base sections for material processing."
+description = "A plugin for NOMAD containing base sections for measurements."
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [
