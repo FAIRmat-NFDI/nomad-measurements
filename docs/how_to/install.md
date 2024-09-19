@@ -21,6 +21,9 @@ If you want to add a specific version of the plugin you will need to provide the
 
 ```
 nomad-measurements==0.1.0
+```
+or
+```
 git+https://github.com/FAIRmat-NFDI/nomad-measurements.git@f19c0e3b175613ec026ef36c849af3474c42cf52
 ```
 
