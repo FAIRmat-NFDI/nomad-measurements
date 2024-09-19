@@ -2,6 +2,7 @@
 ![](https://img.shields.io/pypi/pyversions/nomad-measurements)
 ![](https://img.shields.io/pypi/l/nomad-measurements)
 ![](https://img.shields.io/pypi/v/nomad-measurements)
+[![DOI](https://zenodo.org/badge/687933583.svg)](https://zenodo.org/doi/10.5281/zenodo.13789632)
 
 # NOMAD's Measurements Plugin
 This is a plugin for [NOMAD](https://nomad-lab.eu) which contains base sections for
