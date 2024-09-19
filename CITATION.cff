@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+title: nomad-measurements
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Andrea
+    family-names: Albino
+    orcid: 'https://orcid.org/0000-0001-9280-7431'
+  - given-names: Sebastian
+    family-names: Brückner
+    orcid: 'https://orcid.org/0000-0002-5969-847X'
+  - given-names: Sarthak
+    family-names: Kapoor
+    orcid: 'https://orcid.org/0000-0002-1889-6998'
+  - given-names: José A.
+    family-names: Márquez
+    orcid: 'https://orcid.org/0000-0002-8173-2566'
+  - given-names: Rubel
+    family-names: Mozumder
+    orcid: 'https://orcid.org/0009-0007-5926-6646'
+  - given-names: Hampus
+    family-names: Näsström
+    orcid: 'https://orcid.org/0000-0002-3264-1692'
+repository-code: 'https://github.com/FAIRmat-NFDI/nomad-measurements'
+url: 'https://fairmat-nfdi.github.io/nomad-measurements/'
+abstract: >-
+  A NOMAD plugin containing base sections for measurements.
+license: Apache-2.0
