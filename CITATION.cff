@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: nomad-measurements
+title: NOMAD Measurements Plugin
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
@@ -26,5 +26,12 @@ authors:
 repository-code: 'https://github.com/FAIRmat-NFDI/nomad-measurements'
 url: 'https://fairmat-nfdi.github.io/nomad-measurements/'
 abstract: >-
-  A NOMAD plugin containing base sections for measurements.
+  `nomad-measurements` is a plugin for the NOMAD software (https://zenodo.org/doi/10.5281/zenodo.8366162) 
+  adding data schemas and parsers for material measurement data.
+  For example, it can be used to parse data from various X-ray diffraction vendor files 
+  into a common data format that can be analyzed, explored, and published in NOMAD.
+  The plugin is community driven and primarily aims at providing usability to users 
+  through practical data parsers and common data schemas.
+  The data schemas continue to develop with the community to ultimately provide Findable, 
+  Accessible, Interoperable, and Reusable (FAIR) data.
 license: Apache-2.0

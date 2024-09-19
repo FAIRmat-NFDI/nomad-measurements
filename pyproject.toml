@@ -18,7 +18,7 @@ classifiers = [
 ]
 name = "nomad-measurements"
 dynamic = ["version"]
-description = "A plugin for NOMAD containing base sections for material processing."
+description = "A plugin for NOMAD containing base sections for measurements."
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [
@@ -31,16 +31,13 @@ authors = [
     { email = "fairmat@physik.hu-berlin.de" },
 ]
 maintainers = [
-    { name = "Hampus Näsström", email = "hampus.naesstroem@physik.hu-berlin.de" },
-    { name = "Andrea Albino", email = "andrea.albino@physik.hu-berlin.de" },
-    { name = "Sebastian Brückner", email = "sebastian.brueckner@ikz-berlin.de" },
-    { name = "Sarthak Kapoor", email = "sarthak.kapoor@physik.hu-berlin.de" },
+    { name = "FAIRmat", email = "fairmat@physik.hu-berlin.de" },
 ]
 license = { file = "LICENSE" }
 dependencies = [
     "nomad-lab>=1.3.6", 
     "xmltodict==0.13.0",
-    "fairmat-readers-xrd~=0.0.3",
+    "fairmat-readers-xrd>=0.0.3",
 ]
 [project.urls]
 "Homepage" = "https://github.com/FAIRmat-NFDI/nomad-measurements"
