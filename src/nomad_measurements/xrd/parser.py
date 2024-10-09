@@ -37,13 +37,19 @@ class XRDParser(MatchingParser):
     Parser for matching XRD files and creating instances of ELNXRayDiffraction
     """
 
+    def set_entrydata_definition(self):
+        self.entrydata_definition = ELNXRayDiffraction
+
     def parse(
         self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None
     ) -> None:
+        self.set_entrydata_definition()
         data_file = mainfile.split('/')[-1]
         if isinstance(archive.m_context, ServerContext):
             data_file = mainfile.split('/raw/', 1)[1]
-        entry = ELNXRayDiffraction.m_from_dict(ELNXRayDiffraction.m_def.a_template)
+        entry = self.entrydata_definition.m_from_dict(
+            self.entrydata_definition.m_def.a_template
+        )
         entry.data_file = data_file
         file_name = f'{"".join(data_file.split(".")[:-1])}.archive.json'
         archive.data = RawFileXRDData(
