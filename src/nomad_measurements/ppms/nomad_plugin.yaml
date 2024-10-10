@@ -1,0 +1,4 @@
+plugin_type: schema
+name: NOMAD PPMS schema and parser plugin
+description: |
+  This is a schema and parser for PPMS measurements

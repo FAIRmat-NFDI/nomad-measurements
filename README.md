@@ -14,6 +14,10 @@ parsing of following vendor-specific file formats:
 - `.xrdml` (Malvern Panalytical)
 - `.brml` (Bruker)
 
+The `nomad_measurements.xrd` module supports
+parsing of following file format:
+- `.dat` (in the structure of the QuantumDesign PPMS)
+
 ## Getting started
 `nomad-measurements` can be installed from PyPI using `pip`.
 Currently we require features in `nomad-lab` which are not published to PyPI.
