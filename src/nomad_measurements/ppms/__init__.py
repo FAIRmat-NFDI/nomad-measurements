@@ -1,6 +1,6 @@
 from nomad.config.models.plugins import (
-    SchemaPackageEntryPoint,
     ParserEntryPoint,
+    SchemaPackageEntryPoint,
 )
 from pydantic import Field
 
@@ -52,4 +52,3 @@ schema_package_entry_point = PPMSSchemaEntryPoint(
     name='NewSchemaPackage',
     description='New schema package entry point configuration.',
 )
-

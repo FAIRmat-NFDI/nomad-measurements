@@ -43,6 +43,7 @@ from nomad.datamodel import EntryArchive
 from nomad.datamodel.metainfo.basesections import (
     BaseSection,
 )
+
 from nomad_measurements.ppms.schema import PPMSMeasurement
 
 configuration = config.get_plugin_entry_point(
@@ -58,55 +59,50 @@ class PPMSFile(EntryData):
         type=PPMSMeasurement,
         a_eln=ELNAnnotation(
             component='ReferenceEditQuantity',
-        )
+        ),
     )
 
 
-class PPMSParser(MatchingParser):
-
-    def __init__(self):
-        super().__init__(
-            name='NOMAD PPMS schema and parser plugin',
-            code_name= 'ppms_data',
-            code_homepage='https://github.com/FAIRmat-NFDI/AreaA-data_modeling_and_schemas',
-            supported_compressions=['gz', 'bz2', 'xz']
-        )
-
+class PPMSSarser(MatchingParser):
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         data_file = mainfile.split('/')[-1]
-        data_file_with_path = mainfile.split("raw/")[-1]
+        data_file_with_path = mainfile.split('raw/')[-1]
         entry = PPMSMeasurement()
         entry.data_file = data_file_with_path
         file_name = f'{data_file[:-4]}.archive.json'
-        #entry.normalize(archive, logger)
+        # entry.normalize(archive, logger)
         tic = perf_counter()
         while True:
             search_result = search(
-                owner="user",
+                owner='user',
                 query={
-                    "results.eln.sections:any": ["PPMSSequenceFile"],
-                    "upload_id:any": [archive.m_context.upload_id]
+                    'results.eln.sections:any': ['PPMSSequenceFile'],
+                    'upload_id:any': [archive.m_context.upload_id],
                 },
                 user_id=archive.metadata.main_author.user_id,
-                )
-            if len(search_result.data)>0:
+            )
+            if len(search_result.data) > 0:
                 for sequence in search_result.data:
-                    entry.sequence_file=sequence['search_quantities'][0]['str_value']
+                    entry.sequence_file = sequence['search_quantities'][0]['str_value']
                     logger.info(sequence['search_quantities'][0]['str_value'])
                     break
             sleep(0.1)
             toc = perf_counter()
-            if toc - tic > 15:
-                logger.warning("The Sequence File entry/ies in the current upload were not found and couldn't be referenced.")
+            if toc - tic > 15:  # noqa: PLR2004
+                logger.warning(
+                    "The Sequence File entry/ies in the current upload were\
+                          not found and couldn't be referenced."
+                )
                 break
-        archive.data = PPMSFile(measurement=create_archive(entry,archive,file_name))
+        archive.data = PPMSFile(measurement=create_archive(entry, archive, file_name))
         archive.metadata.entry_name = data_file + ' measurement file'
 
-class PPMSSequenceFile(BaseSection,EntryData):
+
+class PPMSSequenceFile(BaseSection, EntryData):
     file_path = Quantity(
         type=str,
         a_eln=dict(component='FileEditQuantity'),
-        a_browser=dict(adaptor='RawFileAdaptor')
+        a_browser=dict(adaptor='RawFileAdaptor'),
     )
     entry_type = Quantity(
         type=str,
@@ -114,19 +110,10 @@ class PPMSSequenceFile(BaseSection,EntryData):
 
 
 class PPMSSequenceParser(MatchingParser):
-
-    def __init__(self):
-        super().__init__(
-            name='NOMAD PPMS schema and parser plugin',
-            code_name= 'ppms_sequence',
-            code_homepage='https://github.com/FAIRmat-NFDI/AreaA-data_modeling_and_schemas',
-            supported_compressions=['gz', 'bz2', 'xz']
-        )
-
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         data_file = mainfile.split('/')[-1]
-        data_file_with_path = mainfile.split("raw/")[-1]
-        file_name = f'{data_file[:-4]}.archive.json'
-        #entry.normalize(archive, logger)
-        archive.data = PPMSSequenceFile(file_path=data_file_with_path,entry_type="PPMSSequenceFile")
+        data_file_with_path = mainfile.split('raw/')[-1]
+        archive.data = PPMSSequenceFile(
+            file_path=data_file_with_path, entry_type='PPMSSequenceFile'
+        )
         archive.metadata.entry_name = data_file + ' sequence file'

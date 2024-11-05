@@ -27,92 +27,83 @@ from nomad.metainfo import (
     Quantity,
 )
 
+
 class PPMSMeasurementStep(ActivityStep):
-    '''
+    """
     A step in the PPMS measurement.
-    '''
+    """
+
     pass
 
+
 class PPMSMeasurementSetTemperatureStep(PPMSMeasurementStep):
-    '''
+    """
     A step in the PPMS measurement.
-    '''
+    """
+
     temperature_set = Quantity(
         type=float,
         unit='kelvin',
         a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='kelvin'
+            component='NumberEditQuantity', defaultDisplayUnit='kelvin'
         ),
     )
     temperature_rate = Quantity(
         type=float,
         unit='kelvin/second',
         a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='kelvin/minute'
+            component='NumberEditQuantity', defaultDisplayUnit='kelvin/minute'
         ),
     )
-    mode =  Quantity(
-        type=MEnum(
-            'Fast Settle',
-            'No Overshoot'
-            ),
+    mode = Quantity(
+        type=MEnum('Fast Settle', 'No Overshoot'),
         a_eln=ELNAnnotation(
             component='EnumEditQuantity',
         ),
     )
 
+
 class PPMSMeasurementSetMagneticFieldStep(PPMSMeasurementStep):
-    '''
+    """
     A step in the PPMS measurement.
-    '''
+    """
+
     field_set = Quantity(
         type=float,
         unit='gauss',
-        a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='gauss'
-        ),
+        a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='gauss'),
     )
     field_rate = Quantity(
         type=float,
         unit='gauss/second',
         a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='gauss/second'
+            component='NumberEditQuantity', defaultDisplayUnit='gauss/second'
         ),
     )
-    approach =  Quantity(
-        type=MEnum(
-            'Linear',
-            'No Overshoot',
-            'Oscillate'
-            ),
+    approach = Quantity(
+        type=MEnum('Linear', 'No Overshoot', 'Oscillate'),
         a_eln=ELNAnnotation(
             component='EnumEditQuantity',
         ),
     )
-    end_mode =  Quantity(
-        type=MEnum(
-            'Persistent',
-            'Driven'
-            ),
+    end_mode = Quantity(
+        type=MEnum('Persistent', 'Driven'),
         a_eln=ELNAnnotation(
             component='EnumEditQuantity',
         ),
     )
 
+
 class PPMSMeasurementWaitStep(PPMSMeasurementStep):
-    '''
+    """
     A step in the PPMS measurement.
-    '''
+    """
+
     delay = Quantity(
         type=float,
         unit='second',
         a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='second'
+            component='NumberEditQuantity', defaultDisplayUnit='second'
         ),
     )
     condition_temperature = Quantity(
@@ -139,36 +130,32 @@ class PPMSMeasurementWaitStep(PPMSMeasurementStep):
             component='BoolEditQuantity',
         ),
     )
-    on_error_execute =  Quantity(
+    on_error_execute = Quantity(
         type=MEnum(
             'No Action',
             'Abort',
             'Shutdown',
-            ),
+        ),
         a_eln=ELNAnnotation(
             component='EnumEditQuantity',
         ),
     )
 
+
 class PPMSMeasurementScanFieldStep(PPMSMeasurementStep):
-    '''
+    """
     A step in the PPMS measurement.
-    '''
+    """
+
     initial_field = Quantity(
         type=float,
         unit='gauss',
-        a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='gauss'
-        ),
+        a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='gauss'),
     )
     final_field = Quantity(
         type=float,
         unit='gauss',
-        a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='gauss'
-        ),
+        a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='gauss'),
     )
     spacing_code = Quantity(
         type=MEnum(
@@ -177,31 +164,28 @@ class PPMSMeasurementScanFieldStep(PPMSMeasurementStep):
             'H^1/2',
             '1/H',
             'log(H)',
-            ),
+        ),
         a_eln=ELNAnnotation(
             component='EnumEditQuantity',
         ),
     )
-    #increments = Quantity(
+    # increments = Quantity(
     #    type=float,
     #    unit='tesla',
     #    a_eln=ELNAnnotation(
     #        component='NumberEditQuantity',
     #        defaultDisplayUnit='tesla'
     #    ),
-    #)
-    number_of_steps =  Quantity(
+    # )
+    number_of_steps = Quantity(
         type=int,
-        a_eln=ELNAnnotation(
-            component='NumberEditQuantity'
-        ),
+        a_eln=ELNAnnotation(component='NumberEditQuantity'),
     )
     rate = Quantity(
         type=float,
         unit='gauss/second',
         a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='gauss/second'
+            component='NumberEditQuantity', defaultDisplayUnit='gauss/second'
         ),
     )
     approach = Quantity(
@@ -210,7 +194,7 @@ class PPMSMeasurementScanFieldStep(PPMSMeasurementStep):
             'No Overshoot',
             'Oscillate',
             'Sweep',
-            ),
+        ),
         a_eln=ELNAnnotation(
             component='EnumEditQuantity',
         ),
@@ -219,36 +203,38 @@ class PPMSMeasurementScanFieldStep(PPMSMeasurementStep):
         type=MEnum(
             'Persistent',
             'Driven',
-            ),
+        ),
         a_eln=ELNAnnotation(
             component='EnumEditQuantity',
         ),
     )
 
+
 class PPMSMeasurementScanFieldEndStep(PPMSMeasurementStep):
-    '''
+    """
     A step in the PPMS measurement.
-    '''
+    """
+
     pass
 
+
 class PPMSMeasurementScanTempStep(PPMSMeasurementStep):
-    '''
+    """
     A step in the PPMS measurement.
-    '''
+    """
+
     initial_temp = Quantity(
         type=float,
         unit='kelvin',
         a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='kelvin'
+            component='NumberEditQuantity', defaultDisplayUnit='kelvin'
         ),
     )
     final_temp = Quantity(
         type=float,
         unit='kelvin',
         a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='kelvin'
+            component='NumberEditQuantity', defaultDisplayUnit='kelvin'
         ),
     )
     spacing_code = Quantity(
@@ -256,23 +242,20 @@ class PPMSMeasurementScanTempStep(PPMSMeasurementStep):
             'Uniform',
             '1/T',
             'log(T)',
-            ),
+        ),
         a_eln=ELNAnnotation(
             component='EnumEditQuantity',
         ),
     )
-    number_of_steps =  Quantity(
+    number_of_steps = Quantity(
         type=int,
-        a_eln=ELNAnnotation(
-            component='NumberEditQuantity'
-        ),
+        a_eln=ELNAnnotation(component='NumberEditQuantity'),
     )
     rate = Quantity(
         type=float,
         unit='kelvin/second',
         a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='kelvin/minute'
+            component='NumberEditQuantity', defaultDisplayUnit='kelvin/minute'
         ),
     )
     approach = Quantity(
@@ -280,22 +263,26 @@ class PPMSMeasurementScanTempStep(PPMSMeasurementStep):
             'Fast',
             'No Overshoot',
             'Sweep',
-            ),
+        ),
         a_eln=ELNAnnotation(
             component='EnumEditQuantity',
         ),
     )
 
+
 class PPMSMeasurementScanTempEndStep(PPMSMeasurementStep):
-    '''
+    """
     A step in the PPMS measurement.
-    '''
+    """
+
     pass
 
+
 class PPMSMeasurementACTResistanceStep(PPMSMeasurementStep):
-    '''
+    """
     A step in the PPMS measurement.
-    '''
+    """
+
     measurement_active = Quantity(
         type=bool,
         a_eln=ELNAnnotation(
@@ -307,26 +294,21 @@ class PPMSMeasurementACTResistanceStep(PPMSMeasurementStep):
         type=float,
         unit='ampere',
         a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='milliampere'
+            component='NumberEditQuantity', defaultDisplayUnit='milliampere'
         ),
         shape=[2],
     )
     frequency = Quantity(
         type=float,
         unit='hertz',
-        a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='hertz'
-        ),
+        a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='hertz'),
         shape=[2],
     )
     duration = Quantity(
         type=float,
         unit='second',
         a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='second'
+            component='NumberEditQuantity', defaultDisplayUnit='second'
         ),
         shape=[2],
     )
@@ -349,7 +331,7 @@ class PPMSMeasurementACTResistanceStep(PPMSMeasurementStep):
             'Always Autorange',
             'Sticky Autorange',
             'Fixed Gain',
-            ),
+        ),
         a_eln=ELNAnnotation(
             component='EnumEditQuantity',
         ),
@@ -358,17 +340,16 @@ class PPMSMeasurementACTResistanceStep(PPMSMeasurementStep):
     fixed_gain = Quantity(
         type=float,
         unit='volt',
-        a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='volt'
-        ),
+        a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='volt'),
         shape=[2],
     )
 
+
 class PPMSMeasurementETOResistanceStep(PPMSMeasurementStep):
-    '''
+    """
     A step in the PPMS measurement.
-    '''
+    """
+
     mode = Quantity(
         type=MEnum(
             'Do Nothing',
@@ -377,14 +358,14 @@ class PPMSMeasurementETOResistanceStep(PPMSMeasurementStep):
             'Perform N Measurements',
             'Stop Measurement',
             'Stop Excitation',
-            ),
+        ),
         a_eln=ELNAnnotation(
             component='EnumEditQuantity',
         ),
         shape=[2],
     )
     excitation_amplitude = Quantity(
-        #no unit, either milliAmpere for 4-wire or Volt for 2-wire
+        # no unit, either milliAmpere for 4-wire or Volt for 2-wire
         type=float,
         a_eln=ELNAnnotation(
             component='NumberEditQuantity',
@@ -394,26 +375,21 @@ class PPMSMeasurementETOResistanceStep(PPMSMeasurementStep):
     excitation_frequency = Quantity(
         type=float,
         unit='hertz',
-        a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='hertz'
-        ),
+        a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='hertz'),
         shape=[2],
     )
     preamp_range = Quantity(
-        #TODO: figure out to read this from sequence file (is in bins 9-11 somehow)
-        #no unit, either Volt for 4-wire or Ampere for 2-wire
+        # TODO: figure out to read this from sequence file (is in bins 9-11 somehow)
+        # no unit, either Volt for 4-wire or Ampere for 2-wire
         type=float,
-        a_eln=ELNAnnotation(
-            component='NumberEditQuantity'
-        ),
+        a_eln=ELNAnnotation(component='NumberEditQuantity'),
         shape=[2],
     )
     preamp_sample_wiring = Quantity(
         type=MEnum(
             '4-wire',
             '2-wire',
-            ),
+        ),
         a_eln=ELNAnnotation(
             component='EnumEditQuantity',
         ),
@@ -426,58 +402,55 @@ class PPMSMeasurementETOResistanceStep(PPMSMeasurementStep):
         ),
         shape=[2],
     )
-    config_averaging_time= Quantity(
+    config_averaging_time = Quantity(
         type=float,
         unit='second',
         a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='second'
+            component='NumberEditQuantity', defaultDisplayUnit='second'
         ),
         shape=[2],
     )
-    config_number_of_measurements= Quantity(
+    config_number_of_measurements = Quantity(
         type=int,
-        a_eln=ELNAnnotation(
-            component='NumberEditQuantity'
-        ),
+        a_eln=ELNAnnotation(component='NumberEditQuantity'),
         shape=[2],
     )
 
+
 class PPMSMeasurementSetPositionStep(PPMSMeasurementStep):
-    '''
+    """
     A step in the PPMS measurement.
-    '''
+    """
+
     position_set = Quantity(
         type=float,
         unit='degree',
         a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='degree'
+            component='NumberEditQuantity', defaultDisplayUnit='degree'
         ),
     )
     position_rate = Quantity(
         type=float,
         unit='degree/second',
         a_eln=ELNAnnotation(
-            component='NumberEditQuantity',
-            defaultDisplayUnit='degree/minute'
+            component='NumberEditQuantity', defaultDisplayUnit='degree/minute'
         ),
     )
-    mode =  Quantity(
+    mode = Quantity(
         type=MEnum(
-            'Move to position',
-            'Move to index and define',
-            'Redefine present position'
-            ),
+            'Move to position', 'Move to index and define', 'Redefine present position'
+        ),
         a_eln=ELNAnnotation(
             component='EnumEditQuantity',
         ),
     )
 
+
 class PPMSMeasurementRemarkStep(PPMSMeasurementStep):
-    '''
+    """
     A step in the PPMS measurement.
-    '''
+    """
+
     remark_text = Quantity(
         type=str,
         a_eln=ELNAnnotation(
