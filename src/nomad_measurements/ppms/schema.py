@@ -738,7 +738,7 @@ class PPMSMeasurement(Measurement, PlotSection, EntryData):
                             clean_key = clean_channel_keys(key)
                             if hasattr(channel_1, clean_key):
                                 setattr(channel_1, clean_key, block[key])
-                        data.m_add_sub_section(ACTPPMSData.channels, channel_1)
+                        data.m_add_sub_section(ETOPPMSData.channels, channel_1)
                     channel_2_data = [
                         key for key in block.keys() if 'ch2' in key.lower()
                     ]
