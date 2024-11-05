@@ -63,7 +63,7 @@ class PPMSFile(EntryData):
     )
 
 
-class PPMSSarser(MatchingParser):
+class PPMSParser(MatchingParser):
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         data_file = mainfile.split('/')[-1]
         data_file_with_path = mainfile.split('raw/')[-1]
