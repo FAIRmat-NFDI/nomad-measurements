@@ -16,17 +16,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from typing import (
+    TYPE_CHECKING,
+)
 
 import re
 from io import StringIO
 import numpy as np
 import pandas as pd
 from datetime import datetime
-
-from structlog.stdlib import (
-    BoundLogger,
-)
-#from PPMS.schema import PPMSMeasurement, PPMSData, Sample, ChannelData, ETOData
 
 from nomad.metainfo import Package, Section, MEnum, SubSection
 
@@ -54,7 +52,7 @@ from nomad.datamodel.metainfo.eln import (
 
 from nomad.datamodel.metainfo.plot import PlotSection, PlotlyFigure
 
-from ppms.ppmssteps import (
+from nomad_measurements.ppms.ppmssteps import (
     PPMSMeasurementStep,
     PPMSMeasurementRemarkStep,
     PPMSMeasurementWaitStep,
@@ -69,7 +67,7 @@ from ppms.ppmssteps import (
     PPMSMeasurementSetMagneticFieldStep,
 )
 
-from ppms.ppmsdatastruct import (
+from nomad_measurements.ppms.ppmsdatastruct import (
     PPMSData,
     ACTPPMSData,
     ACTChannelData,
@@ -79,7 +77,19 @@ from ppms.ppmsdatastruct import (
     ETOData,
 )
 
-m_package = Package(name='ppms')
+if TYPE_CHECKING:
+    from structlog.stdlib import (
+        BoundLogger,
+    )
+
+from nomad.config import config
+from nomad.metainfo import SchemaPackage
+
+configuration = config.get_plugin_entry_point(
+    'nomad_measurements.ppms.schema:schema_package_entry_point'
+)
+
+m_package = SchemaPackage()
 
 def clean_channel_keys(input_key: str) -> str:
     output_key = (
@@ -452,10 +462,7 @@ class PPMSMeasurement(Measurement,PlotSection,EntryData):
             data_section = header_match.string[header_match.end():]
             data_section = data_section.replace(',Field',',Magnetic Field')
             data_buffer = StringIO(data_section)
-            data_df = pd.read_csv(data_buffer, header=None, skipinitialspace=True, sep=',',engine='python')
-            # Rename columns using the first row of data
-            data_df.columns = data_df.iloc[0]
-            data_df = data_df.iloc[1:].reset_index(drop=True)
+            data_df = pd.read_csv(data_buffer, header=0, skipinitialspace=True, sep=',',engine='python')
             other_data = [key for key in data_df.keys() if 'ch1' not in key and 'ch2' not in key and 'map' not in key.lower()]
             all_data=[]
 

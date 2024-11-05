@@ -18,19 +18,17 @@
 #
 
 import numpy as np
-
-from nomad.metainfo import Section, MEnum, SubSection
-
-from nomad.datamodel.metainfo.annotations import (
-    ELNAnnotation,
-)
-
 from nomad.datamodel.data import (
     ArchiveSection,
 )
-
+from nomad.datamodel.metainfo.annotations import (
+    ELNAnnotation,
+)
 from nomad.metainfo import (
+    MEnum,
     Quantity,
+    Section,
+    SubSection,
 )
 
 

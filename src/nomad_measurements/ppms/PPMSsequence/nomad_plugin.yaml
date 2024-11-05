@@ -1,8 +1,0 @@
-plugin_type: parser #schema
-name: NOMAD PPMS parser for sequence file
-description: |
-  This is a schema and parser for PPMS sequence file
-mainfile_name_re: ^.+\.seq$ # added
-mainfile_mime_re: 'text/plain'
-parser_class_name: ppms.PPMSsequence.PPMSSequenceParser # added
-code_name: ppms_sequence

@@ -133,5 +133,8 @@ where = ["src"]
 general_schema = "nomad_measurements:schema"
 xrd_schema = "nomad_measurements.xrd:schema"
 xrd_parser = "nomad_measurements.xrd:parser"
+ppms_schema = "nomad_measurements.ppms:schema_package_entry_point"
+ppms_parser_data = "nomad_measurements.ppms:parser_entry_point_data"
+ppms_parser_sequence = "nomad_measurements.ppms:parser_entry_point_sqc"
 
 [tool.setuptools_scm]

@@ -16,28 +16,42 @@
 # limitations under the License.
 #
 
-
-from time import (
-    sleep,
-    perf_counter
+from time import perf_counter, sleep
+from typing import (
+    TYPE_CHECKING,
 )
-
-
-from nomad.search import search
 
 from nomad.datamodel import EntryArchive
-from nomad.metainfo import Quantity
-from nomad.parsing import MatchingParser
-
-from nomad.datamodel.metainfo.annotations import (
-    ELNAnnotation,
-)
 from nomad.datamodel.data import (
     EntryData,
 )
-
+from nomad.datamodel.metainfo.annotations import (
+    ELNAnnotation,
+)
+from nomad.metainfo import Quantity
+from nomad.parsing import MatchingParser
+from nomad.search import search
 from nomad_material_processing.utils import create_archive
-from ppms.schema import PPMSMeasurement
+
+if TYPE_CHECKING:
+    from nomad.datamodel.datamodel import (
+        EntryArchive,
+    )
+
+from nomad.config import config
+from nomad.datamodel import EntryArchive
+from nomad.datamodel.metainfo.basesections import (
+    BaseSection,
+)
+from nomad_measurements.ppms.schema import PPMSMeasurement
+
+configuration = config.get_plugin_entry_point(
+    'nomad_measurements.ppms.parser:parser_entry_point_data'
+)
+configuration = config.get_plugin_entry_point(
+    'nomad_measurements.ppms.parser:parser_entry_point_sqc'
+)
+
 
 class PPMSFile(EntryData):
     measurement = Quantity(
@@ -87,3 +101,32 @@ class PPMSParser(MatchingParser):
                 break
         archive.data = PPMSFile(measurement=create_archive(entry,archive,file_name))
         archive.metadata.entry_name = data_file + ' measurement file'
+
+class PPMSSequenceFile(BaseSection,EntryData):
+    file_path = Quantity(
+        type=str,
+        a_eln=dict(component='FileEditQuantity'),
+        a_browser=dict(adaptor='RawFileAdaptor')
+    )
+    entry_type = Quantity(
+        type=str,
+    )
+
+
+class PPMSSequenceParser(MatchingParser):
+
+    def __init__(self):
+        super().__init__(
+            name='NOMAD PPMS schema and parser plugin',
+            code_name= 'ppms_sequence',
+            code_homepage='https://github.com/FAIRmat-NFDI/AreaA-data_modeling_and_schemas',
+            supported_compressions=['gz', 'bz2', 'xz']
+        )
+
+    def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
+        data_file = mainfile.split('/')[-1]
+        data_file_with_path = mainfile.split("raw/")[-1]
+        file_name = f'{data_file[:-4]}.archive.json'
+        #entry.normalize(archive, logger)
+        archive.data = PPMSSequenceFile(file_path=data_file_with_path,entry_type="PPMSSequenceFile")
+        archive.metadata.entry_name = data_file + ' sequence file'

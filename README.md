@@ -14,7 +14,7 @@ parsing of following vendor-specific file formats:
 - `.xrdml` (Malvern Panalytical)
 - `.brml` (Bruker)
 
-The `nomad_measurements.xrd` module supports
+The `nomad_measurements.ppms` module supports
 parsing of following file format:
 - `.dat` (in the structure of the QuantumDesign PPMS)
 

@@ -18,21 +18,14 @@
 #
 
 
-from structlog.stdlib import (
-    BoundLogger,
-)
-
-from nomad.metainfo import MEnum
-
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
 )
-
+from nomad.datamodel.metainfo.basesections import ActivityStep
 from nomad.metainfo import (
+    MEnum,
     Quantity,
 )
-
-from nomad.datamodel.metainfo.basesections import ActivityStep
 
 class PPMSMeasurementStep(ActivityStep):
     '''
