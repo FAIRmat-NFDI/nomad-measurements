@@ -86,7 +86,7 @@ from nomad.config import config
 from nomad.metainfo import SchemaPackage
 
 configuration = config.get_plugin_entry_point(
-    'nomad_measurements.ppms.schema:schema_package_entry_point'
+    'nomad_measurements.ppms:schema_package_entry_point'
 )
 
 m_package = SchemaPackage()
