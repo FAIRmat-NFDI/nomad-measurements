@@ -26,6 +26,11 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
+
+from structlog.stdlib import (
+    BoundLogger,
+)
+
 from nomad.metainfo import Package, Section, MEnum, SubSection
 
 from nomad.datamodel.metainfo.basesections import Measurement
