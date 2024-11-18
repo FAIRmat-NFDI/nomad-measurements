@@ -78,9 +78,9 @@ def test_merge_sections(capfd):
     merge_sections(system_1, system_2)
     out, _ = capfd.readouterr()
     assert out == (
-        'Merging different values for "float_array" quantity.\n'
-        'Merging different values for "bool_array" quantity.\n'
-        'Merging different values for "name" quantity.\n'
+        'Merging sections with different values for quantity "float_array".\n'
+        'Merging sections with different values for quantity "bool_array".\n'
+        'Merging sections with different values for quantity "name".\n'
     )
     assert system_1.components[0].mass_fraction == 1
     assert system_1.components[0].name == 'Cu'

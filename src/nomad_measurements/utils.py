@@ -95,7 +95,7 @@ def merge_sections(  # noqa: PLR0912
             section.m_set(quantity, update.m_get(quantity))
             continue
         if _not_equal(section.m_get(quantity), update.m_get(quantity)):
-            warning = f'Merging different values for "{name}" quantity.'
+            warning = f'Merging sections with different values for quantity "{name}".'
             if logger:
                 logger.warning(warning)
             else:
