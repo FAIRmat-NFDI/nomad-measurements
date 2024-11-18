@@ -67,6 +67,12 @@ def create_archive(
     )
 
 
+def _not_equal(a, b) -> bool:
+    if isinstance(a, np.ndarray):
+        return (a != b).any()
+    return a != b
+
+
 def merge_sections(  # noqa: PLR0912
     section: 'ArchiveSection',
     update: 'ArchiveSection',
@@ -87,13 +93,9 @@ def merge_sections(  # noqa: PLR0912
             continue
         if not section.m_is_set(quantity):
             section.m_set(quantity, update.m_get(quantity))
-        elif (
-            quantity.is_scalar
-            and section.m_get(quantity) != update.m_get(quantity)
-            or not quantity.is_scalar
-            and (section.m_get(quantity) != update.m_get(quantity)).any()
-        ):
-            warning = f'Merging sections with different values for quantity "{name}".'
+            continue
+        if _not_equal(section.m_get(quantity), update.m_get(quantity)):
+            warning = f'Merging different values for "{name}" quantity.'
             if logger:
                 logger.warning(warning)
             else:
