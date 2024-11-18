@@ -24,6 +24,7 @@ from nomad.datamodel.metainfo.basesections import (
     PureSubstanceSection,
 )
 from nomad.metainfo import MEnum, Quantity
+from nomad.units import ureg
 
 from nomad_measurements.utils import (
     merge_sections,
@@ -32,6 +33,7 @@ from nomad_measurements.utils import (
 
 class TestComponent(Component):
     float_array = Quantity(type=np.float64, shape=['*'])
+    float_array_w_units = Quantity(type=np.float64, shape=['*'], unit='eV')
     bool_array = Quantity(type=bool, shape=['*'])
     enum_value = Quantity(type=MEnum(['A', 'B', 'C']))
 
@@ -40,6 +42,7 @@ def test_merge_sections(capfd):
     component_1 = TestComponent(
         mass_fraction=1,
         float_array=[1.0, 1.0],
+        float_array_w_units=[1.0, 1.0],
         bool_array=[True, False],
         enum_value='A',
     )
@@ -47,6 +50,7 @@ def test_merge_sections(capfd):
         name='Cu',
         mass_fraction=1,
         float_array=[1.0, 3.0],
+        float_array_w_units=[1.0, 1.0],
         bool_array=[True, True],
         enum_value='A',
     )
@@ -88,6 +92,8 @@ def test_merge_sections(capfd):
     assert system_1.components[0].bool_array[1] is False
     assert system_1.components[0].float_array[0] == 1.0
     assert system_1.components[0].float_array[1] == 1.0
+    assert system_1.components[0].float_array_w_units[0] == ureg.Quantity(1.0, 'eV')
+    assert system_1.components[0].float_array_w_units[1] == ureg.Quantity(1.0, 'eV')
     assert system_1.components[0].enum_value == 'A'
     assert system_1.components[1].name == 'Cu'
     assert system_1.components[1].pure_substance.name == 'Cu'
