@@ -36,10 +36,10 @@ class TestComponent(Component):
     enum_value = Quantity(type=MEnum(['A', 'B', 'C']))
 
 
-def test_merge_sections():
+def test_merge_sections(capfd):
     component_1 = TestComponent(
         mass_fraction=1,
-        float_array=[1.0, 2.0],
+        float_array=[1.0, 1.0],
         bool_array=[True, False],
         enum_value='A',
     )
@@ -76,10 +76,18 @@ def test_merge_sections():
     )
     system_3 = CompositeSystem()
     merge_sections(system_1, system_2)
+    out, _ = capfd.readouterr()
+    assert out == (
+        'Merging different values for "float_array" quantity.\n'
+        'Merging different values for "bool_array" quantity.\n'
+        'Merging different values for "name" quantity.\n'
+    )
     assert system_1.components[0].mass_fraction == 1
     assert system_1.components[0].name == 'Cu'
     assert system_1.components[0].bool_array[0] is True
     assert system_1.components[0].bool_array[1] is False
+    assert system_1.components[0].float_array[0] == 1.0
+    assert system_1.components[0].float_array[1] == 1.0
     assert system_1.components[0].enum_value == 'A'
     assert system_1.components[1].name == 'Cu'
     assert system_1.components[1].pure_substance.name == 'Cu'
