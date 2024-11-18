@@ -22,19 +22,29 @@ from nomad.datamodel.metainfo.basesections import (
     PureSubstanceComponent,
     PureSubstanceSection,
 )
+from nomad.metainfo import MEnum, Quantity
 
 from nomad_measurements.utils import (
     merge_sections,
 )
 
 
+class TestComponent(Component):
+    bool_array = Quantity(type=bool, shape=["*"])
+    enum_value = Quantity(type=MEnum(['A', 'B', 'C']))
+
+
 def test_merge_sections():
-    component_1 = Component(
+    component_1 = TestComponent(
         mass_fraction=1,
+        bool_value=[True, False],
+        enum_value='A',
     )
-    component_2 = Component(
+    component_2 = TestComponent(
         name='Cu',
         mass_fraction=1,
+        bool_value=[True, True],
+        enum_value='A',
     )
     substance_1 = PureSubstanceSection(
         name='Cu',
@@ -64,6 +74,9 @@ def test_merge_sections():
     merge_sections(system_1, system_2)
     assert system_1.components[0].mass_fraction == 1
     assert system_1.components[0].name == 'Cu'
+    assert system_1.components[0].bool_value[0] is True
+    assert system_1.components[0].bool_value[1] is False
+    assert system_1.components[0].enum_value == 'A'
     assert system_1.components[1].name == 'Cu'
     assert system_1.components[1].pure_substance.name == 'Cu'
     assert system_1.components[1].pure_substance.iupac_name == 'Copper'
