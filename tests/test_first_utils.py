@@ -31,8 +31,8 @@ from nomad_measurements.utils import (
 
 
 class TestComponent(Component):
-    float_array = Quantity(type=np.float64, shape=["*"])
-    bool_array = Quantity(type=bool, shape=["*"])
+    float_array = Quantity(type=np.float64, shape=['*'])
+    bool_array = Quantity(type=bool, shape=['*'])
     enum_value = Quantity(type=MEnum(['A', 'B', 'C']))
 
 
