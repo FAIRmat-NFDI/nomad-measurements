@@ -16,25 +16,39 @@
 # limitations under the License.
 #
 
+import numpy as np
 from nomad.datamodel.metainfo.basesections import (
     Component,
     CompositeSystem,
     PureSubstanceComponent,
     PureSubstanceSection,
 )
+from nomad.metainfo import MEnum, Quantity
 
 from nomad_measurements.utils import (
     merge_sections,
 )
 
 
-def test_merge_sections():
-    component_1 = Component(
+class TestComponent(Component):
+    float_array = Quantity(type=np.float64, shape=['*'])
+    bool_array = Quantity(type=bool, shape=['*'])
+    enum_value = Quantity(type=MEnum(['A', 'B', 'C']))
+
+
+def test_merge_sections(capfd):
+    component_1 = TestComponent(
         mass_fraction=1,
+        float_array=[1.0, 1.0],
+        bool_array=[True, False],
+        enum_value='A',
     )
-    component_2 = Component(
+    component_2 = TestComponent(
         name='Cu',
         mass_fraction=1,
+        float_array=[1.0, 3.0],
+        bool_array=[True, True],
+        enum_value='A',
     )
     substance_1 = PureSubstanceSection(
         name='Cu',
@@ -62,8 +76,19 @@ def test_merge_sections():
     )
     system_3 = CompositeSystem()
     merge_sections(system_1, system_2)
+    out, _ = capfd.readouterr()
+    assert out == (
+        'Merging sections with different values for quantity "float_array".\n'
+        'Merging sections with different values for quantity "bool_array".\n'
+        'Merging sections with different values for quantity "name".\n'
+    )
     assert system_1.components[0].mass_fraction == 1
     assert system_1.components[0].name == 'Cu'
+    assert system_1.components[0].bool_array[0] is True
+    assert system_1.components[0].bool_array[1] is False
+    assert system_1.components[0].float_array[0] == 1.0
+    assert system_1.components[0].float_array[1] == 1.0
+    assert system_1.components[0].enum_value == 'A'
     assert system_1.components[1].name == 'Cu'
     assert system_1.components[1].pure_substance.name == 'Cu'
     assert system_1.components[1].pure_substance.iupac_name == 'Copper'
