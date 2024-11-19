@@ -68,9 +68,10 @@ def create_archive(
 
 
 def _not_equal(a, b) -> bool:
-    if isinstance(a, np.ndarray):
-        return (a != b).any()
-    return a != b
+    comparison = a != b
+    if isinstance(comparison, np.ndarray):
+        return comparison.any()
+    return comparison
 
 
 def merge_sections(  # noqa: PLR0912
