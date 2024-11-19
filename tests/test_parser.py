@@ -22,6 +22,7 @@ from nomad.client import normalize_all, parse
 
 
 @pytest.fixture(
+    name='parsed_archive',
     params=[
         'XRD-918-16_10.xrdml',
         'm54313_om2th_10.xrdml',
@@ -31,9 +32,9 @@ from nomad.client import normalize_all, parse
         'Omega-2Theta_scan_high_temperature.rasx',
         'RSM_111_sdd=350.rasx',
         'TwoTheta_scan_powder.rasx',
-    ]
+    ],
 )
-def parsed_archive(request):
+def fixture_parsed_archive(request):
     """
     Sets up data for testing and cleans up after the test.
     """
@@ -51,9 +52,21 @@ def parsed_archive(request):
         os.remove(measurement)
 
 
-def test_normalize_all(parsed_archive):
+@pytest.mark.parametrize(
+    'caplog',
+    ['error', 'critical'],
+    indirect=True,
+)
+def test_normalize_all(parsed_archive, caplog):
+    """
+    Tests the normalization of the parsed archive.
+
+    Args:
+        parsed_archive (pytest.fixture): Fixture to handle the parsing of archive.
+        caplog (pytest.fixture): Fixture to capture errors from the logger.
+    """
     normalize_all(parsed_archive)
-    print(parsed_archive.data)
+
     assert parsed_archive.data.xrd_settings.source.xray_tube_material == 'Cu'
     assert parsed_archive.data.results[
         0
