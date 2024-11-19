@@ -52,20 +52,18 @@ def fixture_parsed_archive(request):
         os.remove(measurement)
 
 
-@pytest.mark.usefixtures('caplog')
 @pytest.mark.parametrize(
     'caplog',
     ['error', 'critical'],
     indirect=True,
 )
-def test_normalize_all(parsed_archive):
+def test_normalize_all(parsed_archive, caplog):
     """
     Tests the normalization of the parsed archive.
 
     Args:
         parsed_archive (pytest.fixture): Fixture to handle the parsing of archive.
-        capture_error_from_logger (capture_error_from_logger): Fixture to capture
-            errors from the logger.
+        caplog (pytest.fixture): Fixture to capture errors from the logger.
     """
     normalize_all(parsed_archive)
 
