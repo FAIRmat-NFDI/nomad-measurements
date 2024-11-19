@@ -37,8 +37,7 @@ license = { file = "LICENSE" }
 dependencies = [
     "nomad-lab>=1.3.6", 
     "xmltodict==0.13.0",
-    "fairmat-readers-xrd~=0.0.3",
-    "pynxtools", 
+    "fairmat-readers-xrd>=0.0.3",
 ]
 [project.urls]
 "Homepage" = "https://github.com/FAIRmat-NFDI/nomad-measurements"
