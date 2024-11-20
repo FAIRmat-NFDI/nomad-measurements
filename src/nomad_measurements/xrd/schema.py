@@ -937,19 +937,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
     )
-    use_nexus_file = Quantity(
-        type=bool,
-        description="""
-        Whether or not to generate a NeXus output file and use it to store array data.
-        Once set to True, it cannot be set back to False.
-        """,
-        default=False,
-        a_eln=ELNAnnotation(
-            component=ELNComponentEnum.BoolEditQuantity,
-            label='Generate NeXus file',
-        ),
-    )
-    state_use_nexus_file = False
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
         """
@@ -1009,26 +996,22 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         scan_type = metadata_dict.get('scan_type', None)
         if scan_type not in ['line', 'rsm']:
             raise NotImplementedError(f'Scan type `{scan_type}` is not supported.')
-        if self.state_use_nexus_file:
-            # Create a new result section
-            if self.results:
-                self.results = []
-            if scan_type == 'line':
-                result = XRDResult1D_HDF5()
-            elif scan_type == 'rsm':
-                result = XRDResultRSM_HDF5()
-            result.scan_axis = metadata_dict.get('scan_axis', None)
-            result.integration_time = xrd_dict.get('countTime', None)
-        if not self.state_use_nexus_file:
-            if scan_type == 'line':
-                result = XRDResult1D()
-            elif scan_type == 'rsm':
-                result = XRDResultRSM()
-            result.intensity = xrd_dict.get('intensity', None)
-            result.two_theta = xrd_dict.get('2Theta', None)
-            result.omega = xrd_dict.get('Omega', None)
-            result.chi = xrd_dict.get('Chi', None)
-            result.phi = xrd_dict.get('Phi', None)
+
+        # removing exisiting results for backwards compatibility
+        if self.results:
+            self.results = []
+        # Create a new result section
+        if scan_type == 'line':
+            result = XRDResult1D_HDF5()
+        elif scan_type == 'rsm':
+            result = XRDResultRSM_HDF5()
+        result.scan_axis = metadata_dict.get('scan_axis', None)
+        result.integration_time = xrd_dict.get('countTime', None)
+        result.intensity = xrd_dict.get('intensity', None)
+        result.two_theta = xrd_dict.get('2Theta', None)
+        result.omega = xrd_dict.get('Omega', None)
+        result.chi = xrd_dict.get('Chi', None)
+        result.phi = xrd_dict.get('Phi', None)
         result.normalize(archive, logger)
 
         source = XRayTubeSource(
@@ -1069,12 +1052,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             normalized.
             logger (BoundLogger): A structlog logger.
         """
-        # lock the decision of using nexus file references once it is set True
-        if self.state_use_nexus_file:
-            self.use_nexus_file = True
-        if self.use_nexus_file:
-            self.state_use_nexus_file = True
-
         if self.data_file is not None:
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:
@@ -1088,10 +1065,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         super().normalize(archive, logger)
         if not self.results:
             return
-
-        scan_type = xrd_dict.get('metadata', {}).get('scan_type', None)
-        if self.generate_nexus_file and self.data_file is not None:
-            write_nx_section_and_create_file(archive, logger, scan_type=scan_type)
 
         self.figures = self.results[0].generate_plots(archive, logger)
 
