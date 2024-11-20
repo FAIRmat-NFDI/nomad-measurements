@@ -930,6 +930,13 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             component=ELNComponentEnum.FileEditQuantity,
         ),
     )
+    auxiliary_hdf5_file = Quantity(
+        type=str,
+        description='Auxiliary HDF5 file containing the raw data',
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.FileEditQuantity,
+        ),
+    )
     measurement_identifiers = SubSection(
         section_def=ReadableIdentifiers,
     )
