@@ -55,9 +55,17 @@ def create_archive(
 
     entity_entry = entity.m_to_dict(with_root_def=True)
     if isinstance(archive.m_context, ClientContext):
+        from nomad.client import normalize_all, parse
         with open(file_name, 'w') as outfile:
             json.dump({'data': entity_entry}, outfile, indent=4)
-        return os.path.abspath(file_name)
+        path = os.path.abspath(file_name)
+        archive = parse(path)[0]
+        normalize_all(archive)
+        name = file_name.rsplit('.', 2)[0]
+        processed_file_name = f"{name}.processed.archive.json"
+        with open(processed_file_name, 'w') as outfile:
+            json.dump(archive.m_to_dict(with_root_def=True), outfile, indent=4)
+        return path
     if not archive.m_context.raw_path_exists(file_name):
         with archive.m_context.raw_file(file_name, 'w') as outfile:
             json.dump({'data': entity_entry}, outfile)
