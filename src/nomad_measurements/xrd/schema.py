@@ -72,6 +72,7 @@ from nomad_measurements.general import (
     NOMADMeasurementsCategory,
 )
 from nomad_measurements.utils import get_bounding_range_2d, merge_sections
+from nomad_measurements.xrd import nx
 from nomad_measurements.xrd.nx import write_nx_section_and_create_file
 
 if TYPE_CHECKING:
@@ -809,7 +810,6 @@ class XRayDiffraction(Measurement):
                 ),
             )
 
-
 class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     """
     Example section for how XRayDiffraction can be implemented with a general reader for
@@ -839,6 +839,10 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     diffraction_method_name = XRayDiffraction.diffraction_method_name.m_copy()
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
+    )
+    xrd_pan = Quantity(
+        type=HDF5Reference,
+        description='Type of the X-ray tube',
     )
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
@@ -916,7 +920,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         eln_dict['kbeta'] = source.kbeta.magnitude
         eln_dict['kbeta/units'] = str(source.kbeta.units)
 
-        nx_out_f = archive.metadata.mainfile.split('.')[0] + '.nxs'
+        nx_out_f = archive.metadata.mainfile.split('.', 1)[0] + '.nxs'
         result = None
         if scan_type == 'line':
             result = XRDResult1D(
@@ -955,6 +959,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             xrd_dict=xrd_dict,
             scan_type=scan_type,
         )
+        self.xrd_pan = f'{nx_out_f}#/entry'
         result.normalize(archive, logger)
         merge_sections(self, xrd, logger)
 

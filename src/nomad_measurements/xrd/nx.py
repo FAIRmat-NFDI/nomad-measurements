@@ -15,23 +15,118 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from importlib import metadata
 from typing import TYPE_CHECKING
 
 import os
 
+from pynxtools.nomad.parser import NexusParser
+from nomad.datamodel.datamodel import EntryArchive, EntryMetadata
 from pynxtools.dataconverter import writer as pynxtools_writer
 from pynxtools.dataconverter.helpers import (
     get_nxdl_root_and_path,
     generate_template_from_nxdl,
 )
+import json
 from pynxtools.dataconverter.template import Template
-# from pynxtools.nomad.dataconverter import populate_nexus_subsection
 
+from nomad_measurements.utils import get_reference, get_entry_id_from_file_name
 if TYPE_CHECKING:
-    from nomad.datamodel.datamodel import EntryArchive
     from structlog.stdlib import (
         BoundLogger,
     )
+
+
+# import json
+# import math
+# import os
+
+# import numpy as np
+# import pandas as pd
+# import yaml
+# from epic_scraper.epicfileimport.epic_module import (
+#     epiclog_read,
+# )
+# from nomad.datamodel.context import ClientContext
+# from nomad.datamodel.metainfo.basesections import (
+#     ExperimentStep,
+# )
+# from nomad.units import ureg
+
+
+# def get_entry_id(upload_id, filename):
+#     from nomad.utils import hash
+
+#     return hash(upload_id, filename)
+
+
+# def get_hash_ref(upload_id, filename):
+#     return f'{get_reference(upload_id, get_entry_id(upload_id, filename))}#data'
+
+
+# def nan_equal(a, b):
+#     """
+#     Compare two values with NaN values.
+#     """
+#     if isinstance(a, float) and isinstance(b, float):
+#         return a == b or (math.isnan(a) and math.isnan(b))
+#     elif isinstance(a, dict) and isinstance(b, dict):
+#         return dict_nan_equal(a, b)
+#     elif isinstance(a, list) and isinstance(b, list):
+#         return list_nan_equal(a, b)
+#     else:
+#         return a == b
+
+
+# def list_nan_equal(list1, list2):
+#     """
+#     Compare two lists with NaN values.
+#     """
+#     if len(list1) != len(list2):
+#         return False
+#     for a, b in zip(list1, list2):
+#         if not nan_equal(a, b):
+#             return False
+#     return True
+
+
+# def dict_nan_equal(dict1, dict2):
+#     """
+#     Compare two dictionaries with NaN values.
+#     """
+#     if set(dict1.keys()) != set(dict2.keys()):
+#         return False
+#     for key in dict1:
+#         if not nan_equal(dict1[key], dict2[key]):
+#             return False
+#     return True
+
+
+# def create_archive(
+#     entry_dict, context, filename, file_type, logger, *, overwrite: bool = False
+# ):
+#     file_exists = context.raw_path_exists(filename)
+#     dicts_ae_equal = None
+#     if isinstance(context, ClientContext):
+#         return None
+#     if file_exists:
+#         with context.raw_file(filename, 'r') as file:
+#             existing_dict = yaml.safe_load(file)
+#             dicts_are_equal = dict_nan_equal(existing_dict, entry_dict)
+#     if not file_exists or overwrite or dicts_are_equal:
+#         with context.raw_file(filename, 'w') as newfile:
+#             if file_type == 'json':
+#                 json.dump(entry_dict, newfile)
+#             elif file_type == 'yaml':
+#                 yaml.dump(entry_dict, newfile)
+#         context.upload.process_updated_raw_file(filename, allow_modify=True)
+#     elif file_exists and not overwrite and not dicts_are_equal:
+#         logger.error(
+#             f'{filename} archive file already exists. '
+#             f'You are trying to overwrite it with a different content. '
+#             f'To do so, remove the existing archive and click reprocess again.'
+#         )
+#     return get_hash_ref(context.upload_id, filename)
 
 
 def connect_concepts_from_dict(xrd_dict, template, scan_type: str):
@@ -39,7 +134,6 @@ def connect_concepts_from_dict(xrd_dict, template, scan_type: str):
     Connect the concepts between `ELNXrayDiffraction` and `NXxrd_pan` schema.
 
     Args:
-        archive (EntryArchive): The Nomad archive object.
         xrd_dict (dict): A dictionary containing the data from experiment file and
                 eln data under the key `eln_dict`.
         template (Template): A template object containing the NXxrd_pan schema.
@@ -168,7 +262,14 @@ def connect_concepts_from_dict(xrd_dict, template, scan_type: str):
     template['/ENTRY[entry]/q_data/q_perpendicular'] = {
         'link': '/entry/experiment_result/q_perpendicular'
     }
+from nomad.datamodel.data import (
+    ArchiveSection,
+    EntryData,
+)
 
+
+class xrd_pan(EntryData):
+    pass
 
 def write_nx_section_and_create_file(
     archive: 'EntryArchive', logger: 'BoundLogger', nx_file, xrd_dict, scan_type='line'
@@ -199,8 +300,45 @@ def write_nx_section_and_create_file(
     #     output_file_path=nx_file,
     #     write_entry_type=False,
     # )
-
+    # TODO remove global variable
+    # TODO list
+    # 1. Create an entry archive
+    # 2. Run NeXus Parser on the entry archive
+    # TODO Create a nexus/panxtools section in XRDDiffraction
     archive.data.output = os.path.join(archive.m_context.raw_path(), nx_file)
     pynxtools_writer.Writer(
         data=template, nxdl_f_path=nxdl_f_path, output_path=archive.data.output
     ).write()
+    archive.m_context.process_updated_raw_file(nx_file)
+    upload_id = archive.metadata.upload_id
+    entry_id = get_entry_id_from_file_name(nx_file, archive)
+    return get_reference(upload_id, entry_id)
+
+    # # Write the archive file:
+    # file_name = app_def + '.archive.json'
+    # if archive.m_context.raw_path_exists(file_name):
+    #     return
+    # nx_entry_archive = EntryArchive(
+    #     # m_context=archive.m_context,
+    #     # metadata=EntryMetadata(upload_id=archive.m_context.upload_id),
+    # )
+    # # create_archive(
+    # #     substrate_archive.m_to_dict(),
+    # #     archive.m_context,
+    # #     substrate_filename,
+    # #     filetype,
+    # #     logger,
+    # # )
+    # NexusParser().parse(
+    #     mainfile=archive.data.output, archive=nx_entry_archive, logger=logger
+    # )
+
+    # with archive.m_context.raw_file(file_name, 'w') as outfile:
+    #     json.dump(
+    #         nx_entry_archive.m_to_dict(
+    #             with_meta=True,
+    #         ),
+    #         outfile,
+    #     )
+
+    # # archive.m_context.process_updated_raw_file(file_name)
