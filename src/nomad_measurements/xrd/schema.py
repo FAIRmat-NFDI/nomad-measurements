@@ -15,7 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from os import name
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -45,7 +44,6 @@ from nomad.datamodel.metainfo.basesections import (
     Measurement,
     MeasurementResult,
     ReadableIdentifiers,
-    SectionReference,
 )
 
 from nomad.datamodel.metainfo.plot import (
@@ -718,18 +716,8 @@ class XRDResultRSM(XRDResult):
         if self.name is None:
             self.name = 'RSM Scan Result'
 
-class NexusMeasurement(Measurement):
-    nexus_result = Quantity(
-        type=ArchiveSection,
-        description='A reference to a NOMAD archive section.',
-        a_eln=ELNAnnotation(
-            component='ReferenceEditQuantity',
-            label='NeXus reference',
-        ),
-    )
 
-
-class XRayDiffraction(NexusMeasurement):
+class XRayDiffraction(Measurement):
     """
     Generic X-ray diffraction measurement.
     """
@@ -769,6 +757,15 @@ class XRayDiffraction(NexusMeasurement):
     )
     results = Measurement.results.m_copy()
     results.section_def = XRDResult
+
+    nexus_result = Quantity(
+        type=ArchiveSection,
+        description='NeXus section containing results of the XRD scan.',
+        a_eln=ELNAnnotation(
+            component='ReferenceEditQuantity',
+            label='NeXus reference',
+        ),
+    )
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
