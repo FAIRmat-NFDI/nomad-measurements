@@ -19,17 +19,16 @@ from typing import TYPE_CHECKING
 
 import os
 
-# from pynxtools.nomad.parser import NexusParser
-# from nomad.datamodel.datamodel import EntryArchive, EntryMetadata
+from nomad_measurements.utils import get_entry_id_from_file_name, get_reference
+from nomad.datamodel.datamodel import EntryArchive
 from pynxtools.dataconverter import writer as pynxtools_writer
 from pynxtools.dataconverter.helpers import (
     get_nxdl_root_and_path,
     generate_template_from_nxdl,
 )
-import json
+
 from pynxtools.dataconverter.template import Template
 
-from nomad_measurements.utils import get_reference, get_entry_id_from_file_name
 if TYPE_CHECKING:
     from structlog.stdlib import (
         BoundLogger,
@@ -170,7 +169,6 @@ def connect_concepts_from_dict(xrd_dict, template, scan_type: str):
         'link': '/entry/experiment_result/q_perpendicular'
     }
 from nomad.datamodel.data import (
-    ArchiveSection,
     EntryData,
 )
 
@@ -191,6 +189,7 @@ def write_nx_section_and_create_file(
                 eln data under the key 'eln_dict
         scan_type (str): The type of scan, either 'line' or 'rsm'
     """
+    from nomad.processing.data import Entry
     app_def = 'NXxrd_pan'
     nxdl_root, nxdl_f_path = get_nxdl_root_and_path(app_def)
     template = Template()
@@ -199,53 +198,16 @@ def write_nx_section_and_create_file(
         xrd_dict=xrd_dict, template=template, scan_type=scan_type
     )
 
-    # populate_nexus_subsection(
-    #     template=template,
-    #     app_def=app_def,
-    #     archive=archive,
-    #     logger=logger,
-    #     output_file_path=nx_file,
-    #     write_entry_type=False,
-    # )
-    # TODO remove global variable
-    # TODO list
-    # 1. Create an entry archive
-    # 2. Run NeXus Parser on the entry archive
-    # TODO Create a nexus/panxtools section in XRDDiffraction
     archive.data.output = os.path.join(archive.m_context.raw_path(), nx_file)
     pynxtools_writer.Writer(
         data=template, nxdl_f_path=nxdl_f_path, output_path=archive.data.output
     ).write()
-    archive.m_context.process_updated_raw_file(nx_file)
-    upload_id = archive.metadata.upload_id
-    entry_id = get_entry_id_from_file_name(nx_file, archive)
+    upload_id = archive.m_context.upload_id
+    entry_list = Entry.objects(upload_id=upload_id, mainfile=nx_file)
+    if not entry_list:
+        archive.m_context.process_updated_raw_file(nx_file)
+        # if not archive.m_context.raw_path_exists(nx_file):
+        entry_id = get_entry_id_from_file_name(nx_file, archive)
+    else:
+        entry_id = entry_list[0].entry_id
     return get_reference(upload_id, entry_id)
-
-    # # Write the archive file:
-    # file_name = app_def + '.archive.json'
-    # if archive.m_context.raw_path_exists(file_name):
-    #     return
-    # nx_entry_archive = EntryArchive(
-    #     # m_context=archive.m_context,
-    #     # metadata=EntryMetadata(upload_id=archive.m_context.upload_id),
-    # )
-    # # create_archive(
-    # #     substrate_archive.m_to_dict(),
-    # #     archive.m_context,
-    # #     substrate_filename,
-    # #     filetype,
-    # #     logger,
-    # # )
-    # NexusParser().parse(
-    #     mainfile=archive.data.output, archive=nx_entry_archive, logger=logger
-    # )
-
-    # with archive.m_context.raw_file(file_name, 'w') as outfile:
-    #     json.dump(
-    #         nx_entry_archive.m_to_dict(
-    #             with_meta=True,
-    #         ),
-    #         outfile,
-    #     )
-
-    # # archive.m_context.process_updated_raw_file(file_name)

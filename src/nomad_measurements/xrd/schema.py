@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from os import name
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -44,7 +45,9 @@ from nomad.datamodel.metainfo.basesections import (
     Measurement,
     MeasurementResult,
     ReadableIdentifiers,
+    SectionReference,
 )
+
 from nomad.datamodel.metainfo.plot import (
     PlotlyFigure,
     PlotSection,
@@ -58,13 +61,7 @@ from nomad.datamodel.results import (
     StructuralProperties,
     XRDMethod,
 )
-from nomad.metainfo import (
-    MEnum,
-    Quantity,
-    SchemaPackage,
-    Section,
-    SubSection,
-)
+from nomad.metainfo import MEnum, Quantity, SchemaPackage, Section, SubSection
 from nomad.units import ureg
 from scipy.interpolate import griddata
 
@@ -72,7 +69,6 @@ from nomad_measurements.general import (
     NOMADMeasurementsCategory,
 )
 from nomad_measurements.utils import get_bounding_range_2d, merge_sections
-from nomad_measurements.xrd import nx
 from nomad_measurements.xrd.nx import write_nx_section_and_create_file
 
 if TYPE_CHECKING:
@@ -91,7 +87,7 @@ m_package = SchemaPackage(aliases=['nomad_measurements.xrd.parser.parser'])
 
 # Make the xrd_dict accessible to the whole module to avoid passing it around
 xrd_dict = {}
-
+NX_REF = None
 
 def calculate_two_theta_or_q(
     wavelength: 'pint.Quantity',
@@ -722,8 +718,18 @@ class XRDResultRSM(XRDResult):
         if self.name is None:
             self.name = 'RSM Scan Result'
 
+class NexusMeasurement(Measurement):
+    nexus_result = Quantity(
+        type=ArchiveSection,
+        description='A reference to a NOMAD archive section.',
+        a_eln=ELNAnnotation(
+            component='ReferenceEditQuantity',
+            label='NeXus reference',
+        ),
+    )
 
-class XRayDiffraction(Measurement):
+
+class XRayDiffraction(NexusMeasurement):
     """
     Generic X-ray diffraction measurement.
     """
@@ -809,7 +815,6 @@ class XRayDiffraction(Measurement):
                     xrd=XRDMethod(diffraction_method_name=self.diffraction_method_name)
                 ),
             )
-
 class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     """
     Example section for how XRayDiffraction can be implemented with a general reader for
@@ -839,10 +844,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     diffraction_method_name = XRayDiffraction.diffraction_method_name.m_copy()
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
-    )
-    xrd_pan = Quantity(
-        type=HDF5Reference,
-        description='Type of the X-ray tube',
     )
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
@@ -952,14 +953,15 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             xrd_settings=xrd_settings,
             samples=samples,
         )
-        write_nx_section_and_create_file(
+        ref_to_nx_data = write_nx_section_and_create_file(
             archive,
             logger,
             nx_file=nx_out_f,
             xrd_dict=xrd_dict,
             scan_type=scan_type,
         )
-        self.xrd_pan = f'{nx_out_f}#/entry'
+
+        self.nexus_result = ref_to_nx_data
         result.normalize(archive, logger)
         merge_sections(self, xrd, logger)
 
@@ -983,6 +985,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                     xrd_dict = read_function(file.name, logger)
             write_function(xrd_dict, archive, logger)
         super().normalize(archive, logger)
+        # 1
+        # self.nexus_result.reference = NX_REF
         if not self.results:
             return
         self.figures = self.results[0].generate_plots(archive, logger)
