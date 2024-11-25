@@ -19,6 +19,7 @@ import os
 
 import pytest
 from nomad.client import normalize_all, parse
+from nomad.datamodel.hdf5 import HDF5Reference
 
 
 @pytest.fixture(
@@ -72,7 +73,14 @@ def test_normalize_all(parsed_archive, caplog):
     assert parsed_archive.data.results[
         0
     ].source_peak_wavelength.magnitude == pytest.approx(1.540598, 1e-2)
-    if len(parsed_archive.data.results[0].intensity.shape) == 1:
+    if (
+        len(
+            HDF5Reference.read_dataset(
+                parsed_archive, parsed_archive.data.results[0].intensity
+            ).shape
+        )
+        == 1
+    ):
         assert parsed_archive.results.properties.structural.diffraction_pattern[
             0
         ].incident_beam_wavelength.magnitude * 1e10 == pytest.approx(1.540598, 1e-2)
