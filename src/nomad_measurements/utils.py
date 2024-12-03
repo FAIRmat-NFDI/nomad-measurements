@@ -84,7 +84,7 @@ def merge_sections(  # noqa: PLR0912
     if section is None:
         section = update.m_copy()
         return
-    if update.m_def in [section.m_def, *section.m_def.all_base_sections]:
+    if update.m_def not in [section.m_def, *section.m_def.all_base_sections]:
         raise TypeError(
             'Cannot merge sections of different types: '
             f'{type(section)} and {type(update)}'
