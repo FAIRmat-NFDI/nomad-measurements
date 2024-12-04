@@ -1153,30 +1153,16 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         """
         Method for getting the correct read and write functions for the current data
         file.
-
         Returns:
             tuple[Callable, Callable]: The read, write functions.
         """
-        if self.data_file.endswith(('.rasx', '.xrdml', '.brml')):
-            return self.read_raw_file, self.write_xrd_data
+        if self.data_file.endswith('.rasx'):
+            return read_rigaku_rasx, self.write_xrd_data
+        if self.data_file.endswith('.xrdml'):
+            return read_panalytical_xrdml, self.write_xrd_data
+        if self.data_file.endswith('.brml'):
+            return read_bruker_brml, self.write_xrd_data
         return None, None
-
-    def read_raw_file(self, file_name, archive, logger) -> dict[str, Any]:
-        """
-        Read method for reading the raw data from the data file.
-
-        Returns:
-            Dict[str, Any]: A dictionary with the raw data.
-        """
-        if file_name.endswith('.rasx'):
-            return read_rigaku_rasx(file_name)
-        elif file_name.endswith('.xrdml'):
-            return read_panalytical_xrdml(file_name)
-        elif file_name.endswith('.brml'):
-            return read_bruker_brml(file_name)
-        else:
-            logger.error(f'File type "{file_name}" is not supported.')
-            return {}
 
     def write_xrd_data(
         self,
@@ -1278,8 +1264,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         """
         self.backward_compatibility()
         if self.data_file is not None:
-            self.auxiliary_file = f'{self.data_file}.nxs'
-            self.hdf5_dataset_paths = NEXUS_DATASET_PATHS
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:
                 logger.warn(
@@ -1287,14 +1271,16 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                 )
             else:
                 with archive.m_context.raw_file(self.data_file) as file:
-                    xrd_dict = read_function(file.name, archive, logger)
+                    xrd_dict = read_function(file.name, logger)
+                self.auxiliary_file = f'{self.data_file}.nxs'
+                self.hdf5_dataset_paths = NEXUS_DATASET_PATHS
                 write_function(xrd_dict, archive, logger)
+                self.create_auxiliary_file(archive, logger)
         super().normalize(archive, logger)
         if not self.results:
             return
 
         self.figures = self.results[0].generate_plots(archive, logger)
-        self.create_auxiliary_file(archive, logger)
 
 
 class RawFileXRDData(EntryData):
