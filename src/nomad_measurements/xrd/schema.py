@@ -1060,36 +1060,37 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
 
         return h5_data_dict
 
-    def update_hdf5_file(
-        self,
-        xrd_dict: 'AttrDict',
-        archive: 'EntryArchive' = None,
-        logger: 'BoundLogger' = None,
-    ) -> dict:
+    def create_nx_file(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+        """
+        Method for creating a NeXus file.
+
+        Args:
+            archive (EntryArchive): The archive containing the section.
+            logger (BoundLogger): A structlog logger.
+        """
+        raise NotImplementedError('Method `create_nx_file` is not implemented.')
+
+    def create_hdf5_file(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
         TODO make it independent of prepare_hdf5_data
 
         Args:
-            xrd_dict (AttrDict): A dictionary with the raw data from the instrument.
-            archive (EntryArchive, optional): A NOMAD archive.
-            logger (BoundLogger, optional): A structlog logger.
-
-        Returns:
-            dict: A dictionary with the raw data.
+            archive (EntryArchive): The archive containing the section.
+            logger (BoundLogger): A structlog logger.
         """
-        # create a h5 file if it does not exist
-        if not self.auxiliary_file:
-            self.auxiliary_file = f'{self.data_file}.h5'
-
-        h5_data_dict = self.prepare_hdf5_data(xrd_dict, archive, logger)
+        self.auxiliary_file = f'{self.data_file}.h5'
 
         with archive.m_context.raw_file(self.auxiliary_file, 'w') as h5file:
             with h5py.File(h5file.name, 'w') as h5:
-                for key, value in h5_data_dict.items():
+                for key, value in self.h5_data_dict.items():
+                    if value is None:
+                        continue
+
                     value_is_unit = False
                     if key.endswith('@units'):
                         value_is_unit = True
                         key = key.rsplit('/', 1)[0]
+
                     group_name, dataset_name = key.rsplit('/', 1)
                     group = h5.require_group(group_name)
 
@@ -1104,10 +1105,46 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                                 'as the dataset does not exist.'
                             )
                     else:
-                        group.create_dataset(dataset_name, data=value)
+                        group.create_dataset(
+                            dataset_name, data=value, compression='gzip'
+                        )
                         # group.attrs['axes'] = 'time'
                         # group.attrs['signal'] = 'value'
                         # group.attrs['NX_class'] = 'NXdata'
+
+    def create_auxiliary_file(
+        self,
+        archive: 'EntryArchive',
+        logger: 'BoundLogger',
+    ):
+        """
+        Method for creating an auxiliary file.
+
+        Args:
+            archive (EntryArchive): The archive containing the section.
+            logger (BoundLogger): A structlog logger.
+        """
+        try:
+            self.create_nx_file(archive, logger)
+        except Exception:
+            logger.warning('Error creating nexus file.\n Creating h5 file instead.')
+
+            # remove nexus related annotations in the dataset paths
+            for quantity in [
+                'intensity',
+                'two_theta',
+                'omega',
+                'phi',
+                'chi',
+                'integration_time',
+                'q_norm',
+                'q_parallel',
+                'q_perpendicular',
+            ]:
+                if self.get(quantity) is not None:
+                    self[quantity] = remove_nexus_annotations(self.get(quantity))
+
+            self.create_hdf5_file(archive, logger)
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
         """
@@ -1128,23 +1165,15 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         Returns:
             Dict[str, Any]: A dictionary with the raw data.
         """
-        xrd_dict = AttrDict(lambda: None)
         if file_name.endswith('.rasx'):
-            xrd_dict.update(read_rigaku_rasx(file_name))
-        if file_name.endswith('.xrdml'):
-            xrd_dict.update(read_panalytical_xrdml(file_name))
-        if file_name.endswith('.brml'):
-            xrd_dict.update(read_bruker_brml(file_name))
-
-        try:
-            raise NotImplementedError('Creating a nexus file is not yet implemented.')
-        except Exception as e:
-            logger.warning(
-                f'Error creating nexus file: {e}.\n Creating h5 file instead.'
-            )
-            # TODO
-
-        return xrd_dict
+            return read_rigaku_rasx(file_name)
+        elif file_name.endswith('.xrdml'):
+            return read_panalytical_xrdml(file_name)
+        elif file_name.endswith('.brml'):
+            return read_bruker_brml(file_name)
+        else:
+            logger.error(f'File type "{file_name}" is not supported.')
+            return {}
 
     def write_xrd_data(
         self,
@@ -1261,6 +1290,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             return
 
         self.figures = self.results[0].generate_plots(archive, logger)
+        self.create_auxiliary_file(archive, logger)
 
 
 class RawFileXRDData(EntryData):
