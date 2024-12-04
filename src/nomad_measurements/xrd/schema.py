@@ -73,10 +73,16 @@ from nomad_measurements.general import (
     NOMADMeasurementsCategory,
 )
 from nomad_measurements.utils import (
+    AttrDict,
     get_bounding_range_2d,
     get_data,
     merge_sections,
     set_data,
+)
+from nomad_measurements.xrd.nx import (
+    CONCEPT_MAP,
+    remove_nexus_annotations,
+    walk_through_object,
 )
 
 if TYPE_CHECKING:
@@ -953,6 +959,112 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
     )
+
+    def prepare_hdf5_data(
+        self,
+        raw_data: 'AttrDict' = AttrDict(),
+        archive: 'EntryArchive' = None,
+        logger: 'BoundLogger' = None,
+    ):
+        """
+        Prepares data for the HDF5 file. Based on the concept map, the data is extracted
+        either from the `raw_data` or the `archive`.
+
+        If the data extracted from the raw data is an array, the data is stored in the HDF5 file and the path to the data is
+        overwritten in the `raw_data` (in-place modification). For example,
+        {'intensity': array([1, 2, 3])} becomes
+        {'intensity': '{file_path}{file_name}.h5#intensity'}
+        and the array [1, 2, 3] is stored in the HDF5 file.
+
+        Args:
+            raw_data (AttrDict, optional): A dictionary with the raw data from
+                the instrument.
+            archive (EntryArchive, optional): A NOMAD archive.
+            logger (BoundLogger, optional): A structlog logger.
+        """
+        concept_map = remove_nexus_annotations(CONCEPT_MAP)
+        h5_data_dict = collections.defaultdict(lambda: None)
+        h5_data_paths = collections.defaultdict(lambda: None)
+        for h5_key, data_key in concept_map.items():
+            if isinstance(data_key, dict):
+                if h5_key == raw_data.get('metadata', {}).get('scan_type', ''):
+                    h5_data_dict.update(
+                        self.prepare_hdf5_data(data_key, archive, logger)
+                    )
+            else:
+                data_source_type, data_source_path = data_key.split('.', maxsplit=1)
+                if data_source_type == 'raw_data':
+                    data_source = raw_data
+                elif data_source_type == 'archive':
+                    data_source = archive
+                else:
+                    continue
+
+                value = walk_through_object(data_source, data_source_path)
+
+                if value is not None:
+                    h5_data_dict[h5_key] = value
+                    if isinstance(value, np.ndarray) and data_source_type == 'raw_data':
+                        # edit raw_data to contain the path to the data
+                        if data_source_path.endswith('.magnitude'):
+                            data_source_path = data_source_path.rsplit('.', 1)[0]
+                        h5_data_paths[data_source_path] = (
+                            f'/uploads/{archive.m_context.upload_id}/raw/'
+                            f'{self.auxiliary_hdf5_file}#{h5_key}'
+                        )
+
+        raw_data.update(h5_data_paths)
+
+        return h5_data_dict
+
+    def update_hdf5_file(
+        self,
+        xrd_dict: 'AttrDict',
+        archive: 'EntryArchive' = None,
+        logger: 'BoundLogger' = None,
+    ) -> dict:
+        """
+        TODO make it independent of prepare_hdf5_data
+
+        Args:
+            xrd_dict (AttrDict): A dictionary with the raw data from the instrument.
+            archive (EntryArchive, optional): A NOMAD archive.
+            logger (BoundLogger, optional): A structlog logger.
+
+        Returns:
+            dict: A dictionary with the raw data.
+        """
+        # create a h5 file if it does not exist
+        if not self.auxiliary_hdf5_file:
+            self.auxiliary_hdf5_file = f'{self.data_file}.h5'
+
+        h5_data_dict = self.prepare_hdf5_data(xrd_dict, archive, logger)
+
+        with archive.m_context.raw_file(self.auxiliary_hdf5_file, 'w') as h5file:
+            with h5py.File(h5file.name, 'w') as h5:
+                for key, value in h5_data_dict.items():
+                    value_is_unit = False
+                    if key.endswith('@units'):
+                        value_is_unit = True
+                        key = key.rsplit('/', 1)[0]
+                    group_name, dataset_name = key.rsplit('/', 1)
+                    group = h5.require_group(group_name)
+
+                    if value_is_unit:
+                        try:
+                            h5[f'{group_name}/{dataset_name}'].attrs['units'] = str(
+                                value
+                            )
+                        except KeyError:
+                            logger.error(
+                                f'Could not set units for "{group_name}/{dataset_name}"'
+                                'as the dataset does not exist.'
+                            )
+                    else:
+                        group.create_dataset(dataset_name, data=value)
+                        # group.attrs['axes'] = 'time'
+                        # group.attrs['signal'] = 'value'
+                        # group.attrs['NX_class'] = 'NXdata'
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
         """
