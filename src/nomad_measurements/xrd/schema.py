@@ -1191,6 +1191,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         """
         self.backward_compatibility()
         if self.data_file is not None:
+            self.auxiliary_file = f'{self.data_file}.nxs'
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:
                 logger.warn(
