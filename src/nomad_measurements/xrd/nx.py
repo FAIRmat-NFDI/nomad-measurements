@@ -113,21 +113,24 @@ def walk_through_object(parent_obj, attr_chain, default=None):
         attr_chain: Dot separated obj chain.
         default: A value to be returned by default, if not data is found.
     """
-    expected_parts = 2
-    if isinstance(attr_chain, str):
-        parts = attr_chain.split('.', 1)
+    try:
+        expected_parts = 2
+        if isinstance(attr_chain, str):
+            parts = attr_chain.split('.', 1)
 
-        if len(parts) == expected_parts:
-            child_nm, rest_part = parts
-            if '[' in child_nm:
-                child_nm, index = child_nm.split('[')
-                index = int(index[:-1])
-                child_obj = getattr(parent_obj, child_nm)[index]
+            if len(parts) == expected_parts:
+                child_nm, rest_part = parts
+                if '[' in child_nm:
+                    child_nm, index = child_nm.split('[')
+                    index = int(index[:-1])
+                    child_obj = getattr(parent_obj, child_nm)[index]
+                else:
+                    child_obj = getattr(parent_obj, child_nm)
+                return walk_through_object(child_obj, rest_part, default=default)
             else:
-                child_obj = getattr(parent_obj, child_nm)
-            return walk_through_object(child_obj, rest_part, default=default)
-        else:
-            return getattr(parent_obj, attr_chain, default)
+                return getattr(parent_obj, attr_chain, default)
+    except (AttributeError, IndexError, KeyError, ValueError):
+        return None
 
 
 def connect_concepts(template, archive: 'EntryArchive', scan_type: str):  # noqa: PLR0912
@@ -146,29 +149,19 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):  # noqa
             if key == scan_type:
                 for sub_key, sub_archive_concept in archive_concept.items():
                     _, arch_attr = sub_archive_concept.split('.', 1)
-                    value = None
-                    try:
-                        value = walk_through_object(archive, arch_attr)
-                    except (AttributeError, IndexError, KeyError, ValueError):
-                        pass
-                    finally:
-                        if value is not None:
-                            template[sub_key] = (
-                                str(value) if sub_key.endswith('units') else value
-                            )
+                    value = walk_through_object(archive, arch_attr)
+                    if value is not None:
+                        template[sub_key] = (
+                            str(value) if sub_key.endswith('units') else value
+                        )
             else:
                 continue
         elif archive_concept:
             _, arch_attr = archive_concept.split('.', 1)
-            value = None
-            try:
-                value = walk_through_object(archive, arch_attr)
+            value = walk_through_object(archive, arch_attr)
             # Use multiple excepts to avoid catching all exceptions
-            except (AttributeError, IndexError, KeyError, ValueError):
-                pass
-            finally:
-                if value is not None:
-                    template[key] = str(value) if key.endswith('units') else value
+            if value is not None:
+                template[key] = str(value) if key.endswith('units') else value
 
     template['/ENTRY[entry]/definition'] = 'NXxrd_pan'
 
