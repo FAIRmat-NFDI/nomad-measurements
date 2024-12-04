@@ -781,6 +781,10 @@ class XRDResult1D_HDF5(XRDResult1D):
         type=HDF5Reference,
         description='The chi range of the diffractogram',
     )
+    integration_time = Quantity(
+        type=HDF5Reference,
+        description='Integration time per channel',
+    )
 
 
 class XRDResultRSM_HDF5(XRDResultRSM):
