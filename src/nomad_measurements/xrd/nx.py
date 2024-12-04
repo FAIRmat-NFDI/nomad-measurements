@@ -74,6 +74,35 @@ CONCEPT_MAP = OrderedDict(
 )
 
 
+def remove_nexus_annotations(mapping: dict) -> dict:
+    """
+    Remove the nexus related annotations from a keys of concept mapping.
+    For example:
+    '/ENTRY[entry]/experiment_result/intensity': 'raw_data.intensity.magnitude'
+    will be converted to
+    '/entry/experiment_result/intensity': 'raw_data.intensity.magnitude'
+
+    Args:
+        mapping: A mapping for the NeXus templates.
+
+    Returns:
+        dict: A new mapping with the nexus annotations removed.
+    """
+    pattern = r'.*\[.*\]'
+    new_mapping = OrderedDict()
+    for key, value in mapping.items():
+        if isinstance(value, dict):
+            new_mapping[key] = remove_nexus_annotations(value)
+        elif isinstance(value, str):
+            new_key = ''
+            for part in key.split('/')[1:]:
+                if re.match(pattern, part):
+                    new_key += '/' + part.split('[')[0].strip().lower()
+                else:
+                    new_key += '/' + part
+            new_mapping[new_key] = value
+    return new_mapping
+
 
 def walk_through_object(parent_obj, attr_chain, default=None):
     """
