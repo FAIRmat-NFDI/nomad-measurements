@@ -28,6 +28,27 @@ if TYPE_CHECKING:
         BoundLogger,
     )
 
+NEXUS_DATASET_PATHS = [
+    '/ENTRY[entry]/experiment_result/intensity',
+    '/ENTRY[entry]/experiment_result/two_theta',
+    '/ENTRY[entry]/experiment_result/omega',
+    '/ENTRY[entry]/experiment_result/chi',
+    '/ENTRY[entry]/experiment_result/phi',
+    '/ENTRY[entry]/experiment_config/count_time',
+    '/ENTRY[entry]/experiment_result/q_norm',
+    '/ENTRY[entry]/experiment_result/q_parallel',
+    '/ENTRY[entry]/experiment_result/q_perpendicular',
+    '/ENTRY[entry]/method',
+    '/ENTRY[entry]/measurement_type',
+    '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis',
+    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material',
+    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current',
+    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage',
+    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one',
+    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two',
+    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone',
+    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta',
+]
 
 CONCEPT_MAP = OrderedDict(
     {

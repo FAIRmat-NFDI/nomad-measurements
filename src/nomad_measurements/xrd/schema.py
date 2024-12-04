@@ -83,12 +83,12 @@ from nomad_measurements.utils import (
 )
 from nomad_measurements.xrd.nx import (
     CONCEPT_MAP,
+    NEXUS_DATASET_PATHS,
     remove_nexus_annotations,
     walk_through_object,
 )
 
 if TYPE_CHECKING:
-    import pint
     from nomad.datamodel.datamodel import (
         EntryArchive,
     )
@@ -1062,12 +1062,15 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
 
     def create_nx_file(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
-        Method for creating a NeXus file.
+        Method for creating a NeXus file which contains the array data along with other
+        archive data in a NeXus view.
 
         Args:
             archive (EntryArchive): The archive containing the section.
             logger (BoundLogger): A structlog logger.
         """
+        # add archive data to `hdf5_data_dict` before creating the nexus file
+        # create a NeXus file with the data
         raise NotImplementedError('Method `create_nx_file` is not implemented.')
 
     def create_hdf5_file(self, archive: 'EntryArchive', logger: 'BoundLogger'):
@@ -1276,6 +1279,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         self.backward_compatibility()
         if self.data_file is not None:
             self.auxiliary_file = f'{self.data_file}.nxs'
+            self.hdf5_dataset_paths = NEXUS_DATASET_PATHS
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:
                 logger.warn(
