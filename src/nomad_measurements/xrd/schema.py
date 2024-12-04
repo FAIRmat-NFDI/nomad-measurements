@@ -377,7 +377,7 @@ class XRDResult1D(XRDResult):
         plots = []
         two_theta = get_data(self, 'two_theta')
         intensity = get_data(self, 'intensity')
-        if any([two_theta, intensity] == [None, None]):
+        if two_theta is None or intensity is None:
             return plots
 
         x = two_theta.to('degree').magnitude
@@ -903,7 +903,7 @@ class XRayDiffraction(Measurement):
             diffraction_patterns = []
             for result in self.results:
                 intensity = get_data(result, 'intensity')
-                if len(intensity.shape) == 1:
+                if intensity is None or len(intensity) != 1:
                     diffraction_patterns.append(
                         DiffractionPattern(
                             incident_beam_wavelength=result.source_peak_wavelength,
@@ -998,7 +998,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
 
             return (
                 f'/uploads/{archive.m_context.upload_id}/raw/{self.auxiliary_file}'
-                '#{dataset_path}'
+                f'#{dataset_path}'
             )
 
         return None
@@ -1085,7 +1085,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
 
         with archive.m_context.raw_file(self.auxiliary_file, 'w') as h5file:
             with h5py.File(h5file.name, 'w') as h5:
-                for key, value in self.h5_data_dict.items():
+                for key, value in self.hdf5_data_dict.items():
                     if value is None:
                         continue
 
@@ -1130,7 +1130,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         try:
             self.create_nx_file(archive, logger)
         except Exception:
-            logger.warning('Error creating nexus file.\n Creating h5 file instead.')
+            logger.warning('Error creating nexus file. Creating h5 file instead')
 
             # remove nexus related annotations in the dataset paths
             for quantity in [
@@ -1183,7 +1183,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
 
         scan_type = metadata_dict.get('scan_type', None)
         if scan_type not in ['line', 'rsm']:
-            raise NotImplementedError(f'Scan type `{scan_type}` is not supported.')
+            logger.error(f'Scan type `{scan_type}` is not supported.')
+            return
 
         # Create a new result section
         results = []
