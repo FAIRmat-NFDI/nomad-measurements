@@ -27,6 +27,54 @@ if TYPE_CHECKING:
     )
 
 
+CONCEPT_MAP = OrderedDict(
+    {
+        # Mapping data in raw_data: data in the raw file from the instrument
+        # Make sure to defines the mapping for magnitude before the mapping for units
+        '/ENTRY[entry]/experiment_result/intensity': 'raw_data.intensity.magnitude',
+        '/ENTRY[entry]/experiment_result/two_theta': 'raw_data.2Theta.magnitude',
+        '/ENTRY[entry]/experiment_result/two_theta/@units': 'raw_data.2Theta.units',
+        '/ENTRY[entry]/experiment_result/omega': 'raw_data.Omega.magnitude',
+        '/ENTRY[entry]/experiment_result/omega/@units': 'raw_data.Omega.units',
+        '/ENTRY[entry]/experiment_result/chi': 'raw_data.Chi.magnitude',
+        '/ENTRY[entry]/experiment_result/chi/@units': 'raw_data.Chi.units',
+        '/ENTRY[entry]/experiment_result/phi': 'raw_data.Phi.magnitude',
+        '/ENTRY[entry]/experiment_result/phi/@units': 'raw_data.Phi.units',
+        '/ENTRY[entry]/experiment_config/count_time': 'raw_data.countTime.magnitude',
+        '/ENTRY[entry]/experiment_config/count_time/@units': 'raw_data.countTime.units',
+        'line': {
+            '/ENTRY[entry]/experiment_result/q_norm': 'raw_data.q_norm.magnitude',
+            '/ENTRY[entry]/experiment_result/q_norm/@units': 'raw_data.q_norm.units',
+        },
+        'rsm': {
+            '/ENTRY[entry]/experiment_result/q_parallel': 'raw_data.q_parallel',
+            '/ENTRY[entry]/experiment_result/q_parallel/@units': 'raw_data.q_parallel.units',
+            '/ENTRY[entry]/experiment_result/q_perpendicular': 'raw_data.q_perpendicular.magnitude',
+            '/ENTRY[entry]/experiment_result/q_perpendicular/@units': 'raw_data.q_perpendicular.units',
+        },
+        # Mapping data in NOMAD archive
+        '/ENTRY[entry]/method': 'archive.data.method',
+        '/ENTRY[entry]/measurement_type': 'archive.data.diffraction_method_name',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis': (
+            'archive.data.results[0].scan_axis'
+        ),
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material': 'archive.data.xrd_settings.source.xray_tube_material',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current': 'archive.data.xrd_settings.source.xray_tube_current.magnitude',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current/@units': 'archive.data.xrd_settings.source.xray_tube_current.units',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage': 'archive.data.xrd_settings.source.xray_tube_voltage.magnitude',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage/@units': 'archive.data.xrd_settings.source.xray_tube_voltage.units',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one': 'archive.data.xrd_settings.source.kalpha_one.magnitude',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one/@units': 'archive.data.xrd_settings.source.kalpha_one.units',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two': 'archive.data.xrd_settings.source.kalpha_two.magnitude',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two/@units': 'archive.data.xrd_settings.source.kalpha_two.units',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone': 'archive.data.xrd_settings.source.ratio_kalphatwo_kalphaone',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta': 'archive.data.xrd_settings.source.kbeta.magnitude',
+        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta/@units': 'archive.data.xrd_settings.source.kbeta.units',
+    }
+)
+
+
+
 def walk_through_object(parent_obj, attr_chain, default=None):
     """
     Walk though the object until reach the leaf.
@@ -64,47 +112,7 @@ def connect_concepts(template, archive: 'EntryArchive', scan_type: str):  # noqa
         scan_type (str): Name of the scan type such as line and RSM.
     """
 
-    # General concepts
-    # ruff: noqa: E501
-    concept_map = {
-        '/ENTRY[entry]/method': 'archive.data.method',
-        '/ENTRY[entry]/measurement_type': 'archive.data.diffraction_method_name',
-        '/ENTRY[entry]/experiment_result/intensity': 'archive.data.results[0].intensity.magnitude',
-        '/ENTRY[entry]/experiment_result/two_theta': 'archive.data.results[0].two_theta.magnitude',
-        '/ENTRY[entry]/experiment_result/two_theta/@units': 'archive.data.results[0].two_theta.units',
-        '/ENTRY[entry]/experiment_result/omega': 'archive.data.results[0].omega.magnitude',
-        '/ENTRY[entry]/experiment_result/omega/@units': 'archive.data.results[0].omega.units',
-        '/ENTRY[entry]/experiment_result/chi': 'archive.data.results[0].chi.magnitude',
-        '/ENTRY[entry]/experiment_result/chi/@units': 'archive.data.results[0].chi.units',
-        '/ENTRY[entry]/experiment_result/phi': 'archive.data.results[0].phi.magnitude',
-        '/ENTRY[entry]/experiment_result/phi/@units': 'archive.data.results[0].phi.units',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis': 'archive.data.results[0].scan_axis',
-        '/ENTRY[entry]/experiment_config/count_time': 'archive.data.results[0].count_time.magnitude',
-        'line': '',  # For future implementation
-        'rsm': {
-            '/ENTRY[entry]/experiment_result/q_parallel': 'archive.data.results[0].q_parallel',
-            '/ENTRY[entry]/experiment_result/q_parallel/@units': 'archive.data.results[0].q_parallel.units',
-            '/ENTRY[entry]/experiment_result/q_perpendicular': 'archive.data.results[0].q_perpendicular.magnitude',
-            '/ENTRY[entry]/experiment_result/q_perpendicular/@units': 'archive.data.results[0].q_perpendicular.units',
-            '/ENTRY[entry]/experiment_result/q_norm': 'archive.data.results[0].q_norm.magnitude',
-            '/ENTRY[entry]/experiment_result/q_norm/@units': 'archive.data.results[0].q_norm.units',
-        },
-        # Source
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material': 'archive.data.xrd_settings.source.xray_tube_material',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current': 'archive.data.xrd_settings.source.xray_tube_current.magnitude',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current/@units': 'archive.data.xrd_settings.source.xray_tube_current.units',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage': 'archive.data.xrd_settings.source.xray_tube_voltage.magnitude',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage/@units': 'archive.data.xrd_settings.source.xray_tube_voltage.units',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one': 'archive.data.xrd_settings.source.kalpha_one.magnitude',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one/@units': 'archive.data.xrd_settings.source.kalpha_one.units',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two': 'archive.data.xrd_settings.source.kalpha_two.magnitude',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two/@units': 'archive.data.xrd_settings.source.kalpha_two.units',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone': 'archive.data.xrd_settings.source.ratio_kalphatwo_kalphaone',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta': 'archive.data.xrd_settings.source.kbeta.magnitude',
-        '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta/@units': 'archive.data.xrd_settings.source.kbeta.units',
-    }
-
-    for key, archive_concept in concept_map.items():
+    for key, archive_concept in CONCEPT_MAP.items():
         if isinstance(archive_concept, dict):
             if key == scan_type:
                 for sub_key, sub_archive_concept in archive_concept.items():
