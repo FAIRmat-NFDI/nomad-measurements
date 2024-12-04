@@ -1008,22 +1008,24 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         if scan_type not in ['line', 'rsm']:
             raise NotImplementedError(f'Scan type `{scan_type}` is not supported.')
 
-        # removing exisiting results for backwards compatibility
-        if self.results:
-            self.results = []
         # Create a new result section
+        results = []
+        result = None
         if scan_type == 'line':
             result = XRDResult1D_HDF5()
         elif scan_type == 'rsm':
             result = XRDResultRSM_HDF5()
-        result.scan_axis = metadata_dict.get('scan_axis', None)
-        result.integration_time = xrd_dict.get('countTime', None)
-        result.intensity = xrd_dict.get('intensity', None)
-        result.two_theta = xrd_dict.get('2Theta', None)
-        result.omega = xrd_dict.get('Omega', None)
-        result.chi = xrd_dict.get('Chi', None)
-        result.phi = xrd_dict.get('Phi', None)
-        result.normalize(archive, logger)
+
+        if result is not None:
+            result.intensity = xrd_dict.get('intensity', None)
+            result.two_theta = xrd_dict.get('2Theta', None)
+            result.omega = xrd_dict.get('Omega', None)
+            result.chi = xrd_dict.get('Chi', None)
+            result.phi = xrd_dict.get('Phi', None)
+            result.scan_axis = metadata_dict.get('scan_axis', None)
+            result.integration_time = xrd_dict.get('countTime', None)
+            result.normalize(archive, logger)
+            results.append(result)
 
         source = XRayTubeSource(
             xray_tube_material=source_dict.get('anode_material', None),
@@ -1035,7 +1037,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             xray_tube_current=source_dict.get('current', None),
         )
         source.normalize(archive, logger)
-
         xrd_settings = XRDSettings(source=source)
         xrd_settings.normalize(archive, logger)
 
@@ -1048,10 +1049,11 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             samples.append(sample)
 
         xrd = ELNXRayDiffraction(
-            results=[result],
+            results=results,
             xrd_settings=xrd_settings,
             samples=samples,
         )
+
         merge_sections(self, xrd, logger)
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
