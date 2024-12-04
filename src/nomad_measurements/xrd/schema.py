@@ -945,9 +945,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             component=ELNComponentEnum.FileEditQuantity,
         ),
     )
-    auxiliary_hdf5_file = Quantity(
+    auxiliary_file = Quantity(
         type=str,
-        description='Auxiliary HDF5 file containing the raw data',
+        description='Auxiliary file (like .h5 or .nxs) containing the entry data.',
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.FileEditQuantity,
         ),
@@ -1010,7 +1010,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                             data_source_path = data_source_path.rsplit('.', 1)[0]
                         h5_data_paths[data_source_path] = (
                             f'/uploads/{archive.m_context.upload_id}/raw/'
-                            f'{self.auxiliary_hdf5_file}#{h5_key}'
+                            f'{self.auxiliary_file}#{h5_key}'
                         )
 
         raw_data.update(h5_data_paths)
@@ -1035,12 +1035,12 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             dict: A dictionary with the raw data.
         """
         # create a h5 file if it does not exist
-        if not self.auxiliary_hdf5_file:
-            self.auxiliary_hdf5_file = f'{self.data_file}.h5'
+        if not self.auxiliary_file:
+            self.auxiliary_file = f'{self.data_file}.h5'
 
         h5_data_dict = self.prepare_hdf5_data(xrd_dict, archive, logger)
 
-        with archive.m_context.raw_file(self.auxiliary_hdf5_file, 'w') as h5file:
+        with archive.m_context.raw_file(self.auxiliary_file, 'w') as h5file:
             with h5py.File(h5file.name, 'w') as h5:
                 for key, value in h5_data_dict.items():
                     value_is_unit = False
