@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import collections
 import os.path
 from typing import (
     TYPE_CHECKING,
@@ -185,3 +186,36 @@ def set_data(obj, **kwargs):
     for key, value in kwargs.items():
         if hasattr(obj, key):
             setattr(obj, key, value)
+
+
+class AttrDict(collections.defaultdict):
+    """
+    A dictionary subclass that allows attribute-style access to dictionary keys,
+    including nested dictionaries. It uses defaultdict as the base class, so it can be
+    initialized with a default factory function.
+    """
+
+    # TODO Add a
+    def __init__(self, default_factory=None, *args, **kwargs):
+        super().__init__(default_factory, *args, **kwargs)
+        for key, value in self.items():
+            if isinstance(value, dict):
+                self[key] = AttrDict(default_factory, value)
+        self.default_factory = default_factory
+
+    def __getattr__(self, item):
+        try:
+            return self[item]
+        except KeyError as e:
+            raise AttributeError(f"'AttrDict' object has no attribute '{item}'") from e
+
+    def __setattr__(self, key, value):
+        if isinstance(value, dict):
+            value = AttrDict(self.default_factory, value)
+        self[key] = value
+
+    def __delattr__(self, item):
+        try:
+            del self[item]
+        except KeyError as e:
+            raise AttributeError(f"'AttrDict' object has no attribute '{item}'") from e
