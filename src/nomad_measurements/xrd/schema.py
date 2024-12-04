@@ -960,6 +960,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         component=ELNComponentEnum.EnumEditQuantity,
     )
 
+    hdf5_data_dict = collections.OrderedDict()
+    hdf5_dataset_paths = []
+
     def prepare_hdf5_data(
         self,
         raw_data: 'AttrDict' = AttrDict(),
