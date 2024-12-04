@@ -1056,6 +1056,14 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
 
         merge_sections(self, xrd, logger)
 
+    def backward_compatibility(self):
+        """
+        Method for backward compatibility.
+        """
+        # Migration to using HFD5References: removing exisiting results
+        if self.results:
+            self.results = []
+
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
         The normalize function of the `ELNXRayDiffraction` section.
@@ -1065,6 +1073,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             normalized.
             logger (BoundLogger): A structlog logger.
         """
+        self.backward_compatibility()
         if self.data_file is not None:
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:
