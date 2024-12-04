@@ -20,10 +20,12 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Optional,
 )
 
 import h5py
 import numpy as np
+import pint
 import plotly.express as px
 from fairmat_readers_xrd import (
     read_bruker_brml,
@@ -963,6 +965,44 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     hdf5_data_dict = collections.OrderedDict()
     hdf5_dataset_paths = []
 
+    def populate_hdf5_data_dict(
+        self,
+        key: str,
+        value: Any,
+        archive: 'EntryArchive',
+    ) -> Optional[str]:
+        """
+        Populates the `hdf5_data_dict` with the given key and value. The key used in the
+        `hd5_data_dict` is picked from the `hdf5_dataset_paths` based on the given key.
+
+        Args:
+            key (str): The key to be used in the HDF5 file.
+            value (Any): The value to be stored in the HDF5 file.
+            archive (EntryArchive): The archive containing the section.
+
+        Returns:
+            Optional[str]: The path to the dataset in the HDF5 file.
+        """
+        if not self.hdf5_dataset_paths:
+            return
+
+        # find the corresponding dataset for the given key
+        for dataset_path in self.hdf5_dataset_paths:
+            dataset_name = dataset_path.rsplit('/', 1)[1]
+            if key == dataset_name:
+                if isinstance(value, pint.Quantity):
+                    self.hdf5_data_dict[dataset_path] = value.magnitude
+                    self.hdf5_data_dict[f'{dataset_path}/@units'] = str(value.units)
+                else:
+                    self.hdf5_data_dict[dataset_path] = value
+
+            return (
+                f'/uploads/{archive.m_context.upload_id}/raw/{self.auxiliary_file}'
+                '#{dataset_path}'
+            )
+
+        return None
+
     def prepare_hdf5_data(
         self,
         raw_data: 'AttrDict' = AttrDict(),
@@ -1136,13 +1176,25 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             result = XRDResultRSM_HDF5()
 
         if result is not None:
-            result.intensity = xrd_dict.get('intensity', None)
-            result.two_theta = xrd_dict.get('2Theta', None)
-            result.omega = xrd_dict.get('Omega', None)
-            result.chi = xrd_dict.get('Chi', None)
-            result.phi = xrd_dict.get('Phi', None)
+            result.intensity = self.populate_hdf5_data_dict(
+                'intensity', xrd_dict.get('intensity', None), archive
+            )
+            result.two_theta = self.populate_hdf5_data_dict(
+                'intensity', xrd_dict.get('2Theta', None), archive
+            )
+            result.omega = self.populate_hdf5_data_dict(
+                'intensity', xrd_dict.get('Omega', None), archive
+            )
+            result.chi = self.populate_hdf5_data_dict(
+                'intensity', xrd_dict.get('Chi', None), archive
+            )
+            result.phi = self.populate_hdf5_data_dict(
+                'intensity', xrd_dict.get('Phi', None), archive
+            )
+            result.integration_time = self.populate_hdf5_data_dict(
+                'intensity', xrd_dict.get('countTime', None), archive
+            )
             result.scan_axis = metadata_dict.get('scan_axis', None)
-            result.integration_time = xrd_dict.get('countTime', None)
             result.normalize(archive, logger)
             results.append(result)
 
