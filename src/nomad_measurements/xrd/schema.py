@@ -15,12 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import collections
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
 )
-import collections
+
+import h5py
 import numpy as np
 import plotly.express as px
 from fairmat_readers_xrd import (
@@ -31,6 +33,9 @@ from fairmat_readers_xrd import (
 from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
+)
+from nomad.datamodel.hdf5 import (
+    HDF5Reference,
 )
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
