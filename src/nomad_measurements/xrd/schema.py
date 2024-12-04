@@ -961,31 +961,30 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             return self.read_raw_file, self.write_xrd_data
         return None, None
 
-    def read_raw_file(self) -> dict[str, Any]:
+    def read_raw_file(self, file_name, archive, logger) -> dict[str, Any]:
         """
         Read method for reading the raw data from the data file.
 
         Returns:
             Dict[str, Any]: A dictionary with the raw data.
         """
-        data_dict = collections.defaultdict(dict, None)
-        if self.data_file.endswith('.rasx'):
-            data_dict.update(read_rigaku_rasx(self.data_file))
-        if self.data_file.endswith('.xrdml'):
-            data_dict.update(read_panalytical_xrdml(self.data_file))
-        if self.data_file.endswith('.brml'):
-            data_dict.update(read_bruker_brml(self.data_file))
-        
-        # create a nexus file and populate it with the data
-        # if that fails, create a HDF5 file instead
-        # update the results to have paths to the nexus file sections
-        # add a reference to nexus file entry
-        
-        # scan_type = xrd_dict.get('metadata', {}).get('scan_type', None)
-        # if self.generate_nexus_file and self.data_file is not None:
-        #     write_nx_section_and_create_file(archive, logger, scan_type=scan_type)
+        xrd_dict = AttrDict(lambda: None)
+        if file_name.endswith('.rasx'):
+            xrd_dict.update(read_rigaku_rasx(file_name))
+        if file_name.endswith('.xrdml'):
+            xrd_dict.update(read_panalytical_xrdml(file_name))
+        if file_name.endswith('.brml'):
+            xrd_dict.update(read_bruker_brml(file_name))
 
-        return data_dict
+        try:
+            raise NotImplementedError('Creating a nexus file is not yet implemented.')
+        except Exception as e:
+            logger.warning(
+                f'Error creating nexus file: {e}.\n Creating h5 file instead.'
+            )
+            # TODO
+
+        return xrd_dict
 
     def write_xrd_data(
         self,
@@ -1082,7 +1081,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                 )
             else:
                 with archive.m_context.raw_file(self.data_file) as file:
-                    xrd_dict = read_function(file.name, logger)
+                    xrd_dict = read_function(file.name, archive, logger)
                 write_function(xrd_dict, archive, logger)
         super().normalize(archive, logger)
         if not self.results:
