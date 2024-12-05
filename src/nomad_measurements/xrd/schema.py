@@ -988,16 +988,15 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             return
 
         # find the corresponding dataset for the given hdf5_path
-        for dataset_path in self.hdf5_dataset_paths:
-            if hdf5_path == dataset_path:
-                if isinstance(value, pint.Quantity):
-                    self.hdf5_data_dict[dataset_path] = value.magnitude
-                    self.hdf5_data_dict[f'{dataset_path}/@units'] = str(value.units)
-                else:
-                    self.hdf5_data_dict[dataset_path] = value
+        if hdf5_path in self.hdf5_dataset_paths:
+            if isinstance(value, pint.Quantity):
+                self.hdf5_data_dict[hdf5_path] = value.magnitude
+                self.hdf5_data_dict[f'{hdf5_path}/@units'] = str(value.units)
+            else:
+                self.hdf5_data_dict[hdf5_path] = value
             ref = (
                 f'/uploads/{self.m_parent.m_context.upload_id}/raw'
-                f'/{self.auxiliary_file}#{dataset_path}'
+                f'/{self.auxiliary_file}#{hdf5_path}'
             )
             self.hdf5_references[archive_path] = ref
             return
@@ -1110,6 +1109,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             path (str): The path to the quantity.
             ref (str): The reference to the HDF5 dataset.
         """
+        # TODO handle the case when section in the path is not initialized
         attr = section
         path = path.split('.')
         quantity_name = path.pop()
