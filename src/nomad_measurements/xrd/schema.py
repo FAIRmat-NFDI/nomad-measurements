@@ -964,44 +964,51 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
 
     hdf5_data_dict = collections.OrderedDict()
     hdf5_dataset_paths = []
+    hdf5_references = dict()
 
     def populate_hdf5_data_dict(
         self,
-        key: str,
+        hdf5_path: str,
+        archive_path: str,
         value: Any,
-        archive: 'EntryArchive',
-    ) -> Optional[str]:
+        logger: 'BoundLogger',
+    ):
         """
-        Populates the `hdf5_data_dict` with the given key and value. The key used in the
-        `hd5_data_dict` is picked from the `hdf5_dataset_paths` based on the given key.
+        Populates the `hdf5_data_dict` with the given value. The `hdf5_path` is
+        used to find a valid dataset path from `self.hdf5_dataset_paths`, and if it
+        exists, the value is added to the corresponding path.
 
         Args:
-            key (str): The key to be used in the HDF5 file.
+            hdf5_path (str): The dataset path to be used in the HDF5 file.
+            archive_path (str): The path of the quantity in the archive.
             value (Any): The value to be stored in the HDF5 file.
-            archive (EntryArchive): The archive containing the section.
-
-        Returns:
-            Optional[str]: The path to the dataset in the HDF5 file.
         """
         if not self.hdf5_dataset_paths:
+            logger.warning(
+                f'Unable to add "{hdf5_path}" to HDF5 file as no valid '
+                'collection of dataset paths found.'
+            )
             return
 
-        # find the corresponding dataset for the given key
+        # find the corresponding dataset for the given hdf5_path
         for dataset_path in self.hdf5_dataset_paths:
-            dataset_name = dataset_path.rsplit('/', 1)[1]
-            if key == dataset_name:
+            if hdf5_path == dataset_path:
                 if isinstance(value, pint.Quantity):
                     self.hdf5_data_dict[dataset_path] = value.magnitude
                     self.hdf5_data_dict[f'{dataset_path}/@units'] = str(value.units)
                 else:
                     self.hdf5_data_dict[dataset_path] = value
-
-            return (
-                f'/uploads/{archive.m_context.upload_id}/raw/{self.auxiliary_file}'
-                f'#{dataset_path}'
+            ref = (
+                f'/uploads/{self.m_parent.m_context.upload_id}/raw'
+                f'/{self.auxiliary_file}#{dataset_path}'
             )
+            self.hdf5_references[archive_path] = ref
+            return
 
-        return None
+        logger.warning(
+            f'Unable to add "{hdf5_path}" to HDF5 file no compatible dataset '
+            'path found.'
+        )
 
     def prepare_hdf5_data(
         self,
@@ -1195,24 +1202,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             result = XRDResultRSM_HDF5()
 
         if result is not None:
-            result.intensity = self.populate_hdf5_data_dict(
-                'intensity', xrd_dict.get('intensity', None), archive
-            )
-            result.two_theta = self.populate_hdf5_data_dict(
-                'intensity', xrd_dict.get('2Theta', None), archive
-            )
-            result.omega = self.populate_hdf5_data_dict(
-                'intensity', xrd_dict.get('Omega', None), archive
-            )
-            result.chi = self.populate_hdf5_data_dict(
-                'intensity', xrd_dict.get('Chi', None), archive
-            )
-            result.phi = self.populate_hdf5_data_dict(
-                'intensity', xrd_dict.get('Phi', None), archive
-            )
-            result.integration_time = self.populate_hdf5_data_dict(
-                'intensity', xrd_dict.get('countTime', None), archive
-            )
             result.scan_axis = metadata_dict.get('scan_axis', None)
             result.normalize(archive, logger)
             results.append(result)
@@ -1245,6 +1234,43 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         )
 
         merge_sections(self, xrd, logger)
+
+        self.populate_hdf5_data_dict(
+            '/ENTRY[entry]/experiment_result/intensity',
+            'results[0].intensity',
+            xrd_dict.get('intensity', None),
+            logger,
+        )
+        self.populate_hdf5_data_dict(
+            '/ENTRY[entry]/experiment_result/two_theta',
+            'results[0].two_theta',
+            xrd_dict.get('2Theta', None),
+            logger,
+        )
+        self.populate_hdf5_data_dict(
+            '/ENTRY[entry]/experiment_result/omega',
+            'results[0].omega',
+            xrd_dict.get('Omega', None),
+            logger,
+        )
+        self.populate_hdf5_data_dict(
+            '/ENTRY[entry]/experiment_result/chi',
+            'results[0].chi',
+            xrd_dict.get('Chi', None),
+            logger,
+        )
+        self.populate_hdf5_data_dict(
+            '/ENTRY[entry]/experiment_result/phi',
+            'results[0].phi',
+            xrd_dict.get('Phi', None),
+            logger,
+        )
+        self.populate_hdf5_data_dict(
+            '/ENTRY[entry]/experiment_result/integration_time',
+            'results[0].integration_time',
+            xrd_dict.get('countTime', None),
+            logger,
+        )
 
     def backward_compatibility(self):
         """
