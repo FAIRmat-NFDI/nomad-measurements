@@ -21,7 +21,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Optional,
 )
 
 import h5py
@@ -76,17 +75,14 @@ from nomad_measurements.general import (
     NOMADMeasurementsCategory,
 )
 from nomad_measurements.utils import (
-    AttrDict,
     get_bounding_range_2d,
     get_data,
     merge_sections,
     set_data,
 )
 from nomad_measurements.xrd.nx import (
-    CONCEPT_MAP,
     NEXUS_DATASET_PATHS,
     remove_nexus_annotations,
-    walk_through_object,
 )
 
 if TYPE_CHECKING:
@@ -1011,63 +1007,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             'path found.'
         )
 
-    def prepare_hdf5_data(
-        self,
-        raw_data: 'AttrDict' = AttrDict(),
-        archive: 'EntryArchive' = None,
-        logger: 'BoundLogger' = None,
-    ):
-        """
-        Prepares data for the HDF5 file. Based on the concept map, the data is extracted
-        either from the `raw_data` or the `archive`.
-
-        If the data extracted from the raw data is an array, the data is stored in the HDF5 file and the path to the data is
-        overwritten in the `raw_data` (in-place modification). For example,
-        {'intensity': array([1, 2, 3])} becomes
-        {'intensity': '{file_path}{file_name}.h5#intensity'}
-        and the array [1, 2, 3] is stored in the HDF5 file.
-
-        Args:
-            raw_data (AttrDict, optional): A dictionary with the raw data from
-                the instrument.
-            archive (EntryArchive, optional): A NOMAD archive.
-            logger (BoundLogger, optional): A structlog logger.
-        """
-        concept_map = remove_nexus_annotations(CONCEPT_MAP)
-        h5_data_dict = collections.defaultdict(lambda: None)
-        h5_data_paths = collections.defaultdict(lambda: None)
-        for h5_key, data_key in concept_map.items():
-            if isinstance(data_key, dict):
-                if h5_key == raw_data.get('metadata', {}).get('scan_type', ''):
-                    h5_data_dict.update(
-                        self.prepare_hdf5_data(data_key, archive, logger)
-                    )
-            else:
-                data_source_type, data_source_path = data_key.split('.', maxsplit=1)
-                if data_source_type == 'raw_data':
-                    data_source = raw_data
-                elif data_source_type == 'archive':
-                    data_source = archive
-                else:
-                    continue
-
-                value = walk_through_object(data_source, data_source_path)
-
-                if value is not None:
-                    h5_data_dict[h5_key] = value
-                    if isinstance(value, np.ndarray) and data_source_type == 'raw_data':
-                        # edit raw_data to contain the path to the data
-                        if data_source_path.endswith('.magnitude'):
-                            data_source_path = data_source_path.rsplit('.', 1)[0]
-                        h5_data_paths[data_source_path] = (
-                            f'/uploads/{archive.m_context.upload_id}/raw/'
-                            f'{self.auxiliary_file}#{h5_key}'
-                        )
-
-        raw_data.update(h5_data_paths)
-
-        return h5_data_dict
-
     def create_nx_file(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
         Method for creating a NeXus file which contains the array data along with other
@@ -1084,7 +1023,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
 
     def create_hdf5_file(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
-        TODO make it independent of prepare_hdf5_data
+        Method for creating an HDF5 file which contains the array data.
 
         Args:
             archive (EntryArchive): The archive containing the section.
@@ -1140,7 +1079,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         logger: 'BoundLogger',
     ):
         """
-        Method for creating an auxiliary file.
+        Method for creating an auxiliary file to store big data arrays outside the
+        main archive file (e.g. HDF5, NeXus).
 
         Args:
             archive (EntryArchive): The archive containing the section.
