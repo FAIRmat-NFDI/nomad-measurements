@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 import collections
+import re
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -1149,23 +1150,41 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             self.create_nx_file(archive, logger)
         except Exception:
             logger.warning('Error creating nexus file. Creating h5 file instead')
-
-            # remove nexus related annotations in the dataset paths
-            for quantity in [
-                'intensity',
-                'two_theta',
-                'omega',
-                'phi',
-                'chi',
-                'integration_time',
-                'q_norm',
-                'q_parallel',
-                'q_perpendicular',
-            ]:
-                if self.get(quantity) is not None:
-                    self[quantity] = remove_nexus_annotations(self.get(quantity))
-
             self.create_hdf5_file(archive, logger)
+
+        # add the references for the HDF5Reference quantities
+        for archive_path, hdf5_path in self.hdf5_references.items():
+            self.set_hdf5_reference(self, archive_path, hdf5_path)
+
+    @staticmethod
+    def set_hdf5_reference(section: 'Section', path: str, ref: str):
+        """
+        Method for setting the HDF5Reference of a quantity in a section. It can handle
+        nested quantities and repeatable sections, provided that the quantity itself
+        is of type `HDF5Reference`.
+        For example, one can set the reference for a quantity path like
+        `data.results[0].intensity`.
+
+        Args:
+            section (Section): The NOMAD section containing the quantity.
+            path (str): The path to the quantity.
+            ref (str): The reference to the HDF5 dataset.
+        """
+        attr = section
+        path = path.split('.')
+        quantity_name = path.pop()
+
+        for subpath in path:
+            if re.match(r'.*\[.*\]', subpath):
+                index = int(subpath.split('[')[1].split(']')[0])
+                attr = attr.m_get(subpath.split('[')[0], index=index)
+            else:
+                attr = attr.m_get(subpath)
+
+        if isinstance(
+            attr.m_get_quantity_definition(quantity_name).type, HDF5Reference
+        ):
+            attr.m_set(quantity_name, ref)
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
         """
