@@ -1076,9 +1076,10 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             archive (EntryArchive): The archive containing the section.
             logger (BoundLogger): A structlog logger.
         """
-        # add archive data to `hdf5_data_dict` before creating the nexus file
-        # create a NeXus file with the data
         raise NotImplementedError('Method `create_nx_file` is not implemented.')
+        # TODO add archive data to `hdf5_data_dict` before creating the nexus file. Use
+        # `populate_hdf5_data_dict` method for each quantity that is needed in .nxs
+        # file. Create a NeXus file with the data in `hdf5_data_dict`.
 
     def create_hdf5_file(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
@@ -1088,8 +1089,17 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             archive (EntryArchive): The archive containing the section.
             logger (BoundLogger): A structlog logger.
         """
-        self.auxiliary_file = f'{self.data_file}.h5'
 
+        # pivot from .nxs to .h5
+        self.auxiliary_file = f'{self.data_file}.h5'
+        for archive_path, hdf5_path in self.hdf5_references.items():
+            self.hdf5_references[archive_path] = remove_nexus_annotations(hdf5_path)
+        tmp_dict = {}
+        for key, value in self.hdf5_data_dict.items():
+            tmp_dict[remove_nexus_annotations(key)] = value
+        self.hdf5_data_dict = tmp_dict
+
+        # create the HDF5 file
         with archive.m_context.raw_file(self.auxiliary_file, 'w') as h5file:
             with h5py.File(h5file.name, 'w') as h5:
                 for key, value in self.hdf5_data_dict.items():
@@ -1099,6 +1109,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                     value_is_unit = False
                     if key.endswith('@units'):
                         value_is_unit = True
+                        # remove the '@units' suffix
                         key = key.rsplit('/', 1)[0]
 
                     group_name, dataset_name = key.rsplit('/', 1)
