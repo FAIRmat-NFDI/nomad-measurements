@@ -286,52 +286,28 @@ class XRDResult(MeasurementResult):
 
     m_def = Section()
 
-    array_index = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        description=(
-            'A placeholder for the indices of vectorial quantities. '
-            'Used as x-axis for plots within quantities.'
-        ),
-        a_display={'visible': False},
-    )
     intensity = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        unit='dimensionless',
+        type=HDF5Reference,
         description='The count at each 2-theta value, dimensionless',
-        a_plot={'x': 'array_index', 'y': 'intensity'},
     )
     two_theta = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        unit='deg',
+        type=HDF5Reference,
         description='The 2-theta range of the diffractogram',
-        a_plot={'x': 'array_index', 'y': 'two_theta'},
     )
     q_norm = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        unit='meter**(-1)',
+        type=HDF5Reference,
         description='The norm of scattering vector *Q* of the diffractogram',
-        a_plot={'x': 'array_index', 'y': 'q_norm'},
     )
     omega = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        unit='deg',
+        type=HDF5Reference,
         description='The omega range of the diffractogram',
     )
     phi = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        unit='deg',
+        type=HDF5Reference,
         description='The phi range of the diffractogram',
     )
     chi = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        unit='deg',
+        type=HDF5Reference,
         description='The chi range of the diffractogram',
     )
     source_peak_wavelength = Quantity(
@@ -345,9 +321,7 @@ class XRDResult(MeasurementResult):
         description='Axis scanned',
     )
     integration_time = Quantity(
-        type=np.dtype(np.float64),
-        unit='s',
-        shape=['*'],
+        type=HDF5Reference,
         description='Integration time per channel',
     )
 
@@ -548,22 +522,12 @@ class XRDResultRSM(XRDResult):
 
     m_def = Section()
     q_parallel = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*', '*'],
-        unit='meter**(-1)',
+        type=HDF5Reference,
         description='The scattering vector *Q_parallel* of the diffractogram',
     )
     q_perpendicular = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*', '*'],
-        unit='meter**(-1)',
+        type=HDF5Reference,
         description='The scattering vector *Q_perpendicular* of the diffractogram',
-    )
-    intensity = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*', '*'],
-        unit='dimensionless',
-        description='The count at each position, dimensionless',
     )
 
     def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
@@ -764,72 +728,6 @@ class XRDResultRSM(XRDResult):
                         q_perpendicular=q_perpendicular,
                     )
                     break
-
-
-class XRDResult1D_HDF5(XRDResult1D):
-    intensity = Quantity(
-        type=HDF5Reference,
-        description='The count at each 2-theta value, dimensionless',
-    )
-    two_theta = Quantity(
-        type=HDF5Reference,
-        description='The 2-theta range of the diffractogram',
-    )
-    q_norm = Quantity(
-        type=HDF5Reference,
-        description='The norm of scattering vector *Q* of the diffractogram',
-    )
-    omega = Quantity(
-        type=HDF5Reference,
-        description='The omega range of the diffractogram',
-    )
-    phi = Quantity(
-        type=HDF5Reference,
-        description='The phi range of the diffractogram',
-    )
-    chi = Quantity(
-        type=HDF5Reference,
-        description='The chi range of the diffractogram',
-    )
-    integration_time = Quantity(
-        type=HDF5Reference,
-        description='Integration time per channel',
-    )
-
-
-class XRDResultRSM_HDF5(XRDResultRSM):
-    intensity = Quantity(
-        type=HDF5Reference,
-        description='The count at each 2-theta value, dimensionless',
-    )
-    two_theta = Quantity(
-        type=HDF5Reference,
-        description='The 2-theta range of the diffractogram',
-    )
-    q_norm = Quantity(
-        type=HDF5Reference,
-        description='The norm of scattering vector *Q* of the diffractogram',
-    )
-    omega = Quantity(
-        type=HDF5Reference,
-        description='The omega range of the diffractogram',
-    )
-    phi = Quantity(
-        type=HDF5Reference,
-        description='The phi range of the diffractogram',
-    )
-    chi = Quantity(
-        type=HDF5Reference,
-        description='The chi range of the diffractogram',
-    )
-    q_parallel = Quantity(
-        type=HDF5Reference,
-        description='The scattering vector *Q_parallel* of the diffractogram',
-    )
-    q_perpendicular = Quantity(
-        type=HDF5Reference,
-        description='The scattering vector *Q_perpendicular* of the diffractogram',
-    )
 
 
 class XRayDiffraction(Measurement):
@@ -1167,9 +1065,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         results = []
         result = None
         if scan_type == 'line':
-            result = XRDResult1D_HDF5()
+            result = XRDResult1D()
         elif scan_type == 'rsm':
-            result = XRDResultRSM_HDF5()
+            result = XRDResultRSM()
 
         if result is not None:
             result.scan_axis = metadata_dict.get('scan_axis', None)
