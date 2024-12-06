@@ -192,33 +192,6 @@ def set_data(obj, **kwargs):
             setattr(obj, key, value)
 
 
-def read_hdf5_dataset(archive, key: str) -> Any:
-    """
-    Get the data for the quantity. If the quantity is a HDF5Reference, read the dataset
-    and corresponding units if available, and return a pint.Quantity.
-
-    Args:
-        obj (Any): The object to get the data from.
-        key (str): The key of the quantity.
-
-    Returns:
-        Any: The data for the quantity.
-    """
-    if not key:
-        return
-
-    try:
-        value = HDF5Reference.read_dataset(archive, key)
-    except KeyError:
-        return None
-    # file_path, dataset_path = key.split('#')
-    # with archive.m_context.raw_file(file_path, 'r') as h5file:
-    #     with h5py.File(h5file.name, 'r') as h5:
-    #         value = h5[dataset_path]
-
-    return value
-
-
 class AuxiliaryHDF5Handler:
     """
     Class for handling the creation of auxiliary files to store big data arrays outside
@@ -255,15 +228,14 @@ class AuxiliaryHDF5Handler:
     def add_dataset(
         self,
         path: str,
-        archive_path: str,
         data: Any,
+        archive_path: str,
         lazy: bool = True,
     ):
         """
         Add a dataset to the HDF5 file. The dataset is written lazily (default) when
-        the `write_file` method is called. The `path` is validated against the
-        `valid_dataset_paths` if provided before adding the
-        data.
+        either `read_dataset` or `write_file` method is called. The `path` is validated
+        against the `valid_dataset_paths` if provided before adding the data.
 
         Args:
             path (str): The dataset path to be used in the HDF5 file.
@@ -289,6 +261,31 @@ class AuxiliaryHDF5Handler:
 
         if not lazy:
             self.write_file()
+
+    def read_dataset(self, path: str):
+        """
+        Returns the dataset at the given path. If the quantity has `units` as an attribute,
+        tries to returns a `pint.Quantity`. Before returning the dataset, the method
+        also writes the file with any pending datasets.
+
+        Args:
+            path (str): The dataset path in the HDF5 file.
+        """
+        # TODO handle the case when dataset is not found
+        # TODO if units are available, return a pint.Quantity
+        if self.hdf5_data_dict or self.hdf5_references:
+            self.write_file()
+
+        try:
+            value = HDF5Reference.read_dataset(self.archive, path)
+        except KeyError:
+            return None
+        # file_path, dataset_path = path.split('#')
+        # with archive.m_context.raw_file(file_path, 'r') as h5file:
+        #     with h5py.File(h5file.name, 'r') as h5:
+        #         value = h5[dataset_path]
+
+        return value
 
     def write_file(self):
         """
