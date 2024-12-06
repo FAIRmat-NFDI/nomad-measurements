@@ -512,14 +512,14 @@ class XRDResult1D(XRDResult):
                 q=q_norm,
             )
             archive.hdf5_handler.add_dataset(
-                path=self.q_norm,
+                path='/ENTRY[entry]/experiment_result/q_norm',
                 data=q_norm,
-                archive_path='results[0].q_norm',
+                archive_path='data.results[0].q_norm',
             )
             archive.hdf5_handler.add_dataset(
-                path=self.two_theta,
+                path='/ENTRY[entry]/experiment_result/two_theta',
                 data=two_theta,
-                archive_path='results[0].two_theta',
+                archive_path='data.results[0].two_theta',
             )
 
 
@@ -737,12 +737,12 @@ class XRDResultRSM(XRDResult):
                     archive.hdf5_handler.add_dataset(
                         path='/ENTRY[entry]/experiment_result/q_parallel',
                         data=q_parallel,
-                        archive_path='results[0].q_parallel',
+                        archive_path='data.results[0].q_parallel',
                     )
                     archive.hdf5_handler.add_dataset(
                         path='/ENTRY[entry]/experiment_result/q_perpendicular',
                         data=q_perpendicular,
-                        archive_path='results[0].q_perpendicular',
+                        archive_path='data.results[0].q_perpendicular',
                     )
                     return
 
@@ -875,7 +875,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             component=ELNComponentEnum.FileEditQuantity,
         ),
     )
-    auxiliary_file_handler = None
+    hdf5_handler = None
     measurement_identifiers = SubSection(
         section_def=ReadableIdentifiers,
     )
@@ -1028,8 +1028,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                     filename=self.auxiliary_file,
                     archive=archive,
                     logger=logger,
-                    valid_datasets=NEXUS_DATASET_PATHS,
+                    valid_dataset_paths=NEXUS_DATASET_PATHS,
                 )
+                archive.hdf5_handler = self.hdf5_handler
                 write_function(xrd_dict, archive, logger)
                 self.hdf5_handler.write_file()
         super().normalize(archive, logger)
