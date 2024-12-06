@@ -254,36 +254,36 @@ class AuxiliaryHDF5Handler:
 
     def add_dataset(
         self,
-        hdf5_path: str,
+        path: str,
         archive_path: str,
         data: Any,
         lazy: bool = True,
     ):
         """
         Add a dataset to the HDF5 file. The dataset is written lazily (default) when
-        the `write_file` method is called. The `hdf5_path` is validated against the
+        the `write_file` method is called. The `path` is validated against the
         `valid_dataset_paths` if provided before adding the
         data.
 
         Args:
-            hdf5_path (str): The dataset path to be used in the HDF5 file.
-            archive_path (str): The path of the quantity in the archive.
+            path (str): The dataset path to be used in the HDF5 file.
             data (Any): The data to be stored in the HDF5 file.
+            archive_path (str): The path of the quantity in the archive.
             lazy (bool): If True, the file is not written immediately.
         """
         if self.valid_dataset_paths:
-            if hdf5_path not in self.valid_dataset_paths:
-                raise ValidationError(f'Invalid dataset path "{hdf5_path}".')
+            if path not in self.valid_dataset_paths:
+                raise ValidationError(f'Invalid dataset path "{path}".')
 
         # handle the pint.Quantity and add data
         if isinstance(data, pint.Quantity):
-            self.hdf5_data_dict[hdf5_path] = data.magnitude
-            self.hdf5_data_dict[f'{hdf5_path}/@units'] = str(data.units)
+            self.hdf5_data_dict[path] = data.magnitude
+            self.hdf5_data_dict[f'{path}/@units'] = str(data.units)
         else:
-            self.hdf5_data_dict[hdf5_path] = data
+            self.hdf5_data_dict[path] = data
         ref = (
             f'/uploads/{self.archive.m_context.upload_id}/raw'
-            f'/{self.data_file}#{hdf5_path}'
+            f'/{self.data_file}#{path}'
         )
         self.hdf5_references[archive_path] = ref
 
