@@ -203,7 +203,7 @@ class AuxiliaryHDF5Handler:
         filename: str,
         archive: 'EntryArchive',
         logger: 'BoundLogger',
-        valid_dataset_paths: list = [],
+        valid_dataset_paths: list = None,
     ):
         """
         Initialize the handler.
@@ -220,7 +220,9 @@ class AuxiliaryHDF5Handler:
         self.data_file = filename
         self.archive = archive
         self.logger = logger
-        self.valid_dataset_paths = valid_dataset_paths
+        self.valid_dataset_paths = []
+        if valid_dataset_paths:
+            self.valid_dataset_paths = valid_dataset_paths
 
         self.hdf5_data_dict = collections.OrderedDict()
         self.hdf5_references = collections.OrderedDict()
@@ -243,6 +245,10 @@ class AuxiliaryHDF5Handler:
             archive_path (str): The path of the quantity in the archive.
             lazy (bool): If True, the file is not written immediately.
         """
+        if not path or not archive_path:
+            self.logger.warning('Both `path` and `archive_path` must be provided.')
+            return
+
         if self.valid_dataset_paths:
             if path not in self.valid_dataset_paths:
                 self.logger.error(f'Invalid dataset path "{path}".')
@@ -359,22 +365,16 @@ class AuxiliaryHDF5Handler:
                     group_name, dataset_name = key.rsplit('/', 1)
                     group = h5.require_group(group_name)
 
-                    if f'{group_name}/{dataset_name}' in h5:
-                        del h5[f'{group_name}/{dataset_name}']
-
-                    if value_is_unit:
-                        try:
-                            h5[f'{group_name}/{dataset_name}'].attrs['units'] = str(
-                                value
-                            )
-                        except KeyError:
-                            logger.error(
-                                f'Could not set units for "{group_name}/{dataset_name}"'
-                                'as the dataset does not exist.'
-                            )
+                    if key in h5:
+                        if value_is_unit:
+                            group[dataset_name].attrs['units'] = str(value)
+                        else:
+                            group[dataset_name][...] = value
                     else:
                         group.create_dataset(
-                            dataset_name, data=value, compression='gzip'
+                            name=dataset_name,
+                            data=value,
+                            compression='gzip',
                         )
                         # group.attrs['axes'] = 'time'
                         # group.attrs['signal'] = 'value'
