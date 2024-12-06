@@ -16,9 +16,8 @@
 # limitations under the License.
 #
 import collections
-import pint
-import re
 import os.path
+import re
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -26,6 +25,7 @@ from typing import (
 
 import h5py
 import numpy as np
+import pint
 from nomad.datamodel.hdf5 import HDF5Reference
 
 if TYPE_CHECKING:
@@ -245,7 +245,7 @@ class AuxiliaryHDF5Handler:
         """
         if self.valid_dataset_paths:
             if path not in self.valid_dataset_paths:
-                raise ValidationError(f'Invalid dataset path "{path}".')
+                self.logger.error(f'Invalid dataset path "{path}".')
 
         # handle the pint.Quantity and add data
         if isinstance(data, pint.Quantity):
@@ -293,15 +293,17 @@ class AuxiliaryHDF5Handler:
         Method for creating an auxiliary file to store big data arrays outside the
         main archive file (e.g. HDF5, NeXus).
         """
+        # TODO: The selection made in the first instance of using `write_file` should
+        # be remembered and used for subsequent calls to `write_file`.
         try:
             if self.data_file.endswith('.h5'):
                 self.data_file = self.data_file.replace('.h5', '.nxs')
-            self.write_nx_file()
+            self._write_nx_file()
         except Exception:
-            self.logger.warning('Error creating nexus file. Creating h5 file instead')
+            self.logger.warning('Error creating nexus file. Creating h5 file instead.')
             if self.data_file.endswith('.nxs'):
                 self.data_file = self.data_file.replace('.nxs', '.h5')
-            self.write_hdf5_file()
+            self._write_hdf5_file()
 
         # add the references for the HDF5Reference quantities
         for archive_path, hdf5_path in self.hdf5_references.items():
@@ -322,7 +324,7 @@ class AuxiliaryHDF5Handler:
         # `populate_hdf5_data_dict` method for each quantity that is needed in .nxs
         # file. Create a NeXus file with the data in `hdf5_data_dict`.
         # One issue here is as we populate the `hdf5_data_dict` with the archive data,
-        # we will always have to over write the nexus file 
+        # we will always have to over write the nexus file
 
     def _write_hdf5_file(self):
         """
@@ -345,6 +347,7 @@ class AuxiliaryHDF5Handler:
             with h5py.File(h5file.name, 'a') as h5:
                 for key, value in self.hdf5_data_dict.items():
                     if value is None:
+                        self.logger.warning(f'No data found for "{key}". Skipping.')
                         continue
 
                     value_is_unit = False
@@ -405,7 +408,7 @@ class AuxiliaryHDF5Handler:
         return new_path
 
     @staticmethod
-    def _set_hdf5_reference(section: 'Section', path: str, ref: str):
+    def _set_hdf5_reference(section: 'ArchiveSection', path: str, ref: str):
         """
         Method for setting a HDF5Reference quantity in a section. It can handle
         nested quantities and repeatable sections, provided that the quantity itself
