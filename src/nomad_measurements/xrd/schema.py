@@ -72,9 +72,9 @@ from nomad_measurements.general import (
     NOMADMeasurementsCategory,
 )
 from nomad_measurements.utils import (
+    AuxiliaryHDF5Handler,
     get_bounding_range_2d,
     merge_sections,
-    AuxiliaryHDF5Handler,
 )
 from nomad_measurements.xrd.nx import NEXUS_DATASET_PATHS
 
@@ -931,6 +931,36 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
 
         if result is not None:
             result.scan_axis = metadata_dict.get('scan_axis', None)
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/intensity',
+                data=xrd_dict.get('intensity', None),
+                archive_path='data.results[0].intensity',
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/two_theta',
+                data=xrd_dict.get('2Theta', None),
+                archive_path='data.results[0].two_theta',
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/omega',
+                data=xrd_dict.get('Omega', None),
+                archive_path='data.results[0].omega',
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/chi',
+                data=xrd_dict.get('Chi', None),
+                archive_path='data.results[0].chi',
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/phi',
+                data=xrd_dict.get('Phi', None),
+                archive_path='data.results[0].phi',
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_config/count_time',
+                data=xrd_dict.get('countTime', None),
+                archive_path='data.results[0].integration_time',
+            )
             result.normalize(archive, logger)
             results.append(result)
 
@@ -962,37 +992,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         )
 
         merge_sections(self, xrd, logger)
-
-        self.hdf5_handler.add_dataset(
-            path='/ENTRY[entry]/experiment_result/intensity',
-            data=xrd_dict.get('intensity', None),
-            archive_path='results[0].intensity',
-        )
-        self.hdf5_handler.add_dataset(
-            path='/ENTRY[entry]/experiment_result/two_theta',
-            data=xrd_dict.get('2Theta', None),
-            archive_path='results[0].two_theta',
-        )
-        self.hdf5_handler.add_dataset(
-            path='/ENTRY[entry]/experiment_result/omega',
-            data=xrd_dict.get('Omega', None),
-            archive_path='results[0].omega',
-        )
-        self.hdf5_handler.add_dataset(
-            path='/ENTRY[entry]/experiment_result/chi',
-            data=xrd_dict.get('Chi', None),
-            archive_path='results[0].chi',
-        )
-        self.hdf5_handler.add_dataset(
-            path='/ENTRY[entry]/experiment_result/phi',
-            data=xrd_dict.get('Phi', None),
-            archive_path='results[0].phi',
-        )
-        self.hdf5_handler.add_dataset(
-            path='/ENTRY[entry]/experiment_result/integration_time',
-            data=xrd_dict.get('countTime', None),
-            archive_path='results[0].integration_time',
-        )
 
     def backward_compatibility(self):
         """
