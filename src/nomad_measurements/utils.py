@@ -225,10 +225,6 @@ class AuxiliaryHDF5Handler:
     - write_dataset: Write data to an auxiliary file.
     - save: Save the auxiliary file.
     """
-
-    hdf5_data_dict = collections.OrderedDict()
-    hdf5_references = dict()
-
     def __init__(
         self,
         filename: str,
@@ -245,13 +241,16 @@ class AuxiliaryHDF5Handler:
             logger (BoundLogger): A structlog logger.
             valid_dataset_paths (list): The list of valid dataset paths.
         """
-        assert filename.endswith(
-            ('.nxs', '.h5')
-        ), 'Only .h5 or .nxs files are supported.'
+        if not filename.endswith(('.nxs', '.h5')):
+            raise ValueError('Only .h5 or .nxs files are supported.')
+
         self.data_file = filename
-        self.valid_dataset_paths = valid_dataset_paths
         self.archive = archive
         self.logger = logger
+        self.valid_dataset_paths = valid_dataset_paths
+
+        self.hdf5_data_dict = collections.OrderedDict()
+        self.hdf5_references = collections.OrderedDict()
 
     @staticmethod
     def remove_nexus_annotations(path: str) -> str:
@@ -307,7 +306,7 @@ class AuxiliaryHDF5Handler:
         self.hdf5_data_dict = tmp_dict
 
         # create the HDF5 file
-        with self.archive.m_context.raw_file(self.auxiliary_file, 'a') as h5file:
+        with self.archive.m_context.raw_file(self.data_file, 'a') as h5file:
             with h5py.File(h5file.name, 'a') as h5:
                 for key, value in self.hdf5_data_dict.items():
                     if value is None:
@@ -434,7 +433,7 @@ class AuxiliaryHDF5Handler:
             self.hdf5_data_dict[hdf5_path] = value
         ref = (
             f'/uploads/{self.archive.m_context.upload_id}/raw'
-            f'/{self.auxiliary_file}#{hdf5_path}'
+            f'/{self.data_file}#{hdf5_path}'
         )
         self.hdf5_references[archive_path] = ref
 
