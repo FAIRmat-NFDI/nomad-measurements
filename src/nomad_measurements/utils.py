@@ -220,10 +220,8 @@ def read_hdf5_dataset(archive, key: str) -> Any:
 
 class AuxiliaryHDF5Handler:
     """
-    A class for handling auxiliary files.
-    - read_dataset: Read data from an auxiliary file.
-    - write_dataset: Write data to an auxiliary file.
-    - save: Save the auxiliary file.
+    Class for handling the creation of auxiliary files to store big data arrays outside
+    the main archive file (e.g. HDF5, NeXus).
     """
     def __init__(
         self,
@@ -295,7 +293,6 @@ class AuxiliaryHDF5Handler:
         """
 
         # pivot from .nxs to .h5
-        self.auxiliary_file = f'{self.data_file}.h5'
         for archive_path, hdf5_path in self.hdf5_references.items():
             self.hdf5_references[archive_path] = self.remove_nexus_annotations(
                 hdf5_path
