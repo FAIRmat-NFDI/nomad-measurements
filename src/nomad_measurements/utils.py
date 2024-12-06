@@ -358,6 +358,10 @@ class AuxiliaryHDF5Handler:
         for archive_path, hdf5_path in self.hdf5_references.items():
             self.set_hdf5_reference(self.archive, archive_path, hdf5_path)
 
+        # reset hdf5 data dict and references
+        self.hdf5_data_dict = collections.OrderedDict()
+        self.hdf5_references = collections.OrderedDict()
+
     @staticmethod
     def set_hdf5_reference(section: 'Section', path: str, ref: str):
         """
