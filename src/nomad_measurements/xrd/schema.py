@@ -15,15 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import collections
-import re
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
 )
 
-import h5py
 import numpy as np
 import pint
 import plotly.express as px
@@ -76,15 +73,10 @@ from nomad_measurements.general import (
 )
 from nomad_measurements.utils import (
     get_bounding_range_2d,
-    get_data,
     merge_sections,
-    read_hdf5_dataset,
-    set_data,
+    AuxiliaryHDF5Handler,
 )
-from nomad_measurements.xrd.nx import (
-    NEXUS_DATASET_PATHS,
-    remove_nexus_annotations,
-)
+from nomad_measurements.xrd.nx import NEXUS_DATASET_PATHS
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -867,6 +859,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             component=ELNComponentEnum.FileEditQuantity,
         ),
     )
+    auxiliary_file_handler = None
     measurement_identifiers = SubSection(
         section_def=ReadableIdentifiers,
     )
@@ -874,173 +867,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
     )
-
-    hdf5_data_dict = collections.OrderedDict()
-    hdf5_dataset_paths = []
-    hdf5_references = dict()
-
-    def populate_hdf5_data_dict(
-        self,
-        hdf5_path: str,
-        archive_path: str,
-        value: Any,
-        logger: 'BoundLogger',
-    ):
-        """
-        Populates the `hdf5_data_dict` with the given value. The `hdf5_path` is
-        used to find a valid dataset path from `self.hdf5_dataset_paths`, and if it
-        exists, the value is added to the corresponding path.
-
-        Args:
-            hdf5_path (str): The dataset path to be used in the HDF5 file.
-            archive_path (str): The path of the quantity in the archive.
-            value (Any): The value to be stored in the HDF5 file.
-        """
-        if not self.hdf5_dataset_paths:
-            logger.warning(
-                f'Unable to add "{hdf5_path}" to HDF5 file as no valid '
-                'collection of dataset paths found.'
-            )
-            return
-
-        # find the corresponding dataset for the given hdf5_path
-        if hdf5_path in self.hdf5_dataset_paths:
-            if isinstance(value, pint.Quantity):
-                self.hdf5_data_dict[hdf5_path] = value.magnitude
-                self.hdf5_data_dict[f'{hdf5_path}/@units'] = str(value.units)
-            else:
-                self.hdf5_data_dict[hdf5_path] = value
-            ref = (
-                f'/uploads/{self.m_parent.m_context.upload_id}/raw'
-                f'/{self.auxiliary_file}#{hdf5_path}'
-            )
-            self.hdf5_references[archive_path] = ref
-            return
-
-        logger.warning(
-            f'Unable to add "{hdf5_path}" to HDF5 file no compatible dataset '
-            'path found.'
-        )
-
-    def create_nx_file(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-        """
-        Method for creating a NeXus file which contains the array data along with other
-        archive data in a NeXus view.
-
-        Args:
-            archive (EntryArchive): The archive containing the section.
-            logger (BoundLogger): A structlog logger.
-        """
-        raise NotImplementedError('Method `create_nx_file` is not implemented.')
-        # TODO add archive data to `hdf5_data_dict` before creating the nexus file. Use
-        # `populate_hdf5_data_dict` method for each quantity that is needed in .nxs
-        # file. Create a NeXus file with the data in `hdf5_data_dict`.
-
-    def create_hdf5_file(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-        """
-        Method for creating an HDF5 file which contains the array data.
-
-        Args:
-            archive (EntryArchive): The archive containing the section.
-            logger (BoundLogger): A structlog logger.
-        """
-
-        # pivot from .nxs to .h5
-        self.auxiliary_file = f'{self.data_file}.h5'
-        for archive_path, hdf5_path in self.hdf5_references.items():
-            self.hdf5_references[archive_path] = remove_nexus_annotations(hdf5_path)
-        tmp_dict = {}
-        for key, value in self.hdf5_data_dict.items():
-            tmp_dict[remove_nexus_annotations(key)] = value
-        self.hdf5_data_dict = tmp_dict
-
-        # create the HDF5 file
-        with archive.m_context.raw_file(self.auxiliary_file, 'w') as h5file:
-            with h5py.File(h5file.name, 'w') as h5:
-                for key, value in self.hdf5_data_dict.items():
-                    if value is None:
-                        continue
-
-                    value_is_unit = False
-                    if key.endswith('@units'):
-                        value_is_unit = True
-                        # remove the '@units' suffix
-                        key = key.rsplit('/', 1)[0]
-
-                    group_name, dataset_name = key.rsplit('/', 1)
-                    group = h5.require_group(group_name)
-
-                    if value_is_unit:
-                        try:
-                            h5[f'{group_name}/{dataset_name}'].attrs['units'] = str(
-                                value
-                            )
-                        except KeyError:
-                            logger.error(
-                                f'Could not set units for "{group_name}/{dataset_name}"'
-                                'as the dataset does not exist.'
-                            )
-                    else:
-                        group.create_dataset(
-                            dataset_name, data=value, compression='gzip'
-                        )
-                        # group.attrs['axes'] = 'time'
-                        # group.attrs['signal'] = 'value'
-                        # group.attrs['NX_class'] = 'NXdata'
-
-    def create_auxiliary_file(
-        self,
-        archive: 'EntryArchive',
-        logger: 'BoundLogger',
-    ):
-        """
-        Method for creating an auxiliary file to store big data arrays outside the
-        main archive file (e.g. HDF5, NeXus).
-
-        Args:
-            archive (EntryArchive): The archive containing the section.
-            logger (BoundLogger): A structlog logger.
-        """
-        try:
-            self.create_nx_file(archive, logger)
-        except Exception:
-            logger.warning('Error creating nexus file. Creating h5 file instead')
-            self.create_hdf5_file(archive, logger)
-
-        # add the references for the HDF5Reference quantities
-        for archive_path, hdf5_path in self.hdf5_references.items():
-            self.set_hdf5_reference(self, archive_path, hdf5_path)
-
-    @staticmethod
-    def set_hdf5_reference(section: 'Section', path: str, ref: str):
-        """
-        Method for setting the HDF5Reference of a quantity in a section. It can handle
-        nested quantities and repeatable sections, provided that the quantity itself
-        is of type `HDF5Reference`.
-        For example, one can set the reference for a quantity path like
-        `data.results[0].intensity`.
-
-        Args:
-            section (Section): The NOMAD section containing the quantity.
-            path (str): The path to the quantity.
-            ref (str): The reference to the HDF5 dataset.
-        """
-        # TODO handle the case when section in the path is not initialized
-        attr = section
-        path = path.split('.')
-        quantity_name = path.pop()
-
-        for subpath in path:
-            if re.match(r'.*\[.*\]', subpath):
-                index = int(subpath.split('[')[1].split(']')[0])
-                attr = attr.m_get(subpath.split('[')[0], index=index)
-            else:
-                attr = attr.m_get(subpath)
-
-        if isinstance(
-            attr.m_get_quantity_definition(quantity_name).type, HDF5Reference
-        ):
-            attr.m_set(quantity_name, ref)
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
         """
@@ -1188,6 +1014,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                 with archive.m_context.raw_file(self.data_file) as file:
                     xrd_dict = read_function(file.name, logger)
                 self.auxiliary_file = f'{self.data_file}.nxs'
+                self.auxiliary_file_handler = AuxiliaryHDF5Handler()
                 self.hdf5_dataset_paths = NEXUS_DATASET_PATHS
                 write_function(xrd_dict, archive, logger)
                 self.create_auxiliary_file(archive, logger)
