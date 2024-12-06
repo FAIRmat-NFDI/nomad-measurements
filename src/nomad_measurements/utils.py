@@ -275,7 +275,8 @@ class AuxiliaryHDF5Handler:
         # TODO if units are available, return a pint.Quantity
         if self.hdf5_data_dict or self.hdf5_references:
             self.write_file()
-
+        if path is None:
+            return
         try:
             value = HDF5Reference.read_dataset(self.archive, path)
         except KeyError:
@@ -320,11 +321,15 @@ class AuxiliaryHDF5Handler:
         # TODO add archive data to `hdf5_data_dict` before creating the nexus file. Use
         # `populate_hdf5_data_dict` method for each quantity that is needed in .nxs
         # file. Create a NeXus file with the data in `hdf5_data_dict`.
+        # One issue here is as we populate the `hdf5_data_dict` with the archive data,
+        # we will always have to over write the nexus file 
 
     def _write_hdf5_file(self):
         """
         Method for creating an HDF5 file.
         """
+        if not self.hdf5_data_dict and not self.hdf5_references:
+            return
         # remove the nexus annotations from the dataset paths if any
         for archive_path, hdf5_path in self.hdf5_references.items():
             self.hdf5_references[archive_path] = self._remove_nexus_annotations(
