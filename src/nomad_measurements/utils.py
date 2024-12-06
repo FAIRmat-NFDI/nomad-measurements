@@ -318,6 +318,9 @@ class AuxiliaryHDF5Handler:
                     group_name, dataset_name = key.rsplit('/', 1)
                     group = h5.require_group(group_name)
 
+                    if f'{group_name}/{dataset_name}' in h5:
+                        del h5[f'{group_name}/{dataset_name}']
+
                     if value_is_unit:
                         try:
                             h5[f'{group_name}/{dataset_name}'].attrs['units'] = str(
