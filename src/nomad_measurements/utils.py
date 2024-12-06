@@ -191,6 +191,7 @@ def set_data(obj, **kwargs):
         if hasattr(obj, key):
             setattr(obj, key, value)
 
+
 def read_hdf5_dataset(archive, key: str) -> Any:
     """
     Get the data for the quantity. If the quantity is a HDF5Reference, read the dataset
@@ -223,6 +224,7 @@ class AuxiliaryHDF5Handler:
     Class for handling the creation of auxiliary files to store big data arrays outside
     the main archive file (e.g. HDF5, NeXus).
     """
+
     def __init__(
         self,
         filename: str,
@@ -250,37 +252,72 @@ class AuxiliaryHDF5Handler:
         self.hdf5_data_dict = collections.OrderedDict()
         self.hdf5_references = collections.OrderedDict()
 
-    @staticmethod
-    def remove_nexus_annotations(path: str) -> str:
+    def add_dataset(
+        self,
+        hdf5_path: str,
+        archive_path: str,
+        data: Any,
+        lazy: bool = True,
+    ):
         """
-        Remove the nexus related annotations from the dataset path.
-        For e.g.,
-        '/ENTRY[entry]/experiment_result/intensity' -> 
-        '/entry/experiment_result/intensity'
+        Add a dataset to the HDF5 file. The dataset is written lazily (default) when
+        the `write_file` method is called. The `hdf5_path` is validated against the
+        `valid_dataset_paths` if provided before adding the
+        data.
 
         Args:
-            path (str): The dataset path with nexus annotations.
-
-        Returns:
-            str: The dataset path without nexus annotations.
+            hdf5_path (str): The dataset path to be used in the HDF5 file.
+            archive_path (str): The path of the quantity in the archive.
+            data (Any): The data to be stored in the HDF5 file.
+            lazy (bool): If True, the file is not written immediately.
         """
-        if not path:
-            return path
+        if self.valid_dataset_paths:
+            if hdf5_path not in self.valid_dataset_paths:
+                raise ValidationError(f'Invalid dataset path "{hdf5_path}".')
 
-        pattern = r'.*\[.*\]'
-        new_path = ''
-        for part in path.split('/')[1:]:
-            if re.match(pattern, part):
-                new_path += '/' + part.split('[')[0].strip().lower()
-            else:
-                new_path += '/' + part
-        new_path = new_path.replace('.nxs', '.h5')
-        return new_path
+        # handle the pint.Quantity and add data
+        if isinstance(data, pint.Quantity):
+            self.hdf5_data_dict[hdf5_path] = data.magnitude
+            self.hdf5_data_dict[f'{hdf5_path}/@units'] = str(data.units)
+        else:
+            self.hdf5_data_dict[hdf5_path] = data
+        ref = (
+            f'/uploads/{self.archive.m_context.upload_id}/raw'
+            f'/{self.data_file}#{hdf5_path}'
+        )
+        self.hdf5_references[archive_path] = ref
+
+        if not lazy:
+            self.write_file()
+
+    def write_file(self):
+        """
+        Method for creating an auxiliary file to store big data arrays outside the
+        main archive file (e.g. HDF5, NeXus).
+        """
+        try:
+            if self.data_file.endswith('.h5'):
+                self.data_file = self.data_file.replace('.h5', '.nxs')
+            self.write_nx_file()
+        except Exception:
+            self.logger.warning('Error creating nexus file. Creating h5 file instead')
+            if self.data_file.endswith('.nxs'):
+                self.data_file = self.data_file.replace('.nxs', '.h5')
+            self.write_hdf5_file()
+
+        # add the references for the HDF5Reference quantities
+        for archive_path, hdf5_path in self.hdf5_references.items():
+            self._set_hdf5_reference(self.archive, archive_path, hdf5_path)
+
+        # reset hdf5 data dict and references
+        self.hdf5_data_dict = collections.OrderedDict()
+        self.hdf5_references = collections.OrderedDict()
 
     def _write_nx_file(self):
         """
-        Method for creating a NeXus file which contains the array data along with other
-        archive data in a NeXus view.
+        Method for creating a NeXus file. Additional data from the archive is added
+        to the `hdf5_data_dict` before creating the nexus file. This provides a NeXus
+        view of the data in addition to storing array data.
         """
         raise NotImplementedError('Method `write_nx_file` is not implemented.')
         # TODO add archive data to `hdf5_data_dict` before creating the nexus file. Use
@@ -289,17 +326,16 @@ class AuxiliaryHDF5Handler:
 
     def _write_hdf5_file(self):
         """
-        Method for creating an HDF5 file which contains the array data.
+        Method for creating an HDF5 file.
         """
-
-        # pivot from .nxs to .h5
+        # remove the nexus annotations from the dataset paths if any
         for archive_path, hdf5_path in self.hdf5_references.items():
-            self.hdf5_references[archive_path] = self.remove_nexus_annotations(
+            self.hdf5_references[archive_path] = self._remove_nexus_annotations(
                 hdf5_path
             )
         tmp_dict = {}
         for key, value in self.hdf5_data_dict.items():
-            tmp_dict[self.remove_nexus_annotations(key)] = value
+            tmp_dict[self._remove_nexus_annotations(key)] = value
         self.hdf5_data_dict = tmp_dict
 
         # create the HDF5 file
@@ -339,33 +375,37 @@ class AuxiliaryHDF5Handler:
                         # group.attrs['signal'] = 'value'
                         # group.attrs['NX_class'] = 'NXdata'
 
-    def write_file(self):
+    @staticmethod
+    def _remove_nexus_annotations(path: str) -> str:
         """
-        Method for creating an auxiliary file to store big data arrays outside the
-        main archive file (e.g. HDF5, NeXus).
+        Remove the nexus related annotations from the dataset path.
+        For e.g.,
+        '/ENTRY[entry]/experiment_result/intensity' ->
+        '/entry/experiment_result/intensity'
+
+        Args:
+            path (str): The dataset path with nexus annotations.
+
+        Returns:
+            str: The dataset path without nexus annotations.
         """
-        try:
-            if self.data_file.endswith('.h5'):
-                self.data_file = self.data_file.replace('.h5', '.nxs')
-            self.write_nx_file()
-        except Exception:
-            self.logger.warning('Error creating nexus file. Creating h5 file instead')
-            if self.data_file.endswith('.nxs'):
-                self.data_file = self.data_file.replace('.nxs', '.h5')
-            self.write_hdf5_file()
+        if not path:
+            return path
 
-        # add the references for the HDF5Reference quantities
-        for archive_path, hdf5_path in self.hdf5_references.items():
-            self.set_hdf5_reference(self.archive, archive_path, hdf5_path)
-
-        # reset hdf5 data dict and references
-        self.hdf5_data_dict = collections.OrderedDict()
-        self.hdf5_references = collections.OrderedDict()
+        pattern = r'.*\[.*\]'
+        new_path = ''
+        for part in path.split('/')[1:]:
+            if re.match(pattern, part):
+                new_path += '/' + part.split('[')[0].strip().lower()
+            else:
+                new_path += '/' + part
+        new_path = new_path.replace('.nxs', '.h5')
+        return new_path
 
     @staticmethod
-    def set_hdf5_reference(section: 'Section', path: str, ref: str):
+    def _set_hdf5_reference(section: 'Section', path: str, ref: str):
         """
-        Method for setting the HDF5Reference of a quantity in a section. It can handle
+        Method for setting a HDF5Reference quantity in a section. It can handle
         nested quantities and repeatable sections, provided that the quantity itself
         is of type `HDF5Reference`.
         For example, one can set the reference for a quantity path like
@@ -392,43 +432,3 @@ class AuxiliaryHDF5Handler:
             attr.m_get_quantity_definition(quantity_name).type, HDF5Reference
         ):
             attr.m_set(quantity_name, ref)
-
-    def add_dataset(
-        self,
-        hdf5_path: str,
-        archive_path: str,
-        data: Any,
-        lazy: bool = True,
-    ):
-        """
-        Add a dataset to the HDF5 file. The dataset is written lazily (default) when
-        the `write_file` method is called. The `hdf5_path` is validated against the 
-        `valid_dataset_paths` if provided before adding the
-        data.
-
-        Args:
-            hdf5_path (str): The dataset path to be used in the HDF5 file.
-            archive_path (str): The path of the quantity in the archive.
-            data (Any): The data to be stored in the HDF5 file.
-            lazy (bool): If True, the file is not written immediately.
-        """
-        if self.valid_dataset_paths:
-            if hdf5_path not in self.valid_dataset_paths:
-                raise ValidationError(
-                    f'Invalid dataset path "{hdf5_path}".'
-                )
-
-        # handle the pint.Quantity and add data
-        if isinstance(data, pint.Quantity):
-            self.hdf5_data_dict[hdf5_path] = data.magnitude
-            self.hdf5_data_dict[f'{hdf5_path}/@units'] = str(data.units)
-        else:
-            self.hdf5_data_dict[hdf5_path] = data
-        ref = (
-            f'/uploads/{self.archive.m_context.upload_id}/raw'
-            f'/{self.data_file}#{hdf5_path}'
-        )
-        self.hdf5_references[archive_path] = ref
-
-        if not lazy:
-            self.write_file()
