@@ -15,7 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import collections
 import os.path
 from typing import (
     TYPE_CHECKING,
@@ -23,6 +22,7 @@ from typing import (
 )
 
 import numpy as np
+from nomad.datamodel.hdf5 import HDF5Reference
 
 if TYPE_CHECKING:
     from nomad.datamodel.data import (
@@ -186,3 +186,25 @@ def set_data(obj, **kwargs):
     for key, value in kwargs.items():
         if hasattr(obj, key):
             setattr(obj, key, value)
+
+def read_hdf5_dataset(archive, key: str) -> Any:
+    """
+    Get the data for the quantity. If the quantity is a HDF5Reference, read the dataset
+    and corresponding units if available, and return a pint.Quantity.
+
+    Args:
+        obj (Any): The object to get the data from.
+        key (str): The key of the quantity.
+
+    Returns:
+        Any: The data for the quantity.
+    """
+    if not key:
+        return
+
+    try:
+        value = HDF5Reference.read_dataset(archive, key)
+    except KeyError:
+        return None
+
+    return value

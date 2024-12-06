@@ -68,6 +68,7 @@ from nomad.metainfo import (
     Section,
     SubSection,
 )
+from nomad.units import ureg
 from scipy.interpolate import griddata
 
 from nomad_measurements.general import (
@@ -77,6 +78,7 @@ from nomad_measurements.utils import (
     get_bounding_range_2d,
     get_data,
     merge_sections,
+    read_hdf5_dataset,
     set_data,
 )
 from nomad_measurements.xrd.nx import (
@@ -503,15 +505,21 @@ class XRDResult1D(XRDResult):
                 self.name = f'{self.scan_axis} Scan Result'
             else:
                 self.name = 'XRD Scan Result'
-        q_norm = get_data(self, 'q_norm')
-        two_theta = get_data(self, 'two_theta')
+
         if self.source_peak_wavelength is not None:
+            q_norm = read_hdf5_dataset(archive, self.q_norm)
+            if q_norm is not None:
+                q_norm *= ureg('1/angstrom')
+            two_theta = read_hdf5_dataset(archive, self.two_theta)
+            if two_theta is not None:
+                two_theta *= ureg('degree')
             q_norm, two_theta = calculate_two_theta_or_q(
                 wavelength=self.source_peak_wavelength,
                 two_theta=two_theta,
                 q=q_norm,
             )
-            set_data(self, q_norm=q_norm, two_theta=two_theta)
+            
+            # set_data(self, q_norm=q_norm, two_theta=two_theta)
 
 
 class XRDResultRSM(XRDResult):
@@ -796,14 +804,23 @@ class XRayDiffraction(Measurement):
         if not archive.results.properties.structural:
             diffraction_patterns = []
             for result in self.results:
-                intensity = get_data(result, 'intensity')
+                intensity = read_hdf5_dataset(archive, result.intensity)
+                if intensity is not None:
+                    intensity *= ureg('dimensionless')
                 if intensity is None or len(intensity) != 1:
+                    two_theta = read_hdf5_dataset(archive, result.two_theta)
+                    if two_theta is not None:
+                        two_theta *= ureg('degree')
+                    q_norm = read_hdf5_dataset(archive, result.q_norm)
+                    if q_norm is not None:
+                        q_norm *= ureg('1/angstrom')
+
                     diffraction_patterns.append(
                         DiffractionPattern(
                             incident_beam_wavelength=result.source_peak_wavelength,
-                            two_theta_angles=get_data(result, 'two_theta'),
-                            intensity=result.intensity,
-                            q_vector=get_data(result, 'q_norm'),
+                            two_theta_angles=two_theta,
+                            intensity=intensity,
+                            q_vector=q_norm,
                         )
                     )
             archive.results.properties.structural = StructuralProperties(
