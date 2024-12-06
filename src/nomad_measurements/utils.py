@@ -397,44 +397,33 @@ class AuxiliaryHDF5Handler:
         self,
         hdf5_path: str,
         archive_path: str,
-        value: Any,
+        data: Any,
         lazy: bool = True,
-        validate: bool = False,
     ):
         """
         Add a dataset to the HDF5 file. The dataset is written lazily (default) when
-        the `write_file` method is called. If `validate` is True, the `hdf5_path` is
-        validated against the `valid_dataset_paths` instance variable before adding the
-        value.
+        the `write_file` method is called. The `hdf5_path` is validated against the 
+        `valid_dataset_paths` if provided before adding the
+        data.
 
         Args:
             hdf5_path (str): The dataset path to be used in the HDF5 file.
             archive_path (str): The path of the quantity in the archive.
-            value (Any): The value to be stored in the HDF5 file.
+            data (Any): The data to be stored in the HDF5 file.
             lazy (bool): If True, the file is not written immediately.
-            validate (bool): If True, the `hdf5_path` is validated against the
-                `valid_dataset_paths` instance variable before adding the value.
         """
-        if validate:
-            if not self.valid_dataset_paths:
-                self.logger.warning(
-                    f'Unable to add "{hdf5_path}" to HDF5 file as no valid '
-                    'collection of dataset paths found.'
-                )
-                return
+        if self.valid_dataset_paths:
             if hdf5_path not in self.valid_dataset_paths:
-                self.logger.warning(
-                    f'Unable to add "{hdf5_path}" to HDF5 file as the dataset path '
-                    'is not in the list of valid dataset paths.'
+                raise ValidationError(
+                    f'Invalid dataset path "{hdf5_path}".'
                 )
-                return
 
         # handle the pint.Quantity and add data
-        if isinstance(value, pint.Quantity):
-            self.hdf5_data_dict[hdf5_path] = value.magnitude
-            self.hdf5_data_dict[f'{hdf5_path}/@units'] = str(value.units)
+        if isinstance(data, pint.Quantity):
+            self.hdf5_data_dict[hdf5_path] = data.magnitude
+            self.hdf5_data_dict[f'{hdf5_path}/@units'] = str(data.units)
         else:
-            self.hdf5_data_dict[hdf5_path] = value
+            self.hdf5_data_dict[hdf5_path] = data
         ref = (
             f'/uploads/{self.archive.m_context.upload_id}/raw'
             f'/{self.data_file}#{hdf5_path}'
