@@ -161,37 +161,6 @@ def get_bounding_range_2d(ax1, ax2):
     return ax1_range, ax2_range
 
 
-def get_data(obj, key: str) -> Any:
-    """
-    Get the data for the quantity. If the quantity is a HDF5Reference, read the dataset
-    and corresponding units if available, and return a pint.Quantity.
-
-    Args:
-        obj (Any): The object to get the data from.
-        key (str): The key of the quantity.
-
-    Returns:
-        Any: The data for the quantity.
-    """
-    return getattr(obj, key, None)
-
-
-def set_data(obj, **kwargs):
-    """
-    Set the data for the quantity. If the quantity is a HDF5Reference, the new value is
-    set in the HDF5 file at the corresponding path.
-
-    Args:
-        obj (Any): The object to set the data for.
-    """
-    if not kwargs:
-        raise ValueError('At least one keyword argument must be provided.')
-
-    for key, value in kwargs.items():
-        if hasattr(obj, key):
-            setattr(obj, key, value)
-
-
 class AuxiliaryHDF5Handler:
     """
     Class for handling the creation of auxiliary files to store big data arrays outside
@@ -270,9 +239,9 @@ class AuxiliaryHDF5Handler:
 
     def read_dataset(self, path: str):
         """
-        Returns the dataset at the given path. If the quantity has `units` as an attribute,
-        tries to returns a `pint.Quantity`. Before returning the dataset, the method
-        also writes the file with any pending datasets.
+        Returns the dataset at the given path. If the quantity has `units` as an
+        attribute, tries to returns a `pint.Quantity`. Before returning the dataset, the
+        method also writes the file with any pending datasets.
 
         Args:
             path (str): The dataset path in the HDF5 file.
