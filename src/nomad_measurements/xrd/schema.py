@@ -719,7 +719,9 @@ class XRDResultRSM(XRDResult):
 
         if self.source_peak_wavelength is not None:
             for var_axis in ['omega', 'chi', 'phi']:
-                var_axis_value = get_data(self, var_axis)
+                var_axis_value = HDF5Reference.read_dataset(
+                    archive, getattr(self, var_axis)
+                )
                 if (
                     var_axis_value is not None
                     and len(np.unique(var_axis_value.magnitude)) > 1
@@ -1161,9 +1163,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         Method for backward compatibility.
         """
         # Migration to using HFD5References: removing exisiting results
-        if self.results:
+        if self.get('results'):
             self.results = []
-        if self.figures:
+        if self.get('figures'):
             del self.figures
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
