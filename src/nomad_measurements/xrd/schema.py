@@ -339,8 +339,15 @@ class XRDResult1D(XRDResult):
             (dict, dict): line_linear, line_log
         """
         plots = []
-        two_theta = archive.hdf5_handler.read_dataset(self.two_theta)
-        intensity = archive.hdf5_handler.read_dataset(self.intensity)
+
+        try:
+            hdf5_handler = self.m_parent.hdf5_handler
+            assert isinstance(hdf5_handler, AuxiliaryHDF5Handler)
+        except (AttributeError, AssertionError):
+            return plots
+
+        two_theta = hdf5_handler.read_dataset(self.two_theta)
+        intensity = hdf5_handler.read_dataset(self.intensity)
         if two_theta is None or intensity is None:
             return plots
 
@@ -431,7 +438,7 @@ class XRDResult1D(XRDResult):
             )
         )
 
-        q_norm = archive.hdf5_handler.read_dataset(self.q_norm)
+        q_norm = hdf5_handler.read_dataset(self.q_norm)
         if q_norm is None:
             return plots
 
@@ -499,11 +506,17 @@ class XRDResult1D(XRDResult):
             else:
                 self.name = 'XRD Scan Result'
 
+        try:
+            hdf5_handler = self.m_parent.hdf5_handler
+            assert isinstance(hdf5_handler, AuxiliaryHDF5Handler)
+        except (AttributeError, AssertionError):
+            return
+
         if self.source_peak_wavelength is not None:
-            q_norm = archive.hdf5_handler.read_dataset(self.q_norm)
+            q_norm = hdf5_handler.read_dataset(self.q_norm)
             if q_norm is not None:
                 q_norm *= ureg('1/angstrom')
-            two_theta = archive.hdf5_handler.read_dataset(self.two_theta)
+            two_theta = hdf5_handler.read_dataset(self.two_theta)
             if two_theta is not None:
                 two_theta *= ureg('degree')
             q_norm, two_theta = calculate_two_theta_or_q(
@@ -511,12 +524,12 @@ class XRDResult1D(XRDResult):
                 two_theta=two_theta,
                 q=q_norm,
             )
-            archive.hdf5_handler.add_dataset(
+            hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/q_norm',
                 data=q_norm,
                 archive_path='data.results[0].q_norm',
             )
-            archive.hdf5_handler.add_dataset(
+            hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/two_theta',
                 data=two_theta,
                 archive_path='data.results[0].two_theta',
@@ -551,9 +564,16 @@ class XRDResultRSM(XRDResult):
             (dict, dict): json_2theta_omega, json_q_vector
         """
         plots = []
-        two_theta = archive.hdf5_handler.read_dataset(self.two_theta)
-        intensity = archive.hdf5_handler.read_dataset(self.intensity)
-        omega = archive.hdf5_handler.read_dataset(self.omega)
+
+        try:
+            hdf5_handler = self.m_parent.hdf5_handler
+            assert isinstance(hdf5_handler, AuxiliaryHDF5Handler)
+        except (AttributeError, AssertionError):
+            return plots
+
+        two_theta = hdf5_handler.read_dataset(self.two_theta)
+        intensity = hdf5_handler.read_dataset(self.intensity)
+        omega = hdf5_handler.read_dataset(self.omega)
         if two_theta is None or intensity is None or omega is None:
             return plots
 
@@ -629,8 +649,8 @@ class XRDResultRSM(XRDResult):
         )
 
         # Plot for RSM in Q-vectors
-        q_parallel = archive.hdf5_handler.read_dataset(self.q_parallel)
-        q_perpendicular = archive.hdf5_handler.read_dataset(self.q_perpendicular)
+        q_parallel = hdf5_handler.read_dataset(self.q_parallel)
+        q_perpendicular = hdf5_handler.read_dataset(self.q_perpendicular)
         if q_parallel is not None and q_perpendicular is not None:
             x = q_parallel.to('1/angstrom').magnitude.flatten()
             y = q_perpendicular.to('1/angstrom').magnitude.flatten()
@@ -720,11 +740,15 @@ class XRDResultRSM(XRDResult):
         if self.name is None:
             self.name = 'RSM Scan Result'
 
+        try:
+            hdf5_handler = self.m_parent.hdf5_handler
+            assert isinstance(hdf5_handler, AuxiliaryHDF5Handler)
+        except (AttributeError, AssertionError):
+            return
+
         if self.source_peak_wavelength is not None:
             for var_axis in ['omega', 'chi', 'phi']:
-                var_axis_value = archive.hdf5_handler.read_dataset(
-                    getattr(self, var_axis)
-                )
+                var_axis_value = hdf5_handler.read_dataset(getattr(self, var_axis))
                 if (
                     var_axis_value is not None
                     and len(np.unique(var_axis_value.magnitude)) > 1
@@ -734,12 +758,12 @@ class XRDResultRSM(XRDResult):
                         two_theta=self.two_theta * np.ones_like(self.intensity),
                         omega=var_axis_value,
                     )
-                    archive.hdf5_handler.add_dataset(
+                    hdf5_handler.add_dataset(
                         path='/ENTRY[entry]/experiment_result/q_parallel',
                         data=q_parallel,
                         archive_path='data.results[0].q_parallel',
                     )
-                    archive.hdf5_handler.add_dataset(
+                    hdf5_handler.add_dataset(
                         path='/ENTRY[entry]/experiment_result/q_perpendicular',
                         data=q_perpendicular,
                         archive_path='data.results[0].q_perpendicular',
@@ -811,17 +835,29 @@ class XRayDiffraction(Measurement):
             archive.results = Results()
         if not archive.results.properties:
             archive.results.properties = Properties()
+        if not archive.results.method:
+            archive.results.method = Method(
+                method_name='XRD',
+                measurement=MeasurementMethod(
+                    xrd=XRDMethod(diffraction_method_name=self.diffraction_method_name)
+                ),
+            )
+
+        try:
+            hdf5_handler = self.hdf5_handler
+        except AttributeError:
+            return
         if not archive.results.properties.structural:
             diffraction_patterns = []
             for result in self.results:
-                intensity = archive.hdf5_handler.read_dataset(result.intensity)
+                intensity = hdf5_handler.read_dataset(result.intensity)
                 if intensity is not None:
                     intensity *= ureg('dimensionless')
                 if intensity is None or len(intensity) != 1:
-                    two_theta = archive.hdf5_handler.read_dataset(result.two_theta)
+                    two_theta = hdf5_handler.read_dataset(result.two_theta)
                     if two_theta is not None:
                         two_theta *= ureg('degree')
-                    q_norm = archive.hdf5_handler.read_dataset(result.q_norm)
+                    q_norm = hdf5_handler.read_dataset(result.q_norm)
                     if q_norm is not None:
                         q_norm *= ureg('1/angstrom')
 
@@ -835,13 +871,6 @@ class XRayDiffraction(Measurement):
                     )
             archive.results.properties.structural = StructuralProperties(
                 diffraction_pattern=diffraction_patterns
-            )
-        if not archive.results.method:
-            archive.results.method = Method(
-                method_name='XRD',
-                measurement=MeasurementMethod(
-                    xrd=XRDMethod(diffraction_method_name=self.diffraction_method_name)
-                ),
             )
 
 
@@ -1014,6 +1043,13 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         """
         self.backward_compatibility()
         if self.data_file is not None:
+            self.auxiliary_file = f'{self.data_file}.nxs'
+            self.hdf5_handler = AuxiliaryHDF5Handler(
+                filename=self.auxiliary_file,
+                archive=archive,
+                logger=logger,
+                valid_dataset_paths=NEXUS_DATASET_PATHS,
+            )
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:
                 logger.warn(
@@ -1022,14 +1058,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             else:
                 with archive.m_context.raw_file(self.data_file) as file:
                     xrd_dict = read_function(file.name, logger)
-                self.auxiliary_file = f'{self.data_file}.nxs'
-                self.hdf5_handler = AuxiliaryHDF5Handler(
-                    filename=self.auxiliary_file,
-                    archive=archive,
-                    logger=logger,
-                    valid_dataset_paths=NEXUS_DATASET_PATHS,
-                )
-                archive.hdf5_handler = self.hdf5_handler
                 write_function(xrd_dict, archive, logger)
                 self.hdf5_handler.write_file()
         super().normalize(archive, logger)
