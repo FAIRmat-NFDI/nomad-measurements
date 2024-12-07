@@ -334,7 +334,7 @@ class AuxiliaryHDF5Handler:
                 if key.endswith('@units'):
                     value_is_unit = True
                     # remove the '@units' suffix
-                    key = key.rsplit('/', 1)[0]
+                    key = key.rsplit('/', 1)[0]  # noqa: PLW2901
 
                 group_name, dataset_name = key.rsplit('/', 1)
                 group = h5.require_group(group_name)

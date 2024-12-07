@@ -29,6 +29,7 @@ from fairmat_readers_xrd import (
     read_panalytical_xrdml,
     read_rigaku_rasx,
 )
+from nomad.config import config
 from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
@@ -65,7 +66,6 @@ from nomad.metainfo import (
     Section,
     SubSection,
 )
-from nomad.units import ureg
 from scipy.interpolate import griddata
 
 from nomad_measurements.general import (
@@ -87,18 +87,16 @@ if TYPE_CHECKING:
     )
 
 
-from nomad.config import config
-
 configuration = config.get_plugin_entry_point('nomad_measurements.xrd:schema')
 
 m_package = SchemaPackage(aliases=['nomad_measurements.xrd.parser.parser'])
 
 
 def calculate_two_theta_or_q(
-    wavelength: 'pint.Quantity',
-    q: 'pint.Quantity' = None,
-    two_theta: 'pint.Quantity' = None,
-) -> tuple['pint.Quantity', 'pint.Quantity']:
+    wavelength: pint.Quantity,
+    q: pint.Quantity = None,
+    two_theta: pint.Quantity = None,
+) -> tuple[pint.Quantity, pint.Quantity]:
     """
     Calculate the two-theta array from the scattering vector (q) or vice-versa,
     given the wavelength of the X-ray source.
@@ -120,10 +118,10 @@ def calculate_two_theta_or_q(
     return q, two_theta
 
 
-def calculate_q_vectors_RSM(
-    wavelength: 'pint.Quantity',
-    two_theta: 'pint.Quantity',
-    omega: 'pint.Quantity',
+def calculate_q_vectors_rsm(
+    wavelength: pint.Quantity,
+    two_theta: pint.Quantity,
+    omega: pint.Quantity,
 ):
     """
     Calculate the q-vectors for RSM scans in coplanar configuration.
@@ -326,7 +324,7 @@ class XRDResult1D(XRDResult):
 
     m_def = Section()
 
-    def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+    def generate_plots(self):
         """
         Plot the 1D diffractogram.
 
@@ -547,7 +545,7 @@ class XRDResultRSM(XRDResult):
         description='The scattering vector *Q_perpendicular* of the diffractogram',
     )
 
-    def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+    def generate_plots(self):
         """
         Plot the 2D RSM diffractogram.
 
@@ -751,7 +749,7 @@ class XRDResultRSM(XRDResult):
                 ):
                     two_theta = hdf5_handler.read_dataset(self.two_theta)
                     intensity = hdf5_handler.read_dataset(self.intensity)
-                    q_parallel, q_perpendicular = calculate_q_vectors_RSM(
+                    q_parallel, q_perpendicular = calculate_q_vectors_rsm(
                         wavelength=self.source_peak_wavelength,
                         two_theta=two_theta * np.ones_like(intensity),
                         omega=var_axis_value,
