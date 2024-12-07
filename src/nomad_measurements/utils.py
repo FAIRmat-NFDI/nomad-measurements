@@ -27,6 +27,7 @@ import h5py
 import numpy as np
 import pint
 from nomad.datamodel.hdf5 import HDF5Reference
+from nomad.units import ureg
 
 if TYPE_CHECKING:
     from nomad.datamodel.data import (
@@ -246,21 +247,25 @@ class AuxiliaryHDF5Handler:
         Args:
             path (str): The dataset path in the HDF5 file.
         """
-        # TODO handle the case when dataset is not found
-        # TODO if units are available, return a pint.Quantity
         if self.hdf5_data_dict or self.hdf5_references:
             self.write_file()
         if path is None:
             return
-        try:
-            value = HDF5Reference.read_dataset(self.archive, path)
-        except KeyError:
-            return None
-        # file_path, dataset_path = path.split('#')
-        # with archive.m_context.raw_file(file_path, 'r') as h5file:
-        #     with h5py.File(h5file.name, 'r') as h5:
-        #         value = h5[dataset_path]
-
+        file_path, dataset_path = path.split('#')
+        file_name = file_path.rsplit('/raw/', 1)[1]
+        with self.archive.m_context.raw_file(file_name, 'r') as h5file:
+            h5 = h5py.File(h5file.name, 'r')
+            if dataset_path not in h5:
+                self.logger.warning(f'Dataset "{dataset_path}" not found.')
+                h5.close()
+                return None
+            value = h5[dataset_path][...]
+            try:
+                units = h5[dataset_path].attrs['units']
+                value *= ureg(units)
+            except KeyError:
+                pass
+            h5.close()
         return value
 
     def write_file(self):
@@ -319,35 +324,35 @@ class AuxiliaryHDF5Handler:
 
         # create the HDF5 file
         with self.archive.m_context.raw_file(self.data_file, 'a') as h5file:
-            with h5py.File(h5file.name, 'a') as h5:
-                for key, value in self.hdf5_data_dict.items():
-                    if value is None:
-                        self.logger.warning(f'No data found for "{key}". Skipping.')
-                        continue
+            h5 = h5py.File(h5file.name, 'a')
+            for key, value in self.hdf5_data_dict.items():
+                if value is None:
+                    self.logger.warning(f'No data found for "{key}". Skipping.')
+                    continue
 
-                    value_is_unit = False
-                    if key.endswith('@units'):
-                        value_is_unit = True
-                        # remove the '@units' suffix
-                        key = key.rsplit('/', 1)[0]
+                value_is_unit = False
+                if key.endswith('@units'):
+                    value_is_unit = True
+                    # remove the '@units' suffix
+                    key = key.rsplit('/', 1)[0]
 
-                    group_name, dataset_name = key.rsplit('/', 1)
-                    group = h5.require_group(group_name)
+                group_name, dataset_name = key.rsplit('/', 1)
+                group = h5.require_group(group_name)
 
-                    if key in h5:
-                        if value_is_unit:
-                            group[dataset_name].attrs['units'] = str(value)
-                        else:
-                            group[dataset_name][...] = value
+                if key in h5:
+                    if value_is_unit:
+                        group[dataset_name].attrs['units'] = str(value)
                     else:
-                        group.create_dataset(
-                            name=dataset_name,
-                            data=value,
-                            compression='gzip',
-                        )
-                        # group.attrs['axes'] = 'time'
-                        # group.attrs['signal'] = 'value'
-                        # group.attrs['NX_class'] = 'NXdata'
+                        group[dataset_name][...] = value
+                else:
+                    group.create_dataset(
+                        name=dataset_name,
+                        data=value,
+                    )
+                    # group.attrs['axes'] = 'time'
+                    # group.attrs['signal'] = 'value'
+                    # group.attrs['NX_class'] = 'NXdata'
+            h5.close()
 
     @staticmethod
     def _remove_nexus_annotations(path: str) -> str:

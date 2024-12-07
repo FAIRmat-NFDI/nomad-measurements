@@ -514,11 +514,7 @@ class XRDResult1D(XRDResult):
 
         if self.source_peak_wavelength is not None:
             q_norm = hdf5_handler.read_dataset(self.q_norm)
-            if q_norm is not None:
-                q_norm *= ureg('1/angstrom')
             two_theta = hdf5_handler.read_dataset(self.two_theta)
-            if two_theta is not None:
-                two_theta *= ureg('degree')
             q_norm, two_theta = calculate_two_theta_or_q(
                 wavelength=self.source_peak_wavelength,
                 two_theta=two_theta,
@@ -753,6 +749,8 @@ class XRDResultRSM(XRDResult):
                     var_axis_value is not None
                     and len(np.unique(var_axis_value.magnitude)) > 1
                 ):
+                    two_theta = hdf5_handler.read_dataset(self.two_theta)
+                    intensity = hdf5_handler.read_dataset(self.intensity)
                     q_parallel, q_perpendicular = calculate_q_vectors_RSM(
                         wavelength=self.source_peak_wavelength,
                         two_theta=self.two_theta * np.ones_like(self.intensity),
@@ -851,16 +849,9 @@ class XRayDiffraction(Measurement):
             diffraction_patterns = []
             for result in self.results:
                 intensity = hdf5_handler.read_dataset(result.intensity)
-                if intensity is not None:
-                    intensity *= ureg('dimensionless')
                 if intensity is None or len(intensity) != 1:
                     two_theta = hdf5_handler.read_dataset(result.two_theta)
-                    if two_theta is not None:
-                        two_theta *= ureg('degree')
                     q_norm = hdf5_handler.read_dataset(result.q_norm)
-                    if q_norm is not None:
-                        q_norm *= ureg('1/angstrom')
-
                     diffraction_patterns.append(
                         DiffractionPattern(
                             incident_beam_wavelength=result.source_peak_wavelength,
