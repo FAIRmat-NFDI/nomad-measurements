@@ -753,7 +753,7 @@ class XRDResultRSM(XRDResult):
                     intensity = hdf5_handler.read_dataset(self.intensity)
                     q_parallel, q_perpendicular = calculate_q_vectors_RSM(
                         wavelength=self.source_peak_wavelength,
-                        two_theta=self.two_theta * np.ones_like(self.intensity),
+                        two_theta=two_theta * np.ones_like(intensity),
                         omega=var_axis_value,
                     )
                     hdf5_handler.add_dataset(
@@ -849,7 +849,7 @@ class XRayDiffraction(Measurement):
             diffraction_patterns = []
             for result in self.results:
                 intensity = hdf5_handler.read_dataset(result.intensity)
-                if intensity is None or len(intensity) != 1:
+                if len(intensity.shape) == 1:
                     two_theta = hdf5_handler.read_dataset(result.two_theta)
                     q_norm = hdf5_handler.read_dataset(result.q_norm)
                     diffraction_patterns.append(
