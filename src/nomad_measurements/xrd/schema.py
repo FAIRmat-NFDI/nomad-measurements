@@ -40,6 +40,7 @@ from nomad.datamodel.hdf5 import (
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
     ELNComponentEnum,
+    H5WebAnnotation,
 )
 from nomad.datamodel.metainfo.basesections import (
     CompositeSystemReference,
@@ -322,7 +323,7 @@ class XRDResult1D(XRDResult):
     Section containing the result of a 1D X-ray diffraction scan.
     """
 
-    m_def = Section()
+    m_def = Section(a_h5web=H5WebAnnotation(axes='two_theta', signal='intensity'))
 
     def generate_plots(self):
         """
@@ -528,6 +529,15 @@ class XRDResult1D(XRDResult):
                 data=two_theta,
                 archive_path='data.results[0].two_theta',
             )
+
+        hdf5_handler.add_attribute(
+            path='/ENTRY[entry]/experiment_result',
+            attrs=dict(
+                axes=['two_theta'],
+                signal='intensity',
+                NX_class='NXdata',
+            ),
+        )
 
 
 class XRDResultRSM(XRDResult):
