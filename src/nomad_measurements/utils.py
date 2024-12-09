@@ -202,6 +202,7 @@ class HDF5Handler:
         path: str,
         data: Any,
         archive_path: str = None,
+        attrs: dict = None,
         lazy: bool = True,
     ):
         """
@@ -224,18 +225,21 @@ class HDF5Handler:
                 self.logger.error(f'Invalid dataset path "{path}".')
                 return
 
+        dataset = dict(
+            data=data,
+            attrs=attrs if attrs else {},
+        )
         # handle the pint.Quantity and add data
         if isinstance(data, pint.Quantity):
-            self.hdf5_data_dict[path] = data.magnitude
-            self.hdf5_data_dict[f'{path}/@units'] = str(data.units)
-        else:
-            self.hdf5_data_dict[path] = data
-        ref = (
-            f'/uploads/{self.archive.m_context.upload_id}/raw'
-            f'/{self.data_file}#{path}'
-        )
+            dataset['data'] = data.magnitude
+            dataset['attrs'].update({'units': str(data.units)})
+
+        self.hdf5_data_dict[path] = dataset
         if archive_path:
-            self.hdf5_references[archive_path] = ref
+            self.hdf5_references[archive_path] = (
+                f'/uploads/{self.archive.m_context.upload_id}/raw'
+                f'/{self.data_file}#{path}'
+            )
 
         if not lazy:
             self.write_file()
@@ -328,32 +332,26 @@ class HDF5Handler:
         with self.archive.m_context.raw_file(self.data_file, 'a') as h5file:
             h5 = h5py.File(h5file.name, 'a')
             for key, value in self.hdf5_data_dict.items():
-                if value is None:
+                data, attrs = value['data'], value['attrs']
+                if data is None:
                     self.logger.warning(f'No data found for "{key}". Skipping.')
                     continue
-
-                value_is_unit = False
-                if key.endswith('@units'):
-                    value_is_unit = True
-                    # remove the '@units' suffix
-                    key = key.rsplit('/', 1)[0]  # noqa: PLW2901
 
                 group_name, dataset_name = key.rsplit('/', 1)
                 group = h5.require_group(group_name)
 
                 if key in h5:
-                    if value_is_unit:
-                        group[dataset_name].attrs['units'] = str(value)
-                    else:
-                        group[dataset_name][...] = value
+                    group[dataset_name][...] = data
                 else:
                     group.create_dataset(
                         name=dataset_name,
-                        data=value,
+                        data=data,
+                        compression='gzip',
                     )
                     # group.attrs['axes'] = 'time'
                     # group.attrs['signal'] = 'value'
                     # group.attrs['NX_class'] = 'NXdata'
+                group[dataset_name].attrs.update(attrs)
             h5.close()
 
     @staticmethod
