@@ -244,6 +244,26 @@ class HDF5Handler:
         if not lazy:
             self.write_file()
 
+    def add_attribute(
+        self,
+        path: str,
+        attrs: dict,
+    ):
+        """
+        Add an attribute to the dataset or group at the given path.
+        Args:
+            path (str): The dataset or group path in the HDF5 file.
+            attrs (dict): The attributes to be added.
+        """
+        self.write_file()
+        with self.archive.m_context.raw_file(self.data_file, 'a') as h5file:
+            h5 = h5py.File(h5file.name, 'a')
+            try:
+                h5[path].attrs.update(attrs)
+            except KeyError:
+                self.logger.warning(f'Path "{path}" not found to add attribute.')
+            h5.close()
+
     def read_dataset(self, path: str):
         """
         Returns the dataset at the given path. If the quantity has `units` as an
