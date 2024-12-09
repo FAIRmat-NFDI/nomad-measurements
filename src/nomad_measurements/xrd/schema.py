@@ -72,7 +72,7 @@ from nomad_measurements.general import (
     NOMADMeasurementsCategory,
 )
 from nomad_measurements.utils import (
-    AuxiliaryHDF5Handler,
+    HDF5Handler,
     get_bounding_range_2d,
     merge_sections,
 )
@@ -340,7 +340,7 @@ class XRDResult1D(XRDResult):
 
         try:
             hdf5_handler = self.m_parent.hdf5_handler
-            assert isinstance(hdf5_handler, AuxiliaryHDF5Handler)
+            assert isinstance(hdf5_handler, HDF5Handler)
         except (AttributeError, AssertionError):
             return plots
 
@@ -506,7 +506,7 @@ class XRDResult1D(XRDResult):
 
         try:
             hdf5_handler = self.m_parent.hdf5_handler
-            assert isinstance(hdf5_handler, AuxiliaryHDF5Handler)
+            assert isinstance(hdf5_handler, HDF5Handler)
         except (AttributeError, AssertionError):
             return
 
@@ -561,7 +561,7 @@ class XRDResultRSM(XRDResult):
 
         try:
             hdf5_handler = self.m_parent.hdf5_handler
-            assert isinstance(hdf5_handler, AuxiliaryHDF5Handler)
+            assert isinstance(hdf5_handler, HDF5Handler)
         except (AttributeError, AssertionError):
             return plots
 
@@ -736,7 +736,7 @@ class XRDResultRSM(XRDResult):
 
         try:
             hdf5_handler = self.m_parent.hdf5_handler
-            assert isinstance(hdf5_handler, AuxiliaryHDF5Handler)
+            assert isinstance(hdf5_handler, HDF5Handler)
         except (AttributeError, AssertionError):
             return
 
@@ -1033,7 +1033,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         self.backward_compatibility()
         if self.data_file is not None:
             self.auxiliary_file = f'{self.data_file}.nxs'
-            self.hdf5_handler = AuxiliaryHDF5Handler(
+            self.hdf5_handler = HDF5Handler(
                 filename=self.auxiliary_file,
                 archive=archive,
                 logger=logger,

@@ -162,7 +162,7 @@ def get_bounding_range_2d(ax1, ax2):
     return ax1_range, ax2_range
 
 
-class AuxiliaryHDF5Handler:
+class HDF5Handler:
     """
     Class for handling the creation of auxiliary files to store big data arrays outside
     the main archive file (e.g. HDF5, NeXus).
