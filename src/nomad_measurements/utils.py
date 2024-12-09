@@ -201,7 +201,7 @@ class AuxiliaryHDF5Handler:
         self,
         path: str,
         data: Any,
-        archive_path: str,
+        archive_path: str = None,
         lazy: bool = True,
     ):
         """
@@ -215,13 +215,14 @@ class AuxiliaryHDF5Handler:
             archive_path (str): The path of the quantity in the archive.
             lazy (bool): If True, the file is not written immediately.
         """
-        if not path or not archive_path:
-            self.logger.warning('Both `path` and `archive_path` must be provided.')
+        if not path:
+            self.logger.warning('HDF5 `path` must be provided.')
             return
 
         if self.valid_dataset_paths:
             if path not in self.valid_dataset_paths:
                 self.logger.error(f'Invalid dataset path "{path}".')
+                return
 
         # handle the pint.Quantity and add data
         if isinstance(data, pint.Quantity):
@@ -233,7 +234,8 @@ class AuxiliaryHDF5Handler:
             f'/uploads/{self.archive.m_context.upload_id}/raw'
             f'/{self.data_file}#{path}'
         )
-        self.hdf5_references[archive_path] = ref
+        if archive_path:
+            self.hdf5_references[archive_path] = ref
 
         if not lazy:
             self.write_file()
