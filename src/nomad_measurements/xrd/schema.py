@@ -321,7 +321,10 @@ class XRDResult1D(XRDResult):
     Section containing the result of a 1D X-ray diffraction scan.
     """
 
-    m_def = Section(a_h5web=H5WebAnnotation(axes='two_theta', signal='intensity'))
+    m_def = Section(
+        a_h5web=H5WebAnnotation(axes=['two_theta'], signal='intensity'),
+        # a_h5web=H5WebAnnotation(axes=['q_norm'], signal='intensity'),
+    )
 
     def generate_plots(self):
         """
@@ -536,6 +539,14 @@ class XRDResult1D(XRDResult):
                 NX_class='NXdata',
             ),
         )
+        # hdf5_handler.add_attribute(
+        #     path='/ENTRY[entry]/experiment_result',
+        #     attrs=dict(
+        #         axes=['q_norm'],
+        #         signal='intensity',
+        #         NX_class='NXdata',
+        #     ),
+        # )
 
 
 class XRDResultRSM(XRDResult):
@@ -543,7 +554,14 @@ class XRDResultRSM(XRDResult):
     Section containing the result of a Reciprocal Space Map (RSM) scan.
     """
 
-    m_def = Section()
+    m_def = Section(
+        a_h5web=H5WebAnnotation(
+            axes=['omega', 'chi', 'pi', 'two_theta'], signal='intensity'
+        )
+        # a_h5web=H5WebAnnotation(
+        #     axes=['q_parallel', 'q_perpendicular'], signal='intensity', paths=[]
+        # )
+    )
     q_parallel = Quantity(
         type=HDF5Reference,
         description='The scattering vector *Q_parallel* of the diffractogram',
@@ -772,7 +790,23 @@ class XRDResultRSM(XRDResult):
                         data=q_perpendicular,
                         archive_path='data.results[0].q_perpendicular',
                     )
-                    return
+                    break
+        hdf5_handler.add_attribute(
+            path='/ENTRY[entry]/experiment_result',
+            attrs=dict(
+                axes=[var_axis, 'two_theta'],
+                signal='intensity',
+                NX_class='NXdata',
+            ),
+        )
+        # hdf5_handler.add_attribute(
+        #     path='/ENTRY[entry]/experiment_result',
+        #     attrs=dict(
+        #         axes=['q_parallel', 'q_perpendicular'],
+        #         signal='intensity',
+        #         NX_class='NXdata',
+        #     ),
+        # )
 
 
 class XRayDiffraction(Measurement):
