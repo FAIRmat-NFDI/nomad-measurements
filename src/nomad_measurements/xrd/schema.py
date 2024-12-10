@@ -1055,6 +1055,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                     xrd_dict = read_function(file.name, logger)
                 write_function(xrd_dict, archive, logger)
                 self.hdf5_handler.write_file()
+                if self.hdf5_handler.data_file != self.auxiliary_file:
+                    self.auxiliary_file = self.hdf5_handler.data_file
         super().normalize(archive, logger)
 
         if self.results:
