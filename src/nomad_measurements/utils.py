@@ -203,6 +203,7 @@ class HDF5Handler:
         data: Any,
         archive_path: str = None,
         attrs: dict = None,
+        internal_reference: bool = False,
         lazy: bool = True,
     ):
         """
@@ -214,6 +215,8 @@ class HDF5Handler:
             path (str): The dataset path to be used in the HDF5 file.
             data (Any): The data to be stored in the HDF5 file.
             archive_path (str): The path of the quantity in the archive.
+            attrs (dict): The attributes to be added to the dataset.
+            internal_reference (bool): If True, the reference is set to the HDF5 dataset.
             lazy (bool): If True, the file is not written immediately.
         """
         if not path:
@@ -233,6 +236,7 @@ class HDF5Handler:
                 f'/{self.data_file}#{path}'
             ),
             archive_path=archive_path,
+            internal_reference=internal_reference,
         )
         # handle the pint.Quantity and add data
         if isinstance(data, pint.Quantity):
@@ -350,10 +354,20 @@ class HDF5Handler:
         with self.archive.m_context.raw_file(self.data_file, 'a') as h5file:
             h5 = h5py.File(h5file.name, 'a')
             for key, value in self.hdf5_datasets.items():
-                data, attrs = value['data'], value['attrs']
-                if data is None:
+                if value['data'] is None:
                     self.logger.warning(f'No data found for "{key}". Skipping.')
                     continue
+                elif value['internal_reference']:
+                    # resolve the internal reference
+                    try:
+                        data = h5[self._remove_nexus_annotations(value['data'])]
+                    except KeyError:
+                        self.logger.warning(
+                            f'Internal reference "{data}" not found. Skipping.'
+                        )
+                        continue
+                else:
+                    data = value['data']
 
                 group_name, dataset_name = key.rsplit('/', 1)
                 group = h5.require_group(group_name)
@@ -366,9 +380,7 @@ class HDF5Handler:
                         data=data,
                         compression='gzip',
                     )
-                    # TODO allow hard link creation for HDF5Reference quantities
-                    # h5[key] = h5[value]
-                group[dataset_name].attrs.update(attrs)
+                group[dataset_name].attrs.update(value['attrs'])
                 if value['archive_path'] is not None:
                     self._set_hdf5_reference(
                         self.archive, value['archive_path'], value['hdf5_path']
