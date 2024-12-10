@@ -223,10 +223,11 @@ class HDF5Handler:
             self.logger.warning('HDF5 `path` must be provided.')
             return
 
-        if self.valid_dataset_paths:
-            if path not in self.valid_dataset_paths:
-                self.logger.error(f'Invalid dataset path "{path}".')
-                return
+        # TODO add back validation
+        # if self.valid_dataset_paths:
+        #     if path not in self.valid_dataset_paths:
+        #         self.logger.error(f'Invalid dataset path "{path}".')
+        #         return
 
         dataset = dict(
             data=data,
