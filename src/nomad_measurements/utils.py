@@ -174,6 +174,7 @@ class HDF5Handler:
         archive: 'EntryArchive',
         logger: 'BoundLogger',
         valid_dataset_paths: list = None,
+        nexus: bool = False,
     ):
         """
         Initialize the handler.
@@ -183,6 +184,7 @@ class HDF5Handler:
             archive (EntryArchive): The NOMAD archive.
             logger (BoundLogger): A structlog logger.
             valid_dataset_paths (list): The list of valid dataset paths.
+            nexus (bool): If True, the file is created as a NeXus file.
         """
         if not filename.endswith(('.nxs', '.h5')):
             raise ValueError('Only .h5 or .nxs files are supported.')
@@ -193,6 +195,7 @@ class HDF5Handler:
         self.valid_dataset_paths = []
         if valid_dataset_paths:
             self.valid_dataset_paths = valid_dataset_paths
+        self.nexus = nexus
 
         self.hdf5_datasets = collections.OrderedDict()
         self.hdf5_attributes = collections.OrderedDict()
@@ -307,17 +310,17 @@ class HDF5Handler:
         Method for creating an auxiliary file to store big data arrays outside the
         main archive file (e.g. HDF5, NeXus).
         """
-        # TODO: The selection made in the first instance of using `write_file` should
-        # be remembered and used for subsequent calls to `write_file`.
-        try:
-            if self.data_file.endswith('.h5'):
-                self.data_file = self.data_file.replace('.h5', '.nxs')
-            self._write_nx_file()
-        except Exception:
-            # TODO also modify the name of the datafile in the archive.
-            self.logger.warning('Error creating nexus file. Creating h5 file instead.')
-            if self.data_file.endswith('.nxs'):
-                self.data_file = self.data_file.replace('.nxs', '.h5')
+        if self.nexus:
+            try:
+                self._write_nx_file()
+            except Exception as e:
+                self.nexus = False
+                self.logger.warning(
+                    f'Encountered "{e}" error while creating nexus file. '
+                    'Creating h5 file instead.'
+                )
+                self._write_hdf5_file()
+        else:
             self._write_hdf5_file()
 
     def _write_nx_file(self):
@@ -326,6 +329,8 @@ class HDF5Handler:
         to the `hdf5_data_dict` before creating the nexus file. This provides a NeXus
         view of the data in addition to storing array data.
         """
+        if self.data_file.endswith('.h5'):
+            self.data_file = self.data_file.replace('.h5', '.nxs')
         raise NotImplementedError('Method `write_nx_file` is not implemented.')
         # TODO add archive data to `hdf5_data_dict` before creating the nexus file. Use
         # `populate_hdf5_data_dict` method for each quantity that is needed in .nxs
@@ -337,6 +342,8 @@ class HDF5Handler:
         """
         Method for creating an HDF5 file.
         """
+        if self.data_file.endswith('.nxs'):
+            self.data_file = self.data_file.replace('.nxs', '.h5')
         if not self.hdf5_datasets and not self.hdf5_attributes:
             return
         # remove the nexus annotations from the dataset paths if any
@@ -394,7 +401,7 @@ class HDF5Handler:
                     self.logger.warning(f'Path "{key}" not found to add attribute.')
             h5.close()
 
-        # reset hdf5 data dict, references, atttributes
+        # reset hdf5 datasets and atttributes
         self.hdf5_datasets = collections.OrderedDict()
         self.hdf5_attributes = collections.OrderedDict()
 

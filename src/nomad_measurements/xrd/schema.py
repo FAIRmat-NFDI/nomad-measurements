@@ -1216,6 +1216,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                 archive=archive,
                 logger=logger,
                 valid_dataset_paths=NEXUS_DATASET_PATHS,
+                nexus=True,
             )
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:
