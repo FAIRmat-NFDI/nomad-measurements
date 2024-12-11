@@ -204,6 +204,7 @@ class HDF5Handler:
         archive_path: str = None,
         attrs: dict = None,
         internal_reference: bool = False,
+        validate_path: bool = True,
         lazy: bool = True,
     ):
         """
@@ -217,17 +218,18 @@ class HDF5Handler:
             archive_path (str): The path of the quantity in the archive.
             attrs (dict): The attributes to be added to the dataset.
             internal_reference (bool): If True, the reference is set to the HDF5 dataset.
+            validate_path (bool): If True, the path is validated against the
+                `valid_dataset_paths`.
             lazy (bool): If True, the file is not written immediately.
         """
         if not path:
             self.logger.warning('HDF5 `path` must be provided.')
             return
 
-        # TODO add back validation
-        # if self.valid_dataset_paths:
-        #     if path not in self.valid_dataset_paths:
-        #         self.logger.error(f'Invalid dataset path "{path}".')
-        #         return
+        if validate_path and self.valid_dataset_paths:
+            if path not in self.valid_dataset_paths:
+                self.logger.warning(f'Invalid dataset path "{path}".')
+                return
 
         dataset = dict(
             data=data,
@@ -379,7 +381,6 @@ class HDF5Handler:
                     group.create_dataset(
                         name=dataset_name,
                         data=data,
-                        compression='gzip',
                     )
                 group[dataset_name].attrs.update(value['attrs'])
                 if value['archive_path'] is not None:
