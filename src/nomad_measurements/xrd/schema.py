@@ -302,11 +302,13 @@ class XRDResultPlotIntensity(ArchiveSection):
         hdf5_handler.add_dataset(
             path='/ENTRY[entry]/experiment_result/plot_intensity/two_theta',
             data='/ENTRY[entry]/experiment_result/two_theta',
+            archive_path='data.results[0].plot_intensity.two_theta',
             internal_reference=True,
         )
         hdf5_handler.add_dataset(
             path='/ENTRY[entry]/experiment_result/plot_intensity/intensity',
             data='/ENTRY[entry]/experiment_result/intensity',
+            archive_path='data.results[0].plot_intensity.intensity',
             internal_reference=True,
         )
 
@@ -315,6 +317,7 @@ class XRDResultPlotIntensity(ArchiveSection):
                 hdf5_handler.add_dataset(
                     path=f'/ENTRY[entry]/experiment_result/plot_intensity/{var_axis}',
                     data=f'/ENTRY[entry]/experiment_result/{var_axis}',
+                    archive_path=f'data.results[0].plot_intensity.{var_axis}',
                     internal_reference=True,
                 )
                 hdf5_handler.add_attribute(
@@ -374,6 +377,7 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
         hdf5_handler.add_dataset(
             path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/intensity',
             data='/ENTRY[entry]/experiment_result/intensity',
+            archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
             internal_reference=True,
         )
 
@@ -381,6 +385,7 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/q_norm',
                 data='/ENTRY[entry]/experiment_result/q_norm',
+                archive_path='data.results[0].plot_intensity_scattering_vector.q_norm',
                 internal_reference=True,
             )
             hdf5_handler.add_attribute(
@@ -395,11 +400,13 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/q_parallel',
                 data='/ENTRY[entry]/experiment_result/q_parallel',
+                archive_path='data.results[0].plot_intensity_scattering_vector.q_parallel',
                 internal_reference=True,
             )
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/q_perpendicular',
                 data='/ENTRY[entry]/experiment_result/q_perpendicular',
+                archive_path='data.results[0].plot_intensity_scattering_vector.q_perpendicular',
                 internal_reference=True,
             )
             hdf5_handler.add_attribute(
