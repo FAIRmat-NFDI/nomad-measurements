@@ -377,15 +377,15 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
 
         if self.intensity is None:
             return
-        hdf5_handler.add_dataset(
-            path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/intensity',
-            data='/ENTRY[entry]/experiment_result/intensity',
-            archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
-            internal_reference=True,
-            validate_path=False,
-        )
 
         if self.q_norm is not None:
+            hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/intensity',
+                data='/ENTRY[entry]/experiment_result/intensity',
+                archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
+                internal_reference=True,
+                validate_path=False,
+            )
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/q_norm',
                 data='/ENTRY[entry]/experiment_result/q_norm',
@@ -402,24 +402,45 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
                 ),
             )
         elif self.q_parallel is not None and self.q_perpendicular is not None:
+            intensity = hdf5_handler.read_dataset(self.intensity)
+            q_parallel = hdf5_handler.read_dataset(self.q_parallel)
+            q_perpendicular = hdf5_handler.read_dataset(self.q_perpendicular)
+            # q_vectors lead to irregular grid
+            # generate a regular grid using interpolation
+            x = q_parallel.to('1/angstrom').magnitude.flatten()
+            y = q_perpendicular.to('1/angstrom').magnitude.flatten()
+            x_regular = np.linspace(x.min(), x.max(), intensity.shape[0])
+            y_regular = np.linspace(y.min(), y.max(), intensity.shape[1])
+            x_grid, y_grid = np.meshgrid(x_regular, y_regular)
+            z_interpolated = griddata(
+                points=(x, y),
+                values=intensity.flatten(),
+                xi=(x_grid, y_grid),
+                method='linear',
+                fill_value=intensity.min(),
+            )
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/q_parallel',
-                data='/ENTRY[entry]/experiment_result/q_parallel',
+                data=x_grid,
                 archive_path='data.results[0].plot_intensity_scattering_vector.q_parallel',
-                internal_reference=True,
                 validate_path=False,
             )
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/q_perpendicular',
-                data='/ENTRY[entry]/experiment_result/q_perpendicular',
+                data=y_grid,
                 archive_path='data.results[0].plot_intensity_scattering_vector.q_perpendicular',
-                internal_reference=True,
+                validate_path=False,
+            )
+            hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/intensity',
+                data=z_interpolated,
+                archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
                 validate_path=False,
             )
             hdf5_handler.add_attribute(
                 path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector',
                 attrs=dict(
-                    axes=['q_parallel', 'q_perpendicular'],
+                    axes=['q_perpendicular', 'q_parallel'],
                     signal='intensity',
                     NX_class='NXdata',
                 ),
