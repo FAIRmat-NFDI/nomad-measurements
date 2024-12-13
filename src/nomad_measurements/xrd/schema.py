@@ -1083,6 +1083,12 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         a_template={
             'measurement_identifiers': {},
         },
+        a_h5web=H5WebAnnotation(
+            paths=[
+                'results/0/plot_intensity',
+                'results/0/plot_intensity_scattering_vector',
+            ]
+        ),
     )
     data_file = Quantity(
         type=str,
