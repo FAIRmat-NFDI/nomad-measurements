@@ -200,12 +200,11 @@ class HDF5Handler:
         self.hdf5_datasets = collections.OrderedDict()
         self.hdf5_attributes = collections.OrderedDict()
 
-    def add_dataset(
+    def add_dataset(  # noqa: PLR0913
         self,
         path: str,
         data: Any,
         archive_path: str = None,
-        attrs: dict = None,
         internal_reference: bool = False,
         validate_path: bool = True,
         lazy: bool = True,
@@ -219,8 +218,8 @@ class HDF5Handler:
             path (str): The dataset path to be used in the HDF5 file.
             data (Any): The data to be stored in the HDF5 file.
             archive_path (str): The path of the quantity in the archive.
-            attrs (dict): The attributes to be added to the dataset.
-            internal_reference (bool): If True, the reference is set to the HDF5 dataset.
+            internal_reference (bool): If True, an internal reference is set to an
+                existing HDF5 dataset.
             validate_path (bool): If True, the path is validated against the
                 `valid_dataset_paths`.
             lazy (bool): If True, the file is not written immediately.
@@ -236,7 +235,7 @@ class HDF5Handler:
 
         dataset = dict(
             data=data,
-            attrs=attrs if attrs else {},
+            attrs={},
             hdf5_path=(
                 f'/uploads/{self.archive.m_context.upload_id}/raw'
                 f'/{self.data_file}#{path}'
@@ -338,7 +337,7 @@ class HDF5Handler:
         # One issue here is as we populate the `hdf5_data_dict` with the archive data,
         # we will always have to over write the nexus file
 
-    def _write_hdf5_file(self):
+    def _write_hdf5_file(self):  # noqa: PLR0912
         """
         Method for creating an HDF5 file.
         """
