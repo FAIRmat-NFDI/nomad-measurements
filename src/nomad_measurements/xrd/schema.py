@@ -290,6 +290,7 @@ class XRDResultPlotIntensity(ArchiveSection):
 
     def normalize(self, archive, logger):
         super().normalize(archive, logger)
+        prefix = '/ENTRY[entry]/experiment_result'
         try:
             hdf5_handler = self.m_parent.m_parent.hdf5_handler
             assert isinstance(hdf5_handler, HDF5Handler)
@@ -300,15 +301,15 @@ class XRDResultPlotIntensity(ArchiveSection):
             return
 
         hdf5_handler.add_dataset(
-            path='/ENTRY[entry]/experiment_result/plot_intensity/two_theta',
-            data='/ENTRY[entry]/experiment_result/two_theta',
+            path=f'{prefix}/plot_intensity/two_theta',
+            data=f'{prefix}/two_theta',
             archive_path='data.results[0].plot_intensity.two_theta',
             internal_reference=True,
             validate_path=False,
         )
         hdf5_handler.add_dataset(
-            path='/ENTRY[entry]/experiment_result/plot_intensity/intensity',
-            data='/ENTRY[entry]/experiment_result/intensity',
+            path=f'{prefix}/plot_intensity/intensity',
+            data=f'{prefix}/intensity',
             archive_path='data.results[0].plot_intensity.intensity',
             internal_reference=True,
             validate_path=False,
@@ -317,14 +318,14 @@ class XRDResultPlotIntensity(ArchiveSection):
         for var_axis in ['omega', 'phi', 'chi']:
             if self.get(var_axis) is not None:
                 hdf5_handler.add_dataset(
-                    path=f'/ENTRY[entry]/experiment_result/plot_intensity/{var_axis}',
-                    data=f'/ENTRY[entry]/experiment_result/{var_axis}',
+                    path=f'{prefix}/plot_intensity/{var_axis}',
+                    data=f'{prefix}/{var_axis}',
                     archive_path=f'data.results[0].plot_intensity.{var_axis}',
                     internal_reference=True,
                     validate_path=False,
                 )
                 hdf5_handler.add_attribute(
-                    path='/ENTRY[entry]/experiment_result/plot_intensity',
+                    path=f'{prefix}/plot_intensity',
                     attrs=dict(
                         axes=[var_axis, 'two_theta'],
                         signal='intensity',
@@ -334,7 +335,7 @@ class XRDResultPlotIntensity(ArchiveSection):
                 return
 
         hdf5_handler.add_attribute(
-            path='/ENTRY[entry]/experiment_result/plot_intensity',
+            path=f'{prefix}/plot_intensity',
             attrs=dict(
                 axes='two_theta',
                 signal='intensity',
@@ -368,7 +369,7 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
 
     def normalize(self, archive, logger):
         super().normalize(archive, logger)
-
+        prefix = '/ENTRY[entry]/experiment_result'
         try:
             hdf5_handler = self.m_parent.m_parent.hdf5_handler
             assert isinstance(hdf5_handler, HDF5Handler)
@@ -380,21 +381,21 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
 
         if self.q_norm is not None:
             hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/intensity',
-                data='/ENTRY[entry]/experiment_result/intensity',
+                path=f'{prefix}/plot_intensity_scattering_vector/intensity',
+                data=f'{prefix}/intensity',
                 archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
                 internal_reference=True,
                 validate_path=False,
             )
             hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/q_norm',
-                data='/ENTRY[entry]/experiment_result/q_norm',
+                path=f'{prefix}/plot_intensity_scattering_vector/q_norm',
+                data=f'{prefix}/q_norm',
                 archive_path='data.results[0].plot_intensity_scattering_vector.q_norm',
                 internal_reference=True,
                 validate_path=False,
             )
             hdf5_handler.add_attribute(
-                path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector',
+                path=f'{prefix}/plot_intensity_scattering_vector',
                 attrs=dict(
                     axes='q_norm',
                     signal='intensity',
@@ -420,25 +421,25 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
                 fill_value=intensity.min(),
             )
             hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/q_parallel',
+                path=f'{prefix}/plot_intensity_scattering_vector/q_parallel',
                 data=x_grid,
                 archive_path='data.results[0].plot_intensity_scattering_vector.q_parallel',
                 validate_path=False,
             )
             hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/q_perpendicular',
+                path=f'{prefix}/plot_intensity_scattering_vector/q_perpendicular',
                 data=y_grid,
                 archive_path='data.results[0].plot_intensity_scattering_vector.q_perpendicular',
                 validate_path=False,
             )
             hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector/intensity',
+                path=f'{prefix}/plot_intensity_scattering_vector/intensity',
                 data=z_interpolated,
                 archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
                 validate_path=False,
             )
             hdf5_handler.add_attribute(
-                path='/ENTRY[entry]/experiment_result/plot_intensity_scattering_vector',
+                path=f'{prefix}/plot_intensity_scattering_vector',
                 attrs=dict(
                     axes=['q_perpendicular', 'q_parallel'],
                     signal='intensity',
