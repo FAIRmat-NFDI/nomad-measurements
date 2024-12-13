@@ -352,7 +352,10 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
     )
     intensity = Quantity(
         type=HDF5Reference,
-        description='The count at each q value, dimensionless',
+        description="""
+        The count at each q value. In case of RSM, it contains interpolated values of
+        `intensity` at regularized grid of `q` vectors.
+        """,
     )
     q_norm = Quantity(
         type=HDF5Reference,
@@ -360,11 +363,11 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
     )
     q_parallel = Quantity(
         type=HDF5Reference,
-        description='The q_parallel range of the diffractogram',
+        description='The regularized grid of `q_parallel` range for plotting.',
     )
     q_perpendicular = Quantity(
         type=HDF5Reference,
-        description='The q_perpendicular range of the diffractogram',
+        description='The regularized grid of `q_perpendicular` range for plotting.',
     )
 
     def normalize(self, archive, logger):
@@ -422,13 +425,13 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
             )
             hdf5_handler.add_dataset(
                 path=f'{prefix}/plot_intensity_scattering_vector/q_parallel',
-                data=x_grid,
+                data=x_regular,
                 archive_path='data.results[0].plot_intensity_scattering_vector.q_parallel',
                 validate_path=False,
             )
             hdf5_handler.add_dataset(
                 path=f'{prefix}/plot_intensity_scattering_vector/q_perpendicular',
-                data=y_grid,
+                data=y_regular,
                 archive_path='data.results[0].plot_intensity_scattering_vector.q_perpendicular',
                 validate_path=False,
             )
