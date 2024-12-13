@@ -48,7 +48,7 @@ from nomad.datamodel.metainfo.basesections import (
     MeasurementResult,
     ReadableIdentifiers,
 )
-from nomad.datamodel.metainfo.plot import PlotlyFigure, PlotSection
+from nomad.datamodel.metainfo.plot import PlotlyFigure
 from nomad.datamodel.results import (
     DiffractionPattern,
     MeasurementMethod,
@@ -1068,7 +1068,7 @@ class XRayDiffraction(Measurement):
             )
 
 
-class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
+class ELNXRayDiffraction(XRayDiffraction, EntryData):
     """
     Example section for how XRayDiffraction can be implemented with a general reader for
     common XRD file types.
@@ -1223,6 +1223,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         # Migration to using HFD5References: removing exisiting results
         if self.get('results'):
             self.results = []
+        if self.get('figures'):
+            self.figures = []
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
@@ -1256,9 +1258,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                 if self.hdf5_handler.data_file != self.auxiliary_file:
                     self.auxiliary_file = self.hdf5_handler.data_file
         super().normalize(archive, logger)
-
-        if self.results:
-            self.figures = self.results[0].generate_plots()
 
 
 class RawFileXRDData(EntryData):
