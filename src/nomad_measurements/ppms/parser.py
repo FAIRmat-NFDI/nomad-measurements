@@ -38,7 +38,6 @@ if TYPE_CHECKING:
         EntryArchive,
     )
 
-from nomad.config import config
 from nomad.datamodel import EntryArchive
 from nomad.datamodel.metainfo.basesections import (
     BaseSection,
