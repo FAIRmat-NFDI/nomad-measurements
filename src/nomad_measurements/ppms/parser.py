@@ -57,10 +57,20 @@ class PPMSFile(EntryData):
 
 
 class PPMSParser(MatchingParser):
+    def set_entrydata_definition(self):
+        """
+        Set the entry data definition for the parser.
+
+        In this way, the parser will be able to create the correct entry data object
+        and the parser can be inherited and specialized to be able to fill specific
+        data
+        """
+        self.ppms_measurement = PPMSMeasurement
+
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         data_file = mainfile.split('/')[-1]
         data_file_with_path = mainfile.split('raw/')[-1]
-        entry = PPMSMeasurement()
+        entry = self.ppms_measurement()
         entry.data_file = data_file_with_path
         file_name = f'{data_file[:-4]}.archive.json'
         # entry.normalize(archive, logger)
@@ -103,10 +113,20 @@ class PPMSSequenceFile(BaseSection, EntryData):
 
 
 class PPMSSequenceParser(MatchingParser):
+    def set_entrydata_definition(self):
+        """
+        Set the entry data definition for the parser.
+
+        In this way, the parser will be able to create the correct entry data object
+        and the parser can be inherited and specialized to be able to fill specific
+        sequences
+        """
+        self.ppms_sequence = PPMSSequenceFile
+
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         data_file = mainfile.split('/')[-1]
         data_file_with_path = mainfile.split('raw/')[-1]
-        archive.data = PPMSSequenceFile(
+        archive.data = self.ppms_sequence(
             file_path=data_file_with_path, entry_type='PPMSSequenceFile'
         )
         archive.metadata.entry_name = data_file + ' sequence file'
