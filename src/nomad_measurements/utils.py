@@ -389,10 +389,9 @@ class HDF5Handler:
                         data=data,
                     )
                 group[dataset_name].attrs.update(value['attrs'])
-                if value['archive_path'] is not None:
-                    self._set_hdf5_reference(
-                        self.archive, value['archive_path'], value['hdf5_path']
-                    )
+                self._set_hdf5_reference(
+                    self.archive, value['archive_path'], value['hdf5_path']
+                )
             for key, value in self.hdf5_attributes.items():
                 if key in h5:
                     h5[key].attrs.update(value)
@@ -432,7 +431,9 @@ class HDF5Handler:
         return new_path
 
     @staticmethod
-    def _set_hdf5_reference(section: 'ArchiveSection', path: str, ref: str):
+    def _set_hdf5_reference(
+        section: 'ArchiveSection' = None, path: str = None, ref: str = None
+    ):
         """
         Method for setting a HDF5Reference quantity in a section. It can handle
         nested quantities and repeatable sections, provided that the quantity itself
@@ -446,6 +447,9 @@ class HDF5Handler:
             ref (str): The reference to the HDF5 dataset.
         """
         # TODO handle the case when section in the path is not initialized
+
+        if not section or not path or not ref:
+            return
         attr = section
         path = path.split('.')
         quantity_name = path.pop()
