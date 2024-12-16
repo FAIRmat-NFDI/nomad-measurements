@@ -46,13 +46,6 @@ from nomad.datamodel.metainfo.basesections import (
 
 from nomad_measurements.ppms.schema import PPMSMeasurement
 
-configuration = config.get_plugin_entry_point(
-    'nomad_measurements.ppms:parser_entry_point_data'
-)
-configuration = config.get_plugin_entry_point(
-    'nomad_measurements.ppms:parser_entry_point_sqc'
-)
-
 
 class PPMSFile(EntryData):
     measurement = Quantity(
