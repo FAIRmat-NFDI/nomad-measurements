@@ -15,7 +15,7 @@ class DataParserEntryPoint(ParserEntryPoint):
 ppms_data_parser = DataParserEntryPoint(
     name='PpmsDataParser',
     description='New parser entry point configuration.',
-    mainfile_name_re='^.+\.dat$',
+    mainfile_name_re=r'.+\.dat',
     mainfile_mime_re='application/x-wine-extension-ini',
 )
 
@@ -30,7 +30,7 @@ class SqcParserEntryPoint(ParserEntryPoint):
 ppms_sequence_parser = SqcParserEntryPoint(
     name='PpmsSequenceParser',
     description='New parser entry point configuration.',
-    mainfile_name_re='^.+\.seq$',
+    mainfile_name_re=r'.+\.seq',
     mainfile_mime_re='text/plain',
 )
 
