@@ -289,19 +289,17 @@ class HDF5Handler:
             return
         file_path, dataset_path = path.split('#')
         file_name = file_path.rsplit('/raw/', 1)[1]
-        with self.archive.m_context.raw_file(file_name, 'r') as h5file:
-            h5 = h5py.File(h5file.name, 'r')
+        value = None
+        with h5py.File(self.archive.m_context.raw_file(file_name, 'rb')) as h5:
             if dataset_path not in h5:
                 self.logger.warning(f'Dataset "{dataset_path}" not found.')
-                h5.close()
-                return None
-            value = h5[dataset_path][...]
-            try:
-                units = h5[dataset_path].attrs['units']
-                value *= ureg(units)
-            except KeyError:
-                pass
-            h5.close()
+            else:
+                value = h5[dataset_path][...]
+                try:
+                    units = h5[dataset_path].attrs['units']
+                    value *= ureg(units)
+                except KeyError:
+                    pass
         return value
 
     def write_file(self):
@@ -360,8 +358,10 @@ class HDF5Handler:
         self.hdf5_attributes = tmp_dict
 
         # create the HDF5 file
-        with self.archive.m_context.raw_file(self.data_file, 'a') as h5file:
-            h5 = h5py.File(h5file.name, 'a')
+        mode = 'r+b' if self.archive.m_context.raw_path_exists(self.data_file) else 'wb'
+        with h5py.File(
+            self.archive.m_context.raw_file(self.data_file, mode), 'a'
+        ) as h5:
             for key, value in self.hdf5_datasets.items():
                 if value['data'] is None:
                     self.logger.warning(f'No data found for "{key}". Skipping.')
@@ -397,7 +397,6 @@ class HDF5Handler:
                     h5[key].attrs.update(value)
                 else:
                     self.logger.warning(f'Path "{key}" not found to add attribute.')
-            h5.close()
 
         # reset hdf5 datasets and atttributes
         self.hdf5_datasets = collections.OrderedDict()
