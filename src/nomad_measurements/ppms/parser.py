@@ -107,10 +107,6 @@ class PPMSSequenceFile(BaseSection, EntryData):
         a_eln=dict(component='FileEditQuantity'),
         a_browser=dict(adaptor='RawFileAdaptor'),
     )
-    entry_type = Quantity(
-        type=str,
-    )
-
 
 class PPMSSequenceParser(MatchingParser):
     def set_entrydata_definition(self):
@@ -126,7 +122,5 @@ class PPMSSequenceParser(MatchingParser):
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         data_file = mainfile.split('/')[-1]
         data_file_with_path = mainfile.split('raw/')[-1]
-        archive.data = self.ppms_sequence(
-            file_path=data_file_with_path, entry_type='PPMSSequenceFile'
-        )
+        archive.data = self.ppms_sequence(file_path=data_file_with_path)
         archive.metadata.entry_name = data_file + ' sequence file'
