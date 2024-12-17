@@ -30,7 +30,6 @@ from nomad.datamodel.metainfo.annotations import (
 )
 from nomad.metainfo import Quantity
 from nomad.parsing import MatchingParser
-
 from nomad_material_processing.utils import create_archive
 
 if TYPE_CHECKING:
