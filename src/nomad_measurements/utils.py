@@ -21,6 +21,7 @@ import re
 from typing import (
     TYPE_CHECKING,
     Any,
+    Optional,
 )
 
 import h5py
@@ -28,6 +29,7 @@ import numpy as np
 import pint
 from nomad.datamodel.hdf5 import HDF5Reference
 from nomad.units import ureg
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from nomad.datamodel.data import (
@@ -168,6 +170,21 @@ class HDF5Handler:
     the main archive file (e.g. HDF5, NeXus).
     """
 
+    class DatasetModel(BaseModel):
+        """
+        Pydantic model for the dataset to be stored in the HDF5 file.
+        """
+
+        data: Any = Field(description='The data to be stored in the HDF5 file.')
+        archive_path: Optional[str] = Field(
+            None, description='The path of the quantity in the NOMAD archive.'
+        )
+        internal_reference: Optional[bool] = Field(
+            False,
+            description='If True, an internal reference is set to an existing HDF5 '
+            'dataset.',
+        )
+
     def __init__(
         self,
         filename: str,
@@ -200,12 +217,10 @@ class HDF5Handler:
         self._hdf5_datasets = collections.OrderedDict()
         self._hdf5_attributes = collections.OrderedDict()
 
-    def add_dataset(  # noqa: PLR0913
+    def add_dataset(
         self,
         path: str,
-        data: Any,
-        archive_path: str = None,
-        internal_reference: bool = False,
+        params: dict,
         validate_path: bool = True,
         lazy: bool = True,
     ):
@@ -214,39 +229,41 @@ class HDF5Handler:
         either `read_dataset` or `write_file` method is called. The `path` is validated
         against the `valid_dataset_paths` if provided before adding the data.
 
+        `params` should be a dictionary containing `data`. Optionally,
+        it can also contain `archive_path` and `internal_reference`:
+        {
+            'data': Any,
+            'archive_path': str,
+            'internal_reference': bool,
+        }
+
         Args:
             path (str): The dataset path to be used in the HDF5 file.
-            data (Any): The data to be stored in the HDF5 file.
-            archive_path (str): The path of the quantity in the archive.
-            internal_reference (bool): If True, an internal reference is set to an
-                existing HDF5 dataset.
-            validate_path (bool): If True, the path is validated against the
-                `valid_dataset_paths`.
-            lazy (bool): If True, the file is not written immediately.
+            params (dict): The dataset parameters.
+            validate_path (bool): If True, the dataset path is validated.
+            lazy (Optional[bool]): If True, the file is not written immediately.
         """
-        if not path:
-            self.logger.warning('HDF5 `path` must be provided.')
+        if not params:
+            self.logger.warning('Dataset `params` must be provided.')
             return
 
+        dataset = HDF5Handler.DatasetModel(
+            **params,
+        )
         if validate_path and self.valid_dataset_paths:
             if path not in self.valid_dataset_paths:
                 self.logger.warning(f'Invalid dataset path "{path}".')
                 return
 
-        dataset = dict(
-            data=data,
-            attrs={},
-            hdf5_path=(
-                f'/uploads/{self.archive.m_context.upload_id}/raw'
-                f'/{self.data_file}#{path}'
-            ),
-            archive_path=archive_path,
-            internal_reference=internal_reference,
-        )
         # handle the pint.Quantity and add data
-        if isinstance(data, pint.Quantity):
-            dataset['data'] = data.magnitude
-            dataset['attrs'].update({'units': str(data.units)})
+        if isinstance(dataset.data, pint.Quantity):
+            self.add_attribute(
+                path=path,
+                params=dict(
+                    units=str(dataset.data.units),
+                ),
+            )
+            dataset.data = dataset.data.magnitude
 
         self._hdf5_datasets[path] = dataset
 
@@ -256,7 +273,7 @@ class HDF5Handler:
     def add_attribute(
         self,
         path: str,
-        attrs: dict,
+        params: dict,
         lazy: bool = True,
     ):
         """
@@ -266,10 +283,13 @@ class HDF5Handler:
 
         Args:
             path (str): The dataset or group path in the HDF5 file.
-            attrs (dict): The attributes to be added.
+            params (dict): The attributes to be added.
             lazy (bool): If True, the file is not written immediately.
         """
-        self._hdf5_attributes[path] = attrs
+        if not params:
+            self.logger.warning('Attribute `params` must be provided.')
+            return
+        self._hdf5_attributes[path] = params
 
         if not lazy:
             self.write_file()
@@ -348,9 +368,6 @@ class HDF5Handler:
         for key, value in self._hdf5_datasets.items():
             new_key = self._remove_nexus_annotations(key)
             tmp_dict[new_key] = value
-            tmp_dict[new_key]['hdf5_path'] = self._remove_nexus_annotations(
-                value['hdf5_path']
-            )
         self._hdf5_datasets = tmp_dict
         tmp_dict = {}
         for key, value in self._hdf5_attributes.items():
@@ -363,20 +380,20 @@ class HDF5Handler:
             self.archive.m_context.raw_file(self.data_file, mode), 'a'
         ) as h5:
             for key, value in self._hdf5_datasets.items():
-                if value['data'] is None:
+                if value.data is None:
                     self.logger.warning(f'No data found for "{key}". Skipping.')
                     continue
-                elif value['internal_reference']:
+                elif value.internal_reference:
                     # resolve the internal reference
                     try:
-                        data = h5[self._remove_nexus_annotations(value['data'])]
+                        data = h5[self._remove_nexus_annotations(value.data)]
                     except KeyError:
                         self.logger.warning(
-                            f'Internal reference "{data}" not found. Skipping.'
+                            f'Internal reference "{value.data}" not found. Skipping.'
                         )
                         continue
                 else:
-                    data = value['data']
+                    data = value.data
 
                 group_name, dataset_name = key.rsplit('/', 1)
                 group = h5.require_group(group_name)
@@ -388,9 +405,11 @@ class HDF5Handler:
                         name=dataset_name,
                         data=data,
                     )
-                group[dataset_name].attrs.update(value['attrs'])
                 self._set_hdf5_reference(
-                    self.archive, value['archive_path'], value['hdf5_path']
+                    self.archive,
+                    value.archive_path,
+                    f'/uploads/{self.archive.m_context.upload_id}/raw'
+                    f'/{self.data_file}#{key}',
                 )
             for key, value in self._hdf5_attributes.items():
                 if key in h5:

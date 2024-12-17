@@ -302,16 +302,20 @@ class XRDResultPlotIntensity(ArchiveSection):
 
         hdf5_handler.add_dataset(
             path=f'{prefix}/plot_intensity/two_theta',
-            data=f'{prefix}/two_theta',
-            archive_path='data.results[0].plot_intensity.two_theta',
-            internal_reference=True,
+            params=dict(
+                data=f'{prefix}/two_theta',
+                archive_path='data.results[0].plot_intensity.two_theta',
+                internal_reference=True,
+            ),
             validate_path=False,
         )
         hdf5_handler.add_dataset(
             path=f'{prefix}/plot_intensity/intensity',
-            data=f'{prefix}/intensity',
-            archive_path='data.results[0].plot_intensity.intensity',
-            internal_reference=True,
+            params=dict(
+                data=f'{prefix}/intensity',
+                archive_path='data.results[0].plot_intensity.intensity',
+                internal_reference=True,
+            ),
             validate_path=False,
         )
 
@@ -319,14 +323,16 @@ class XRDResultPlotIntensity(ArchiveSection):
             if self.get(var_axis) is not None:
                 hdf5_handler.add_dataset(
                     path=f'{prefix}/plot_intensity/{var_axis}',
-                    data=f'{prefix}/{var_axis}',
-                    archive_path=f'data.results[0].plot_intensity.{var_axis}',
-                    internal_reference=True,
+                    params=dict(
+                        data=f'{prefix}/{var_axis}',
+                        archive_path=f'data.results[0].plot_intensity.{var_axis}',
+                        internal_reference=True,
+                    ),
                     validate_path=False,
                 )
                 hdf5_handler.add_attribute(
                     path=f'{prefix}/plot_intensity',
-                    attrs=dict(
+                    params=dict(
                         axes=[var_axis, 'two_theta'],
                         signal='intensity',
                         NX_class='NXdata',
@@ -336,7 +342,7 @@ class XRDResultPlotIntensity(ArchiveSection):
 
         hdf5_handler.add_attribute(
             path=f'{prefix}/plot_intensity',
-            attrs=dict(
+            params=dict(
                 axes='two_theta',
                 signal='intensity',
                 NX_class='NXdata',
@@ -385,21 +391,25 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
         if self.q_norm is not None:
             hdf5_handler.add_dataset(
                 path=f'{prefix}/plot_intensity_scattering_vector/intensity',
-                data=f'{prefix}/intensity',
-                archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
-                internal_reference=True,
+                params=dict(
+                    data=f'{prefix}/intensity',
+                    archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
+                    internal_reference=True,
+                ),
                 validate_path=False,
             )
             hdf5_handler.add_dataset(
                 path=f'{prefix}/plot_intensity_scattering_vector/q_norm',
-                data=f'{prefix}/q_norm',
-                archive_path='data.results[0].plot_intensity_scattering_vector.q_norm',
-                internal_reference=True,
+                params=dict(
+                    data=f'{prefix}/q_norm',
+                    archive_path='data.results[0].plot_intensity_scattering_vector.q_norm',
+                    internal_reference=True,
+                ),
                 validate_path=False,
             )
             hdf5_handler.add_attribute(
                 path=f'{prefix}/plot_intensity_scattering_vector',
-                attrs=dict(
+                params=dict(
                     axes='q_norm',
                     signal='intensity',
                     NX_class='NXdata',
@@ -425,25 +435,31 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
             )
             hdf5_handler.add_dataset(
                 path=f'{prefix}/plot_intensity_scattering_vector/q_parallel',
-                data=x_regular,
-                archive_path='data.results[0].plot_intensity_scattering_vector.q_parallel',
+                params=dict(
+                    data=x_regular,
+                    archive_path='data.results[0].plot_intensity_scattering_vector.q_parallel',
+                ),
                 validate_path=False,
             )
             hdf5_handler.add_dataset(
                 path=f'{prefix}/plot_intensity_scattering_vector/q_perpendicular',
-                data=y_regular,
-                archive_path='data.results[0].plot_intensity_scattering_vector.q_perpendicular',
+                params=dict(
+                    data=y_regular,
+                    archive_path='data.results[0].plot_intensity_scattering_vector.q_perpendicular',
+                ),
                 validate_path=False,
             )
             hdf5_handler.add_dataset(
                 path=f'{prefix}/plot_intensity_scattering_vector/intensity',
-                data=z_interpolated,
-                archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
+                params=dict(
+                    data=z_interpolated,
+                    archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
+                ),
                 validate_path=False,
             )
             hdf5_handler.add_attribute(
                 path=f'{prefix}/plot_intensity_scattering_vector',
-                attrs=dict(
+                params=dict(
                     axes=['q_perpendicular', 'q_parallel'],
                     signal='intensity',
                     NX_class='NXdata',
@@ -703,13 +719,17 @@ class XRDResult1D(XRDResult):
             )
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/q_norm',
-                data=q_norm,
-                archive_path='data.results[0].q_norm',
+                params=dict(
+                    data=q_norm,
+                    archive_path='data.results[0].q_norm',
+                ),
             )
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/two_theta',
-                data=two_theta,
-                archive_path='data.results[0].two_theta',
+                params=dict(
+                    data=two_theta,
+                    archive_path='data.results[0].two_theta',
+                ),
             )
             hdf5_handler.write_file()
             self.m_setdefault('plot_intensity_scattering_vector')
@@ -949,13 +969,17 @@ class XRDResultRSM(XRDResult):
             )
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/q_parallel',
-                data=q_parallel,
-                archive_path='data.results[0].q_parallel',
+                params=dict(
+                    data=q_parallel,
+                    archive_path='data.results[0].q_parallel',
+                ),
             )
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/q_perpendicular',
-                data=q_perpendicular,
-                archive_path='data.results[0].q_perpendicular',
+                params=dict(
+                    data=q_perpendicular,
+                    archive_path='data.results[0].q_perpendicular',
+                ),
             )
             hdf5_handler.write_file()
             self.m_setdefault('plot_intensity_scattering_vector')
@@ -1162,33 +1186,45 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             result.scan_axis = metadata_dict.get('scan_axis', None)
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/intensity',
-                data=xrd_dict.get('intensity', None),
-                archive_path='data.results[0].intensity',
+                params=dict(
+                    data=xrd_dict.get('intensity', None),
+                    archive_path='data.results[0].intensity',
+                ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/two_theta',
-                data=xrd_dict.get('2Theta', None),
-                archive_path='data.results[0].two_theta',
+                params=dict(
+                    data=xrd_dict.get('2Theta', None),
+                    archive_path='data.results[0].two_theta',
+                ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/omega',
-                data=xrd_dict.get('Omega', None),
-                archive_path='data.results[0].omega',
+                params=dict(
+                    data=xrd_dict.get('Omega', None),
+                    archive_path='data.results[0].omega',
+                ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/chi',
-                data=xrd_dict.get('Chi', None),
-                archive_path='data.results[0].chi',
+                params=dict(
+                    data=xrd_dict.get('Chi', None),
+                    archive_path='data.results[0].chi',
+                ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/phi',
-                data=xrd_dict.get('Phi', None),
-                archive_path='data.results[0].phi',
+                params=dict(
+                    data=xrd_dict.get('Phi', None),
+                    archive_path='data.results[0].phi',
+                ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_config/count_time',
-                data=xrd_dict.get('countTime', None),
-                archive_path='data.results[0].integration_time',
+                params=dict(
+                    data=xrd_dict.get('countTime', None),
+                    archive_path='data.results[0].integration_time',
+                ),
             )
             result.normalize(archive, logger)
             results.append(result)
