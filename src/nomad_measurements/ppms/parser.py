@@ -108,6 +108,7 @@ class PPMSSequenceFile(BaseSection, EntryData):
         a_browser=dict(adaptor='RawFileAdaptor'),
     )
 
+
 class PPMSSequenceParser(MatchingParser):
     def set_entrydata_definition(self):
         """
