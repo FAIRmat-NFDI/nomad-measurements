@@ -30,7 +30,6 @@ from nomad.datamodel.metainfo.annotations import (
 )
 from nomad.metainfo import Quantity
 from nomad.parsing import MatchingParser
-from nomad_material_processing.utils import create_archive
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -42,6 +41,7 @@ from nomad.datamodel.metainfo.basesections import (
     BaseSection,
 )
 
+from nomad_measurements.utils import create_archive
 from nomad_measurements.ppms.schema import PPMSMeasurement
 
 
