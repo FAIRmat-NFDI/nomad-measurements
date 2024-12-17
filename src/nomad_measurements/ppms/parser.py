@@ -21,7 +21,7 @@ from typing import (
     TYPE_CHECKING,
 )
 
-from nomad.datamodel import EntryArchive
+from nomad.datamodel import ClientContext, EntryArchive
 from nomad.datamodel.data import (
     EntryData,
 )
@@ -45,6 +45,37 @@ from nomad_measurements.ppms.schema import PPMSMeasurement
 from nomad_measurements.utils import create_archive
 
 
+def find_matching_sequence_file(archive, entry, logger):
+    if isinstance(archive.m_context, ClientContext):
+        return None
+    from nomad.search import search
+
+    tic = perf_counter()
+    while True:
+        search_result = search(
+            owner='user',
+            query={
+                'results.eln.sections:any': ['PPMSSequenceFile'],
+                'upload_id:any': [archive.m_context.upload_id],
+            },
+            user_id=archive.metadata.main_author.user_id,
+        )
+        if len(search_result.data) > 0:
+            for sequence in search_result.data:
+                entry.sequence_file = sequence['search_quantities'][0]['str_value']
+                logger.info(sequence['search_quantities'][0]['str_value'])
+                break
+        sleep(0.1)
+        toc = perf_counter()
+        if toc - tic > 15:  # noqa: PLR2004
+            logger.warning(
+                "The Sequence File entry/ies in the current upload were\
+                        not found and couldn't be referenced."
+            )
+            break
+    return
+
+
 class PPMSFile(EntryData):
     measurement = Quantity(
         type=PPMSMeasurement,
@@ -55,19 +86,10 @@ class PPMSFile(EntryData):
 
 
 class PPMSParser(MatchingParser):
-    def set_entrydata_definition(self):
-        """
-        Set the entry data definition for the parser.
-
-        In this way, the parser will be able to create the correct entry data object
-        and the parser can be inherited and specialized to be able to fill specific
-        data
-        """
-        self.ppms_measurement = PPMSMeasurement
+    ppms_measurement: str = MatchingParser
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
-        self.set_entrydata_definition()
-        from nomad.search import search
+        self.ppms_measurement = PPMSMeasurement
 
         data_file = mainfile.split('/')[-1]
         data_file_with_path = mainfile.split('raw/')[-1]
@@ -75,29 +97,7 @@ class PPMSParser(MatchingParser):
         entry.data_file = data_file_with_path
         file_name = f'{data_file[:-4]}.archive.json'
         # entry.normalize(archive, logger)
-        tic = perf_counter()
-        while True:
-            search_result = search(
-                owner='user',
-                query={
-                    'results.eln.sections:any': ['PPMSSequenceFile'],
-                    'upload_id:any': [archive.m_context.upload_id],
-                },
-                user_id=archive.metadata.main_author.user_id,
-            )
-            if len(search_result.data) > 0:
-                for sequence in search_result.data:
-                    entry.sequence_file = sequence['search_quantities'][0]['str_value']
-                    logger.info(sequence['search_quantities'][0]['str_value'])
-                    break
-            sleep(0.1)
-            toc = perf_counter()
-            if toc - tic > 15:  # noqa: PLR2004
-                logger.warning(
-                    "The Sequence File entry/ies in the current upload were\
-                          not found and couldn't be referenced."
-                )
-                break
+        find_matching_sequence_file(archive, entry, logger)
         archive.data = PPMSFile(measurement=create_archive(entry, archive, file_name))
         archive.metadata.entry_name = data_file + ' measurement file'
 
@@ -111,18 +111,10 @@ class PPMSSequenceFile(BaseSection, EntryData):
 
 
 class PPMSSequenceParser(MatchingParser):
-    def set_entrydata_definition(self):
-        """
-        Set the entry data definition for the parser.
-
-        In this way, the parser will be able to create the correct entry data object
-        and the parser can be inherited and specialized to be able to fill specific
-        sequences
-        """
-        self.ppms_sequence = PPMSSequenceFile
+    ppms_sequence: str = MatchingParser
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
-        self.set_entrydata_definition()
+        self.ppms_sequence = PPMSSequenceFile
         data_file = mainfile.split('/')[-1]
         data_file_with_path = mainfile.split('raw/')[-1]
         archive.data = self.ppms_sequence(file_path=data_file_with_path)
