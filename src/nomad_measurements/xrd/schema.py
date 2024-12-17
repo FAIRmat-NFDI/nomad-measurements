@@ -318,7 +318,14 @@ class XRDResultPlotIntensity(ArchiveSection):
             ),
             validate_path=False,
         )
-
+        hdf5_handler.add_attribute(
+            path=f'{prefix}/plot_intensity',
+            params=dict(
+                axes='two_theta',
+                signal='intensity',
+                NX_class='NXdata',
+            ),
+        )
         for var_axis in ['omega', 'phi', 'chi']:
             if self.get(var_axis) is not None:
                 hdf5_handler.add_dataset(
@@ -338,16 +345,9 @@ class XRDResultPlotIntensity(ArchiveSection):
                         NX_class='NXdata',
                     ),
                 )
-                return
+                break
 
-        hdf5_handler.add_attribute(
-            path=f'{prefix}/plot_intensity',
-            params=dict(
-                axes='two_theta',
-                signal='intensity',
-                NX_class='NXdata',
-            ),
-        )
+        hdf5_handler.write_file()
 
 
 class XRDResultPlotIntensityScatteringVector(ArchiveSection):
@@ -465,6 +465,7 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
                     NX_class='NXdata',
                 ),
             )
+        hdf5_handler.write_file()
 
 
 class XRDResult(MeasurementResult):

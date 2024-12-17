@@ -226,8 +226,8 @@ class HDF5Handler:
     ):
         """
         Add a dataset to the HDF5 file. The dataset is written lazily (default) when
-        either `read_dataset` or `write_file` method is called. The `path` is validated
-        against the `valid_dataset_paths` if provided before adding the data.
+        `write_file` method is called. The `path` is validated against the
+        `valid_dataset_paths` if provided before adding the data.
 
         `params` should be a dictionary containing `data`. Optionally,
         it can also contain `archive_path` and `internal_reference`:
@@ -278,8 +278,7 @@ class HDF5Handler:
     ):
         """
         Add an attribute to the dataset or group at the given path. The attribute is
-        written lazily (default) when either `read_dataset` or `write_file` method is
-        called.
+        written lazily (default) when `write_file` method is called.
 
         Args:
             path (str): The dataset or group path in the HDF5 file.
@@ -297,19 +296,27 @@ class HDF5Handler:
     def read_dataset(self, path: str):
         """
         Returns the dataset at the given path. If the quantity has `units` as an
-        attribute, tries to returns a `pint.Quantity`. Before returning the dataset, the
-        method also writes the file with any pending datasets.
+        attribute, tries to returns a `pint.Quantity`.
+        If the dataset available in the `self._hdf5_datasets`, it is returned directly.
 
         Args:
             path (str): The dataset path in the HDF5 file.
         """
-        if self._hdf5_datasets or self._hdf5_attributes:
-            self.write_file()
         if path is None:
             return
         file_path, dataset_path = path.split('#')
-        file_name = file_path.rsplit('/raw/', 1)[1]
+
+        # find path in the instance variables
         value = None
+        if dataset_path in self._hdf5_datasets:
+            value = self._hdf5_datasets[dataset_path].data
+            if dataset_path in self._hdf5_attributes:
+                units = self._hdf5_attributes[dataset_path].get('units', None)
+                if units:
+                    value *= ureg(units)
+            return value
+
+        file_name = file_path.rsplit('/raw/', 1)[1]
         with h5py.File(self.archive.m_context.raw_file(file_name, 'rb')) as h5:
             if dataset_path not in h5:
                 self.logger.warning(f'Dataset "{dataset_path}" not found.')
