@@ -30,7 +30,7 @@ from nomad.datamodel.metainfo.annotations import (
 )
 from nomad.metainfo import Quantity
 from nomad.parsing import MatchingParser
-from nomad.search import search
+
 from nomad_material_processing.utils import create_archive
 
 if TYPE_CHECKING:
@@ -67,6 +67,8 @@ class PPMSParser(MatchingParser):
         self.ppms_measurement = PPMSMeasurement
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
+        from nomad.search import search
+
         data_file = mainfile.split('/')[-1]
         data_file_with_path = mainfile.split('raw/')[-1]
         entry = self.ppms_measurement()
