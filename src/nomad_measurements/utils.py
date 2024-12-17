@@ -197,8 +197,8 @@ class HDF5Handler:
             self.valid_dataset_paths = valid_dataset_paths
         self.nexus = nexus
 
-        self.hdf5_datasets = collections.OrderedDict()
-        self.hdf5_attributes = collections.OrderedDict()
+        self._hdf5_datasets = collections.OrderedDict()
+        self._hdf5_attributes = collections.OrderedDict()
 
     def add_dataset(  # noqa: PLR0913
         self,
@@ -248,7 +248,7 @@ class HDF5Handler:
             dataset['data'] = data.magnitude
             dataset['attrs'].update({'units': str(data.units)})
 
-        self.hdf5_datasets[path] = dataset
+        self._hdf5_datasets[path] = dataset
 
         if not lazy:
             self.write_file()
@@ -269,7 +269,7 @@ class HDF5Handler:
             attrs (dict): The attributes to be added.
             lazy (bool): If True, the file is not written immediately.
         """
-        self.hdf5_attributes[path] = attrs
+        self._hdf5_attributes[path] = attrs
 
         if not lazy:
             self.write_file()
@@ -283,7 +283,7 @@ class HDF5Handler:
         Args:
             path (str): The dataset path in the HDF5 file.
         """
-        if self.hdf5_datasets or self.hdf5_attributes:
+        if self._hdf5_datasets or self._hdf5_attributes:
             self.write_file()
         if path is None:
             return
@@ -341,28 +341,28 @@ class HDF5Handler:
         """
         if self.data_file.endswith('.nxs'):
             self.data_file = self.data_file.replace('.nxs', '.h5')
-        if not self.hdf5_datasets and not self.hdf5_attributes:
+        if not self._hdf5_datasets and not self._hdf5_attributes:
             return
         # remove the nexus annotations from the dataset paths if any
         tmp_dict = {}
-        for key, value in self.hdf5_datasets.items():
+        for key, value in self._hdf5_datasets.items():
             new_key = self._remove_nexus_annotations(key)
             tmp_dict[new_key] = value
             tmp_dict[new_key]['hdf5_path'] = self._remove_nexus_annotations(
                 value['hdf5_path']
             )
-        self.hdf5_datasets = tmp_dict
+        self._hdf5_datasets = tmp_dict
         tmp_dict = {}
-        for key, value in self.hdf5_attributes.items():
+        for key, value in self._hdf5_attributes.items():
             tmp_dict[self._remove_nexus_annotations(key)] = value
-        self.hdf5_attributes = tmp_dict
+        self._hdf5_attributes = tmp_dict
 
         # create the HDF5 file
         mode = 'r+b' if self.archive.m_context.raw_path_exists(self.data_file) else 'wb'
         with h5py.File(
             self.archive.m_context.raw_file(self.data_file, mode), 'a'
         ) as h5:
-            for key, value in self.hdf5_datasets.items():
+            for key, value in self._hdf5_datasets.items():
                 if value['data'] is None:
                     self.logger.warning(f'No data found for "{key}". Skipping.')
                     continue
@@ -392,15 +392,15 @@ class HDF5Handler:
                 self._set_hdf5_reference(
                     self.archive, value['archive_path'], value['hdf5_path']
                 )
-            for key, value in self.hdf5_attributes.items():
+            for key, value in self._hdf5_attributes.items():
                 if key in h5:
                     h5[key].attrs.update(value)
                 else:
                     self.logger.warning(f'Path "{key}" not found to add attribute.')
 
         # reset hdf5 datasets and atttributes
-        self.hdf5_datasets = collections.OrderedDict()
-        self.hdf5_attributes = collections.OrderedDict()
+        self._hdf5_datasets = collections.OrderedDict()
+        self._hdf5_attributes = collections.OrderedDict()
 
     @staticmethod
     def _remove_nexus_annotations(path: str) -> str:
