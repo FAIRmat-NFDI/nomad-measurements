@@ -41,8 +41,8 @@ from nomad.datamodel.metainfo.basesections import (
     BaseSection,
 )
 
-from nomad_measurements.utils import create_archive
 from nomad_measurements.ppms.schema import PPMSMeasurement
+from nomad_measurements.utils import create_archive
 
 
 class PPMSFile(EntryData):
