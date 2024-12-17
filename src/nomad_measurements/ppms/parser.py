@@ -66,6 +66,7 @@ class PPMSParser(MatchingParser):
         self.ppms_measurement = PPMSMeasurement
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
+        self.set_entrydata_definition()
         from nomad.search import search
 
         data_file = mainfile.split('/')[-1]
@@ -121,6 +122,7 @@ class PPMSSequenceParser(MatchingParser):
         self.ppms_sequence = PPMSSequenceFile
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
+        self.set_entrydata_definition()
         data_file = mainfile.split('/')[-1]
         data_file_with_path = mainfile.split('raw/')[-1]
         archive.data = self.ppms_sequence(file_path=data_file_with_path)
