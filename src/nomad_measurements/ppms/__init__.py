@@ -16,7 +16,8 @@ ppms_data_parser = DataParserEntryPoint(
     name='PpmsDataParser',
     description='New parser entry point configuration.',
     mainfile_name_re=r'.+\.dat',
-    mainfile_mime_re='text/plain',
+    mainfile_mime_re='text/plain|application/x-wine-extension-ini',
+    mainfile_contents_re='BYAPP,',
 )
 
 
