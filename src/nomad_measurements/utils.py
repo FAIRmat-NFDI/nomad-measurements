@@ -164,26 +164,27 @@ def get_bounding_range_2d(ax1, ax2):
     return ax1_range, ax2_range
 
 
+class DatasetModel(BaseModel):
+    """
+    Pydantic model for the dataset to be stored in the HDF5 file.
+    """
+
+    data: Any = Field(description='The data to be stored in the HDF5 file.')
+    archive_path: Optional[str] = Field(
+        None, description='The path of the quantity in the NOMAD archive.'
+    )
+    internal_reference: Optional[bool] = Field(
+        False,
+        description='If True, an internal reference is set to an existing HDF5 '
+        'dataset.',
+    )
+
+
 class HDF5Handler:
     """
     Class for handling the creation of auxiliary files to store big data arrays outside
     the main archive file (e.g. HDF5, NeXus).
     """
-
-    class DatasetModel(BaseModel):
-        """
-        Pydantic model for the dataset to be stored in the HDF5 file.
-        """
-
-        data: Any = Field(description='The data to be stored in the HDF5 file.')
-        archive_path: Optional[str] = Field(
-            None, description='The path of the quantity in the NOMAD archive.'
-        )
-        internal_reference: Optional[bool] = Field(
-            False,
-            description='If True, an internal reference is set to an existing HDF5 '
-            'dataset.',
-        )
 
     def __init__(
         self,
@@ -245,7 +246,7 @@ class HDF5Handler:
             self.logger.warning('Dataset `params` must be provided.')
             return
 
-        dataset = HDF5Handler.DatasetModel(
+        dataset = DatasetModel(
             **params,
         )
         if validate_path and self.valid_dataset_paths:
