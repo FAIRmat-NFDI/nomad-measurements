@@ -38,10 +38,13 @@ def fixture_parsed_archive(request):
     """
     Sets up data for testing and cleans up after the test.
     """
-    rel_file = os.path.join('tests', 'data', request.param)
+    rel_file = os.path.join('tests', 'data', 'xrd', request.param)
     file_archive = parse(rel_file)[0]
     measurement = os.path.join(
-        'tests', 'data', '.'.join(request.param.split('.')[:-1]) + '.archive.json'
+        'tests',
+        'data',
+        'xrd',
+        '.'.join(request.param.split('.')[:-1]) + '.archive.json',
     )
     assert file_archive.data.measurement.m_proxy_value == os.path.abspath(measurement)
     measurement_archive = parse(measurement)[0]
