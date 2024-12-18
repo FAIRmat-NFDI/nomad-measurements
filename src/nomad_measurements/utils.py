@@ -30,6 +30,14 @@ import pint
 from nomad.datamodel.hdf5 import HDF5Reference
 from nomad.units import ureg
 from pydantic import BaseModel, Field
+from pynxtools.dataconverter.helpers import (
+    generate_template_from_nxdl,
+    get_nxdl_root_and_path,
+)
+from pynxtools.dataconverter.template import Template
+from pynxtools.dataconverter.writer import Writer as pynxtools_writer
+
+from nomad_measurements.xrd.nx import populate_nx_dataset_and_attribute
 
 if TYPE_CHECKING:
     from nomad.datamodel.data import (
@@ -326,17 +334,18 @@ class HDF5Handler:
         main archive file (e.g. HDF5, NeXus).
         """
         if self.nexus:
-            try:
-                self._write_nx_file()
-            except Exception as e:
-                self.nexus = False
-                self.logger.warning(
-                    f'Encountered "{e}" error while creating nexus file. '
-                    'Creating h5 file instead.'
-                )
-                self._write_hdf5_file()
-        else:
-            self._write_hdf5_file()
+            self._write_nx_file()
+        #     try:
+        #         self._write_nx_file()
+        #     except Exception as e:
+        #         self.nexus = False
+        #         self.logger.warning(
+        #             f'Encountered "{e}" error while creating nexus file. '
+        #             'Creating h5 file instead.'
+        #         )
+        #         self._write_hdf5_file()
+        # else:
+        #     self._write_hdf5_file()
 
     def _write_nx_file(self):
         """
@@ -344,9 +353,62 @@ class HDF5Handler:
         to the `hdf5_data_dict` before creating the nexus file. This provides a NeXus
         view of the data in addition to storing array data.
         """
-        if self.data_file.endswith('.h5'):
-            self.data_file = self.data_file.replace('.h5', '.nxs')
-        raise NotImplementedError('Method `write_nx_file` is not implemented.')
+        from nomad.processing.data import Entry
+
+        app_def = 'NXxrd_pan'
+        nxdl_root, nxdl_f_path = get_nxdl_root_and_path(app_def)
+        template = Template()
+        generate_template_from_nxdl(nxdl_root, template)
+        attr_dict = {}
+        dataset_dict = {}
+        populate_nx_dataset_and_attribute(
+            archive=self.archive, attr_dict=attr_dict, dataset_dict=dataset_dict
+        )
+        for nx_path, dset in list(self._hdf5_datasets.items()) + list(
+            dataset_dict.items()
+        ):
+            try:
+                template[nx_path] = dset.data
+            except KeyError:
+                template['optional'][nx_path] = dset.data
+
+            hdf_path = self._remove_nexus_annotations(nx_path)
+            self._set_hdf5_reference(
+            self.archive,
+            dset.archive_path,
+            f'/uploads/{self.archive.m_context.upload_id}/raw'
+            f'/{self.data_file}#{hdf_path}',
+                )
+        for nx_path, attr_d in list(self._hdf5_attributes.items()) + list(
+            attr_dict.items()
+        ):
+            for attr_k, attr_v in attr_d.items():
+                if attr_k:
+                    try:
+                        template[f'{nx_path}/@{attr_k}'] = attr_v
+                    except KeyError:
+                        template['optional'][f'{nx_path}/@{attr_k}'] = attr_v
+        try:
+            nx_full_path = os.path.join(
+                self.archive.m_context.raw_path(), self.data_file
+            )
+            pynxtools_writer(
+                data=template, nxdl_f_path=nxdl_f_path, output_path=nx_full_path
+            ).write()
+
+            # entry_list = Entry.objects(
+            #     upload_id=self.archive.m_context.upload_id, mainfile=self.data_file
+            # )
+            # if not entry_list:
+            #     self.archive.m_context.process_updated_raw_file(self.data_file)
+
+        except Exception as exc:
+            if os.path.exists(self.data_file):
+                os.remove(self.data_file)
+                self.data_file = self.data_file.rsplit(os.pathsep, 1)[-1]
+            raise Exception('NeXus file can not be generated.') from exc
+
+        # raise NotImplementedError('Method `write_nx_file` is not implemented.')
         # TODO add archive data to `hdf5_data_dict` before creating the nexus file. Use
         # `populate_hdf5_data_dict` method for each quantity that is needed in .nxs
         # file. Create a NeXus file with the data in `hdf5_data_dict`.
