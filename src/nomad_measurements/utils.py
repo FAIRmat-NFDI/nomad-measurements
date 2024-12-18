@@ -222,11 +222,10 @@ class HDF5Handler:
         path: str,
         params: dict,
         validate_path: bool = True,
-        lazy: bool = True,
     ):
         """
-        Add a dataset to the HDF5 file. The dataset is written lazily (default) when
-        `write_file` method is called. The `path` is validated against the
+        Add a dataset to the HDF5 file. The dataset is written lazily to the file
+        when `write_file` method is called. The `path` is validated against the
         `valid_dataset_paths` if provided before adding the data.
 
         `params` should be a dictionary containing `data`. Optionally,
@@ -241,7 +240,6 @@ class HDF5Handler:
             path (str): The dataset path to be used in the HDF5 file.
             params (dict): The dataset parameters.
             validate_path (bool): If True, the dataset path is validated.
-            lazy (Optional[bool]): If True, the file is not written immediately.
         """
         if not params:
             self.logger.warning('Dataset `params` must be provided.')
@@ -267,31 +265,23 @@ class HDF5Handler:
 
         self._hdf5_datasets[path] = dataset
 
-        if not lazy:
-            self.write_file()
-
     def add_attribute(
         self,
         path: str,
         params: dict,
-        lazy: bool = True,
     ):
         """
         Add an attribute to the dataset or group at the given path. The attribute is
-        written lazily (default) when `write_file` method is called.
+        written lazily to the file when `write_file` method is called.
 
         Args:
             path (str): The dataset or group path in the HDF5 file.
             params (dict): The attributes to be added.
-            lazy (bool): If True, the file is not written immediately.
         """
         if not params:
             self.logger.warning('Attribute `params` must be provided.')
             return
         self._hdf5_attributes[path] = params
-
-        if not lazy:
-            self.write_file()
 
     def read_dataset(self, path: str):
         """
