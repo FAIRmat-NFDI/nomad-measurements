@@ -50,10 +50,12 @@ NEXUS_DATASET_PATHS = [
 
 
 CONCEPT_MAP = {
+    '/ENTRY[entry]/@default': 'experiment_result',
+    '/ENTRY[entry]/definition': 'NXxrd_pan',
     '/ENTRY[entry]/method': 'archive.data.method',
     '/ENTRY[entry]/measurement_type': 'archive.data.diffraction_method_name',
+    '/ENTRY[entry]/experiment_result/@signal': 'intensity',
     '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis': 'archive.data.results[0].scan_axis',
-    '/ENTRY[entry]/experiment_config/count_time': 'archive.data.results[0].integration_time',
     '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material': 'archive.data.xrd_settings.source.xray_tube_material',
     '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current': 'archive.data.xrd_settings.source.xray_tube_current',
     '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage': 'archive.data.xrd_settings.source.xray_tube_voltage',
@@ -61,9 +63,6 @@ CONCEPT_MAP = {
     '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two': 'archive.data.xrd_settings.source.kalpha_two',
     '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone': 'archive.data.xrd_settings.source.ratio_kalphatwo_kalphaone',
     '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta': 'archive.data.xrd_settings.source.kbeta',
-    '/ENTRY[entry]/@default': 'experiment_result',
-    '/ENTRY[entry]/experiment_result/@signal': 'intensity',
-    '/ENTRY[entry]/definition': 'NXxrd_pan',
 }
 
 
@@ -116,7 +115,7 @@ def populate_nx_dataset_and_attribute(
         )
 
         if isinstance(data, pint.Quantity):
-            if str(data.units) != 'unitless' and str(data.units):
+            if str(data.units) != 'dimensionless' and str(data.units):
                 attr_tmp = {nx_path: dict(units=str(data.units))}
                 attr_dict.update(attr_tmp)
                 # attr_dict[nx_path].update({'units': str(data.units)})
