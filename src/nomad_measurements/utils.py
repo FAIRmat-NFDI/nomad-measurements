@@ -398,10 +398,11 @@ class HDF5Handler:
                         template[f'{nx_path}/@{attr_k}'] = attr_v
                     except KeyError:
                         template['optional'][f'{nx_path}/@{attr_k}'] = attr_v
+
+        nx_full_file_path = os.path.join(
+            self.archive.m_context.raw_path(), self.data_file
+        )
         try:
-            nx_full_file_path = os.path.join(
-                self.archive.m_context.raw_path(), self.data_file
-            )
             if self.archive.m_context.raw_path_exists(self.data_file):
                 os.remove(nx_full_file_path)
 
@@ -416,9 +417,8 @@ class HDF5Handler:
                 self.archive.m_context.process_updated_raw_file(self.data_file)
 
         except NXFileGenerationError as exc:
-            if os.path.exists(self.data_file):
-                os.remove(self.data_file)
-                self.data_file = self.data_file.rsplit(os.pathsep, 1)[-1]
+            if os.path.exists(nx_full_file_path):
+                os.remove(nx_full_file_path)
             raise NXFileGenerationError('NeXus file can not be generated.') from exc
 
     def _write_hdf5_file(self):  # noqa: PLR0912
