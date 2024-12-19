@@ -249,10 +249,13 @@ class HDF5Handler:
         dataset = DatasetModel(
             **params,
         )
-        if validate_path and self.valid_dataset_paths:
-            if path not in self.valid_dataset_paths:
-                self.logger.warning(f'Invalid dataset path "{path}".')
-                return
+        if (
+            validate_path
+            and self.valid_dataset_paths
+            and path not in self.valid_dataset_paths
+        ):
+            self.logger.warning(f'Invalid dataset path "{path}".')
+            return
 
         # handle the pint.Quantity and add data
         if isinstance(dataset.data, pint.Quantity):
