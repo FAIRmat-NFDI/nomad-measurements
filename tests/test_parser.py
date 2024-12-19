@@ -20,6 +20,8 @@ import os
 import pytest
 from nomad.client import normalize_all, parse
 
+from nomad_measurements.xrd.schema import XRDResult1D
+
 
 @pytest.fixture(
     name='parsed_archive',
@@ -48,8 +50,9 @@ def fixture_parsed_archive(request):
 
     yield measurement_archive
 
-    if os.path.exists(measurement):
-        os.remove(measurement)
+    for file_path in [measurement, rel_file + '.nxs', rel_file + '.h5']:
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 
 @pytest.mark.parametrize(
@@ -71,7 +74,7 @@ def test_normalize_all(parsed_archive, caplog):
     assert parsed_archive.data.results[
         0
     ].source_peak_wavelength.magnitude == pytest.approx(1.540598, 1e-2)
-    if len(parsed_archive.data.results[0].intensity.shape) == 1:
+    if isinstance(parsed_archive.data.results[0], XRDResult1D):
         assert parsed_archive.results.properties.structural.diffraction_pattern[
             0
         ].incident_beam_wavelength.magnitude * 1e10 == pytest.approx(1.540598, 1e-2)
