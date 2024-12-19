@@ -52,6 +52,10 @@ if TYPE_CHECKING:
     )
 
 
+class NXFileGenerationError(Exception):
+    pass
+
+
 def get_reference(upload_id: str, entry_id: str) -> str:
     return f'../uploads/{upload_id}/archive/{entry_id}#data'
 
@@ -411,11 +415,11 @@ class HDF5Handler:
             if not entry_list:
                 self.archive.m_context.process_updated_raw_file(self.data_file)
 
-        except Exception as exc:
+        except NXFileGenerationError as exc:
             if os.path.exists(self.data_file):
                 os.remove(self.data_file)
                 self.data_file = self.data_file.rsplit(os.pathsep, 1)[-1]
-            raise Exception('NeXus file can not be generated.') from exc
+            raise NXFileGenerationError('NeXus file can not be generated.') from exc
 
     def _write_hdf5_file(self):  # noqa: PLR0912
         """
