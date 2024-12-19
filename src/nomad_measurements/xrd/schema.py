@@ -1170,7 +1170,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         metadata_dict: dict = xrd_dict.get('metadata', {})
         source_dict: dict = metadata_dict.get('source', {})
 
-        scan_type = metadata_dict.get('scan_type', None)
+        scan_type = metadata_dict.get('scan_type')
         if scan_type not in ['line', 'rsm']:
             logger.error(f'Scan type `{scan_type}` is not supported.')
             return
@@ -1184,46 +1184,46 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             result = XRDResultRSM()
 
         if result is not None:
-            result.scan_axis = metadata_dict.get('scan_axis', None)
+            result.scan_axis = metadata_dict.get('scan_axis')
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/intensity',
                 params=dict(
-                    data=xrd_dict.get('intensity', None),
+                    data=xrd_dict.get('intensity'),
                     archive_path='data.results[0].intensity',
                 ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/two_theta',
                 params=dict(
-                    data=xrd_dict.get('2Theta', None),
+                    data=xrd_dict.get('2Theta'),
                     archive_path='data.results[0].two_theta',
                 ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/omega',
                 params=dict(
-                    data=xrd_dict.get('Omega', None),
+                    data=xrd_dict.get('Omega'),
                     archive_path='data.results[0].omega',
                 ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/chi',
                 params=dict(
-                    data=xrd_dict.get('Chi', None),
+                    data=xrd_dict.get('Chi'),
                     archive_path='data.results[0].chi',
                 ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/phi',
                 params=dict(
-                    data=xrd_dict.get('Phi', None),
+                    data=xrd_dict.get('Phi'),
                     archive_path='data.results[0].phi',
                 ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_config/count_time',
                 params=dict(
-                    data=xrd_dict.get('countTime', None),
+                    data=xrd_dict.get('countTime'),
                     archive_path='data.results[0].integration_time',
                 ),
             )
@@ -1231,20 +1231,20 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             results.append(result)
 
         source = XRayTubeSource(
-            xray_tube_material=source_dict.get('anode_material', None),
-            kalpha_one=source_dict.get('kAlpha1', None),
-            kalpha_two=source_dict.get('kAlpha2', None),
-            ratio_kalphatwo_kalphaone=source_dict.get('ratioKAlpha2KAlpha1', None),
-            kbeta=source_dict.get('kBeta', None),
-            xray_tube_voltage=source_dict.get('voltage', None),
-            xray_tube_current=source_dict.get('current', None),
+            xray_tube_material=source_dict.get('anode_material'),
+            kalpha_one=source_dict.get('kAlpha1'),
+            kalpha_two=source_dict.get('kAlpha2'),
+            ratio_kalphatwo_kalphaone=source_dict.get('ratioKAlpha2KAlpha1'),
+            kbeta=source_dict.get('kBeta'),
+            xray_tube_voltage=source_dict.get('voltage'),
+            xray_tube_current=source_dict.get('current'),
         )
         source.normalize(archive, logger)
         xrd_settings = XRDSettings(source=source)
         xrd_settings.normalize(archive, logger)
 
         samples = []
-        if metadata_dict.get('sample_id', None) is not None:
+        if metadata_dict.get('sample_id') is not None:
             sample = CompositeSystemReference(
                 lab_id=metadata_dict['sample_id'],
             )

@@ -302,7 +302,7 @@ class HDF5Handler:
         if dataset_path in self._hdf5_datasets:
             value = self._hdf5_datasets[dataset_path].data
             if dataset_path in self._hdf5_attributes:
-                units = self._hdf5_attributes[dataset_path].get('units', None)
+                units = self._hdf5_attributes[dataset_path].get('units')
                 if units:
                     value *= ureg(units)
             return value
