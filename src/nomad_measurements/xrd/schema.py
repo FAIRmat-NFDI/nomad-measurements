@@ -74,6 +74,8 @@ from nomad_measurements.utils import (
     HDF5Handler,
     get_bounding_range_2d,
     merge_sections,
+    get_entry_id_from_file_name,
+    get_reference
 )
 from nomad_measurements.xrd.nx import NEXUS_DATASET_PATHS
 
@@ -1137,6 +1139,11 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
     )
+    nexus_results = Quantity(
+        type=ArchiveSection,
+        description='Reference to the NeXus entry.',
+        a_eln = ELNAnnotation(component='ReferenceEditQuantity')
+    )
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
         """
@@ -1300,6 +1307,15 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                 self.hdf5_handler.write_file()
                 if self.hdf5_handler.data_file != self.auxiliary_file:
                     self.auxiliary_file = self.hdf5_handler.data_file
+
+        if (archive.m_context.raw_path_exists(self.auxiliary_file) and
+            self.auxiliary_file.endswith('.nxs')):
+            nx_entry_id = get_entry_id_from_file_name(archive=archive,
+                                                      file_name=self.auxiliary_file)
+            ref_to_nx_entry_data = get_reference(archive.metadata.upload_id,
+                                                 nx_entry_id)
+            self.nexus_results = f'{ref_to_nx_entry_data}'
+
         super().normalize(archive, logger)
 
 
