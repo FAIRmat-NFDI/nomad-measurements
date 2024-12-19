@@ -92,6 +92,8 @@ def walk_through_object(parent_obj, attr_chain):
                 child_obj = getattr(parent_obj, child_nm)[index]
             else:
                 child_obj = getattr(parent_obj, child_nm, None)
+            if child_obj is None:
+                return None
             parent_obj = child_obj
 
         return child_obj
@@ -114,31 +116,17 @@ def populate_nx_dataset_and_attribute(
             data=data,
         )
 
-        if isinstance(data, pint.Quantity):
-            if str(data.units) != 'dimensionless' and str(data.units):
-                attr_tmp = {nx_path: dict(units=str(data.units))}
-                attr_dict.update(attr_tmp)
-                # attr_dict[nx_path].update({'units': str(data.units)})
-                dataset.data = data.magnitude
+        if (
+            isinstance(data, pint.Quantity)
+            and str(data.units) != 'dimensionless'
+            and str(data.units)
+        ):
+            attr_tmp = {nx_path: dict(units=str(data.units))}
+            attr_dict |= attr_tmp
+            dataset.data = data.magnitude
 
         l_part, r_part = nx_path.split('/', 1)
         if r_part.startswith('@'):
             attr_dict[l_part] = {r_part.replace('@', ''): data}
         else:
             dataset_dict[nx_path] = dataset
-
-
-def add_group_and_return_child_group(child_group_name, parent_group=None, nxclass=None):
-    """Create group with name `child_group_name` under the parent_group"""
-
-    if (parts := child_group_name.split('[', 1)) and len(parts) > 1:
-        nxclass = parts[0]
-        grp_name_tmp = parts[1].split(']')[0]
-    else:
-        grp_name_tmp = child_group_name
-    parent_group.require_group(grp_name_tmp)
-    child_group = parent_group[grp_name_tmp]
-    if nxclass:
-        child_group.attrs['NX_class'] = 'NX' + nxclass.lower()
-
-    return child_group
