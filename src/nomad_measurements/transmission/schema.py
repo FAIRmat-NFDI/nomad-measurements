@@ -347,7 +347,7 @@ class PerkinElmersLambdaSpectrophotometer(Spectrophotometer):
 class TransmissionSampleReference(CompositeSystemReference):
     """
     Reference to the sample used in the transmission measurement. Additionally,
-    contains the thickness and orientation of the sample.
+    it contains specific sample properties important for transmission measurements.
     """
 
     m_def = Section(
@@ -357,8 +357,8 @@ class TransmissionSampleReference(CompositeSystemReference):
                     'name',
                     'lab_id',
                     'reference',
-                    'thickness',
-                    'orientation',
+                    'geometric_path_length',
+                    'optical_path_length',
                 ]
             )
         )
@@ -373,18 +373,54 @@ class TransmissionSampleReference(CompositeSystemReference):
             label='sample reference',
         ),
     )
-    thickness = Quantity(
+    geometric_path_length = Quantity(
         type=np.float64,
         description="""
-        Thickness of the sample along the direction of the light beam.
-        Also referred to as path length of the beam.""",
+        Length of the sample along the direction of the light beam, i.e., the Euclidean
+        distance between the entry and exit points of the light beam on the sample.
+        This is different from the optical path length, which is the product of the
+        refractive index of the sample and the geometric path length.
+        """,
         a_eln={
             'component': 'NumberEditQuantity',
             'defaultDisplayUnit': 'millimeter',
         },
         unit='meter',
     )
-    orientation = Quantity(
+    optical_path_length = Quantity(
+        type=np.float64,
+        description="""
+        Product of the refractive index of the sample and the geometric path length.
+        """,
+        a_eln={
+            'component': 'NumberEditQuantity',
+            'defaultDisplayUnit': 'millimeter',
+        },
+        unit='meter',
+    )
+
+
+class CrystallographicTransmissionSampleReference(TransmissionSampleReference):
+    """
+    Reference to the sample used in the transmission measurement. Additionally, it
+    includes specific properties for crystallographic samples.
+    """
+
+    m_def = Section(
+        a_eln=ELNAnnotation(
+            properties=SectionProperties(
+                order=[
+                    'name',
+                    'lab_id',
+                    'reference',
+                    'geometric_path_length',
+                    'optical_path_length',
+                    'crystal_orientation',
+                ]
+            )
+        )
+    )
+    crystal_orientation = Quantity(
         type=str,
         description="""
         Crystallographic orientation of the sample surface on which the light beam is
@@ -392,18 +428,6 @@ class TransmissionSampleReference(CompositeSystemReference):
         """,
         a_eln={'component': 'StringEditQuantity'},
     )
-
-    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger') -> None:
-        """
-        The normalizer for the `TransmissionSampleReference` class.
-
-        Args:
-            archive (EntryArchive): The NOMAD archive.
-            logger (BoundLogger): A structlog logger.
-        """
-        super().normalize(archive, logger)
-        # TODO: if the thickness is not mentioned, it should be copied from the
-        # geometry of the referenced sample.
 
 
 class Accessory(ArchiveSection):
