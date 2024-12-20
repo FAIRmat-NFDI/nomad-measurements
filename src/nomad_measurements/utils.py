@@ -374,10 +374,10 @@ class HDF5Handler:
         self.populate_nx_dataset_and_attribute(
             attr_dict=attr_dict, dataset_dict=dataset_dict
         )
-        for nx_path, dset_ori in list(self._hdf5_datasets.items()) + list(
+        for nx_path, dset_original in list(self._hdf5_datasets.items()) + list(
             dataset_dict.items()
         ):
-            dset = copy.deepcopy(dset_ori)
+            dset = copy.deepcopy(dset_original)
             if dset.internal_reference:
                 # convert to the nexus type link
                 dset.data = {'link': self._remove_nexus_annotations(dset.data)}
@@ -524,8 +524,7 @@ class HDF5Handler:
     ):
         """Construct datasets and attributes for nexus and populate."""
 
-        concept_map = copy.deepcopy(CONCEPT_MAP)
-        for nx_path, arch_path in concept_map.items():
+        for nx_path, arch_path in CONCEPT_MAP.items():
             if arch_path.startswith('archive.'):
                 data = self.walk_through_object(self.archive, arch_path)
             else:
