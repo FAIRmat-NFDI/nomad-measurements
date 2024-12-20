@@ -487,51 +487,16 @@ class HDF5Handler:
         self._hdf5_datasets = collections.OrderedDict()
         self._hdf5_attributes = collections.OrderedDict()
 
-    @staticmethod
-    def walk_through_object(parent_obj, attr_chain):
-        """
-        Walk though the object until reach the leaf.
-
-        Args:
-            parent_obj: This is a python obj.
-                e.g.Arvhive
-            attr_chain: Dot separated obj chain.
-                e.g. 'archive.data.xrd_settings.source.xray_tube_material'
-            default: A value to be returned by default, if not data is found.
-        """
-        if parent_obj is None:
-            return parent_obj
-
-        if isinstance(attr_chain, str) and attr_chain.startswith('archive.'):
-            parts = attr_chain.split('.')
-            child_obj = None
-            for part in parts[1:]:
-                child_nm = part
-                if '[' in child_nm:
-                    child_nm, index = child_nm.split('[')
-                    index = int(index[:-1])
-                    # section always exists
-                    child_obj = getattr(parent_obj, child_nm)[index]
-                else:
-                    child_obj = getattr(parent_obj, child_nm, None)
-                if child_obj is None:
-                    return None
-                parent_obj = child_obj
-
-            return child_obj
-
     def populate_nx_dataset_and_attribute(self, attr_dict: dict, dataset_dict: dict):
         """Construct datasets and attributes for nexus and populate."""
 
         for nx_path, arch_path in CONCEPT_MAP.items():
             if arch_path.startswith('archive.'):
-                data = self.walk_through_object(self.archive, arch_path)
+                data = resolve_path(self.archive, arch_path.split('archive.', 1)[1])
             else:
                 data = arch_path  # default value
 
-            dataset = DatasetModel(
-                data=data,
-            )
+            dataset = DatasetModel(data=data)
 
             if (
                 isinstance(data, pint.Quantity)
@@ -580,33 +545,59 @@ class HDF5Handler:
         section: 'ArchiveSection' = None, path: str = None, ref: str = None
     ):
         """
-        Method for setting a HDF5Reference quantity in a section. It can handle
-        nested quantities and repeatable sections, provided that the quantity itself
-        is of type `HDF5Reference`.
+        Method for setting a HDF5Reference quantity in a section.
         For example, one can set the reference for a quantity path like
         `data.results[0].intensity`.
+        In case the section is not initialized, the method returns without setting
+        the reference.
 
         Args:
             section (Section): The NOMAD section containing the quantity.
             path (str): The path to the quantity.
             ref (str): The reference to the HDF5 dataset.
         """
-        # TODO handle the case when section in the path is not initialized
-
         if not section or not path or not ref:
             return
-        attr = section
-        path = path.split('.')
-        quantity_name = path.pop()
 
-        for subpath in path:
-            if re.match(r'.*\[.*\]', subpath):
-                index = int(subpath.split('[')[1].split(']')[0])
-                attr = attr.m_get(subpath.split('[')[0], index=index)
-            else:
-                attr = attr.m_get(subpath)
+        section_path, quantity_name = path.rsplit('.', 1)
+        resolved_section = resolve_path(section, section_path)
 
-        if isinstance(
-            attr.m_get_quantity_definition(quantity_name).type, HDF5Reference
+        if resolved_section and isinstance(
+            resolved_section.m_get_quantity_definition(quantity_name).type,
+            HDF5Reference,
         ):
-            attr.m_set(quantity_name, ref)
+            resolved_section.m_set(quantity_name, ref)
+
+
+def resolve_path(section: 'ArchiveSection', path: str, logger: 'BoundLogger' = None):
+    """
+    Resolves the attribute path within the given NOMAD section.
+
+    Args:
+        section (ArchiveSection): The NOMAD section.
+        path (str): The dot-separated path to the attribute.
+        logger (BoundLogger): A structlog logger.
+
+    Returns:
+        The resolved section or attribute or None if not found.
+    """
+    attr = section
+    parts = path.split('.')
+    try:
+        for part in parts:
+            attr_path = part
+            if re.match(r'.*\[.*\]', attr_path):
+                attr_path, index = part[:-1].split('[')
+                index = int(index)
+            else:
+                index = None
+            attr = attr.m_get(attr_path, index=index)
+    except (KeyError, ValueError, AttributeError) as e:
+        if logger:
+            logger.error(
+                f'Unable to resolve part "{part}" of the given path "{path}". '
+                f'Encountered error "{e}".'
+            )
+        return None
+
+    return attr
