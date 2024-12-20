@@ -351,8 +351,9 @@ class HDF5Handler:
                     nexus file. Creating h5 file instead."""
                 )
                 if self.archive.m_context.raw_path_exists(self.data_file):
-                    os.remove(os.path.join(self.archive.m_context.raw_path(),
-                              self.data_file))
+                    os.remove(
+                        os.path.join(self.archive.m_context.raw_path(), self.data_file)
+                    )
                 self._write_hdf5_file()
         else:
             self._write_hdf5_file()
@@ -519,9 +520,7 @@ class HDF5Handler:
 
             return child_obj
 
-    def populate_nx_dataset_and_attribute(
-        self, attr_dict: dict, dataset_dict: dict
-    ):
+    def populate_nx_dataset_and_attribute(self, attr_dict: dict, dataset_dict: dict):
         """Construct datasets and attributes for nexus and populate."""
 
         for nx_path, arch_path in CONCEPT_MAP.items():
