@@ -16,16 +16,6 @@
 # limitations under the License.
 #
 
-from typing import TYPE_CHECKING, Any, Optional
-import pint
-
-import copy
-from pydantic import BaseModel, Field
-
-if TYPE_CHECKING:
-    from nomad.datamodel.datamodel import EntryArchive
-
-
 NEXUS_DATASET_PATHS = [
     '/ENTRY[entry]/experiment_result/intensity',
     '/ENTRY[entry]/experiment_result/two_theta',
@@ -65,68 +55,3 @@ CONCEPT_MAP = {
     '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta': 'archive.data.xrd_settings.source.kbeta',
 }
 
-
-def walk_through_object(parent_obj, attr_chain):
-    """
-    Walk though the object until reach the leaf.
-
-    Args:
-        parent_obj: This is a python obj.
-            e.g.Arvhive
-        attr_chain: Dot separated obj chain.
-            e.g. 'archive.data.xrd_settings.source.xray_tube_material'
-        default: A value to be returned by default, if not data is found.
-    """
-    if parent_obj is None:
-        return parent_obj
-
-    if isinstance(attr_chain, str) and attr_chain.startswith('archive.'):
-        parts = attr_chain.split('.')
-        child_obj = None
-        for part in parts[1:]:
-            child_nm = part
-            if '[' in child_nm:
-                child_nm, index = child_nm.split('[')
-                index = int(index[:-1])
-                # section always exists
-                child_obj = getattr(parent_obj, child_nm)[index]
-            else:
-                child_obj = getattr(parent_obj, child_nm, None)
-            if child_obj is None:
-                return None
-            parent_obj = child_obj
-
-        return child_obj
-
-
-def populate_nx_dataset_and_attribute(
-    archive: 'EntryArchive', attr_dict: dict, dataset_dict: dict
-):
-    """Construct datasets and attributes for nexus and populate."""
-    from nomad_measurements.utils import DatasetModel
-
-    concept_map = copy.deepcopy(CONCEPT_MAP)
-    for nx_path, arch_path in concept_map.items():
-        if arch_path.startswith('archive.'):
-            data = walk_through_object(archive, arch_path)
-        else:
-            data = arch_path  # default value
-
-        dataset = DatasetModel(
-            data=data,
-        )
-
-        if (
-            isinstance(data, pint.Quantity)
-            and str(data.units) != 'dimensionless'
-            and str(data.units)
-        ):
-            attr_tmp = {nx_path: dict(units=str(data.units))}
-            attr_dict |= attr_tmp
-            dataset.data = data.magnitude
-
-        l_part, r_part = nx_path.split('/', 1)
-        if r_part.startswith('@'):
-            attr_dict[l_part] = {r_part.replace('@', ''): data}
-        else:
-            dataset_dict[nx_path] = dataset

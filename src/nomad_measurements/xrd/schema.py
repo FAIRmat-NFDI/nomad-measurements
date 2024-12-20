@@ -1142,7 +1142,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
     nexus_results = Quantity(
         type=ArchiveSection,
         description='Reference to the NeXus entry.',
-        a_eln = ELNAnnotation(component='ReferenceEditQuantity')
+        a_eln = ELNAnnotation(component=ELNComponentEnum.ReferenceEditQuantity)
     )
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
