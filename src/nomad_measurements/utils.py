@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 import collections
+import copy
 import os.path
 import re
 from typing import (
@@ -30,6 +31,14 @@ import pint
 from nomad.datamodel.hdf5 import HDF5Reference
 from nomad.units import ureg
 from pydantic import BaseModel, Field
+from pynxtools.dataconverter.helpers import (
+    generate_template_from_nxdl,
+    get_nxdl_root_and_path,
+)
+from pynxtools.dataconverter.template import Template
+from pynxtools.dataconverter.writer import Writer as pynxtools_writer
+
+from nomad_measurements.xrd.nx import CONCEPT_MAP
 
 if TYPE_CHECKING:
     from nomad.datamodel.data import (
@@ -41,6 +50,10 @@ if TYPE_CHECKING:
     from structlog.stdlib import (
         BoundLogger,
     )
+
+
+class NXFileGenerationError(Exception):
+    pass
 
 
 def get_reference(upload_id: str, entry_id: str) -> str:
@@ -347,9 +360,13 @@ class HDF5Handler:
             except Exception as e:
                 self.nexus = False
                 self.logger.warning(
-                    f'Encountered "{e}" error while creating nexus file. '
-                    'Creating h5 file instead.'
+                    f"""NeXusFileGenerationError: Encountered '{e}' error while creating
+                    nexus file. Creating h5 file instead."""
                 )
+                if self.archive.m_context.raw_path_exists(self.data_file):
+                    os.remove(
+                        os.path.join(self.archive.m_context.raw_path(), self.data_file)
+                    )
                 self._write_hdf5_file()
         else:
             self._write_hdf5_file()
@@ -360,14 +377,62 @@ class HDF5Handler:
         to the `hdf5_data_dict` before creating the nexus file. This provides a NeXus
         view of the data in addition to storing array data.
         """
-        if self.data_file.endswith('.h5'):
-            self.data_file = self.data_file.replace('.h5', '.nxs')
-        raise NotImplementedError('Method `write_nx_file` is not implemented.')
-        # TODO add archive data to `hdf5_data_dict` before creating the nexus file. Use
-        # `populate_hdf5_data_dict` method for each quantity that is needed in .nxs
-        # file. Create a NeXus file with the data in `hdf5_data_dict`.
-        # One issue here is as we populate the `hdf5_data_dict` with the archive data,
-        # we will always have to over write the nexus file
+        from nomad.processing.data import Entry
+
+        app_def = 'NXxrd_pan'
+        nxdl_root, nxdl_f_path = get_nxdl_root_and_path(app_def)
+        template = Template()
+        generate_template_from_nxdl(nxdl_root, template)
+        attr_dict = {}
+        dataset_dict = {}
+        self.populate_nx_dataset_and_attribute(
+            attr_dict=attr_dict, dataset_dict=dataset_dict
+        )
+        for nx_path, dset_original in list(self._hdf5_datasets.items()) + list(
+            dataset_dict.items()
+        ):
+            dset = copy.deepcopy(dset_original)
+            if dset.internal_reference:
+                # convert to the nexus type link
+                dset.data = {'link': self._remove_nexus_annotations(dset.data)}
+
+            try:
+                template[nx_path] = dset.data
+            except KeyError:
+                template['optional'][nx_path] = dset.data
+
+            hdf5_path = self._remove_nexus_annotations(nx_path)
+            self._set_hdf5_reference(
+                self.archive,
+                dset.archive_path,
+                f'/uploads/{self.archive.m_context.upload_id}/raw'
+                f'/{self.data_file}#{hdf5_path}',
+            )
+        for nx_path, attr_d in list(self._hdf5_attributes.items()) + list(
+            attr_dict.items()
+        ):
+            for attr_k, attr_v in attr_d.items():
+                if attr_v != 'dimensionless' and attr_v:
+                    try:
+                        template[f'{nx_path}/@{attr_k}'] = attr_v
+                    except KeyError:
+                        template['optional'][f'{nx_path}/@{attr_k}'] = attr_v
+
+        nx_full_file_path = os.path.join(
+            self.archive.m_context.raw_path(), self.data_file
+        )
+
+        if self.archive.m_context.raw_path_exists(self.data_file):
+            os.remove(nx_full_file_path)
+        pynxtools_writer(
+            data=template, nxdl_f_path=nxdl_f_path, output_path=nx_full_file_path
+        ).write()
+
+        entry_list = Entry.objects(
+            upload_id=self.archive.m_context.upload_id, mainfile=self.data_file
+        )
+        if not entry_list:
+            self.archive.m_context.process_updated_raw_file(self.data_file)
 
     def _write_hdf5_file(self):  # noqa: PLR0912
         """
@@ -434,6 +499,67 @@ class HDF5Handler:
         # reset hdf5 datasets and atttributes
         self._hdf5_datasets = collections.OrderedDict()
         self._hdf5_attributes = collections.OrderedDict()
+
+    @staticmethod
+    def walk_through_object(parent_obj, attr_chain):
+        """
+        Walk though the object until reach the leaf.
+
+        Args:
+            parent_obj: This is a python obj.
+                e.g.Arvhive
+            attr_chain: Dot separated obj chain.
+                e.g. 'archive.data.xrd_settings.source.xray_tube_material'
+            default: A value to be returned by default, if not data is found.
+        """
+        if parent_obj is None:
+            return parent_obj
+
+        if isinstance(attr_chain, str) and attr_chain.startswith('archive.'):
+            parts = attr_chain.split('.')
+            child_obj = None
+            for part in parts[1:]:
+                child_nm = part
+                if '[' in child_nm:
+                    child_nm, index = child_nm.split('[')
+                    index = int(index[:-1])
+                    # section always exists
+                    child_obj = getattr(parent_obj, child_nm)[index]
+                else:
+                    child_obj = getattr(parent_obj, child_nm, None)
+                if child_obj is None:
+                    return None
+                parent_obj = child_obj
+
+            return child_obj
+
+    def populate_nx_dataset_and_attribute(self, attr_dict: dict, dataset_dict: dict):
+        """Construct datasets and attributes for nexus and populate."""
+
+        for nx_path, arch_path in CONCEPT_MAP.items():
+            if arch_path.startswith('archive.'):
+                data = self.walk_through_object(self.archive, arch_path)
+            else:
+                data = arch_path  # default value
+
+            dataset = DatasetModel(
+                data=data,
+            )
+
+            if (
+                isinstance(data, pint.Quantity)
+                and str(data.units) != 'dimensionless'
+                and str(data.units)
+            ):
+                attr_tmp = {nx_path: dict(units=str(data.units))}
+                attr_dict |= attr_tmp
+                dataset.data = data.magnitude
+
+            l_part, r_part = nx_path.split('/', 1)
+            if r_part.startswith('@'):
+                attr_dict[l_part] = {r_part.replace('@', ''): data}
+            else:
+                dataset_dict[nx_path] = dataset
 
     @staticmethod
     def _remove_nexus_annotations(path: str) -> str:

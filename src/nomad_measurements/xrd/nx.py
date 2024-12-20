@@ -37,3 +37,36 @@ NEXUS_DATASET_PATHS = [
     '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone',
     '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta',
 ]
+
+
+CONCEPT_MAP = {
+    '/ENTRY[entry]/@default': 'experiment_result',
+    '/ENTRY[entry]/definition': 'NXxrd_pan',
+    '/ENTRY[entry]/method': 'archive.data.method',
+    '/ENTRY[entry]/measurement_type': 'archive.data.diffraction_method_name',
+    '/ENTRY[entry]/experiment_result/@signal': 'intensity',
+    '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis': (
+        'archive.data.results[0].scan_axis'
+    ),
+    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material': (
+        'archive.data.xrd_settings.source.xray_tube_material'
+    ),
+    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current': (
+        'archive.data.xrd_settings.source.xray_tube_current'
+    ),
+    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage': (
+        'archive.data.xrd_settings.source.xray_tube_voltage'
+    ),
+    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one': (
+        'archive.data.xrd_settings.source.kalpha_one'
+    ),
+    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two': (
+        'archive.data.xrd_settings.source.kalpha_two'
+    ),
+    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone': (
+        'archive.data.xrd_settings.source.ratio_kalphatwo_kalphaone'
+    ),
+    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta': (
+        'archive.data.xrd_settings.source.kbeta'
+    ),
+}
