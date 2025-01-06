@@ -76,7 +76,7 @@ from nomad.metainfo import (
 )
 from nomad_material_processing.general import Geometry
 
-from nomad_measurements.transmission.utils import create_archive, merge_sections
+from nomad_measurements.utils import create_archive, merge_sections
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import EntryArchive
