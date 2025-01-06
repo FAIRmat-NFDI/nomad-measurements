@@ -60,7 +60,6 @@ from nomad.datamodel.metainfo.basesections import (
     Measurement,
     MeasurementResult,
     ReadableIdentifiers,
-    SystemComponent,
 )
 from nomad.datamodel.metainfo.plot import (
     PlotlyFigure,
@@ -74,7 +73,6 @@ from nomad.metainfo import (
     Section,
     SubSection,
 )
-from nomad_material_processing.general import Geometry
 
 from nomad_measurements.utils import create_archive, merge_sections
 
@@ -84,21 +82,6 @@ if TYPE_CHECKING:
 
 
 m_package = SchemaPackage()
-
-
-class Sample(CompositeSystem, EntryData):
-    """
-    Contains information about the sample id, geometry, and reference to the material
-    system under `components` sub-section.
-    """
-
-    components = SubSection(
-        section_def=SystemComponent,
-        repeats=True,
-    )
-    geometry = SubSection(
-        section_def=Geometry,
-    )
 
 
 class Detector(Entity):
@@ -364,7 +347,7 @@ class TransmissionSampleReference(CompositeSystemReference):
         )
     )
     reference = Quantity(
-        type=Sample,
+        type=CompositeSystem,
         description="""
         A reference to the sample used.
         """,
