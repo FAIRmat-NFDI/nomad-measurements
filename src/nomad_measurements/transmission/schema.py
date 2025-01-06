@@ -761,9 +761,9 @@ class LampSettings(SettingOverWavelengthRange):
     )
 
 
-class Attenuator(ArchiveSection):
+class AttenuatorSettings(ArchiveSection):
     """
-    Attenuation setting for the sample and reference beam.
+    Settings of the attenuator used for the sample and reference light beam.
     """
 
     m_def = Section()
@@ -950,7 +950,7 @@ class UVVisNirTransmissionSettings(ArchiveSection):
         repeats=True,
     )
     attenuator = SubSection(
-        section_def=Attenuator,
+        section_def=AttenuatorSettings,
     )
     monochromator = SubSection(
         section_def=MonochromatorSettings,
