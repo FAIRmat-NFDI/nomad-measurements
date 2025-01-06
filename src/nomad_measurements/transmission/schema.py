@@ -894,35 +894,7 @@ class UVVisNirTransmissionSettings(ArchiveSection):
     visible, and near IR ranges of wavelength.
     """
 
-    m_def = Section(
-        a_eln=ELNAnnotation(
-            properties=SectionProperties(
-                order=[
-                    'sample_beam_position',
-                    'common_beam_mask',
-                    'common_beam_depolarizer',
-                ],
-            ),
-        ),
-    )
-    detector_module = Quantity(
-        type=MEnum(
-            [
-                'Three Detector Module',
-                'Two Detector Module',
-                '150-mm Integrating Sphere',
-            ]
-        ),
-        a_eln={'component': 'EnumEditQuantity'},
-        description="""
-        Modules containing multiple detectors for different wavelength ranges.
-        | Detector Module                      | Description          |
-        |--------------------------------------|----------------------|
-        | **Three Detector Module**            | Installed as standard module on Perkin-Elmer Lambda 1050 WB and NB spectrophotometers. Contains three detectors for different wavelength ranges: PMT, InGaAs, PbS. |
-        | **Two Detector Module**              | Installed on Perkin-Elmer Lambda 750, 900, 950 spectrophotometers. Contains two detectors for different wavelength ranges: PMT, PbS. |
-        | **150-mm Integrating Sphere**        | Includes an integrating sphere with a diameter of 150 mm which is equipped with PMT (R928) and InGaAs detector. The PMT covers 200-860.8 nm and the InGaAs detector covers 860.8-2500 nm. |
-        """,  # noqa: E501
-    )
+    m_def = Section()
     sample_beam_position = Quantity(
         type=MEnum(['Front', 'Rear']),
         description=(
@@ -955,27 +927,41 @@ class UVVisNirTransmissionSettings(ArchiveSection):
         default=False,
         a_eln={'component': 'BoolEditQuantity'},
     )
-    accessory = SubSection(
-        section_def=Accessory,
-        repeats=True,
-    )
-    attenuator = SubSection(
-        section_def=Attenuator,
+    detector_module = Quantity(
+        type=MEnum(
+            [
+                'Three Detector Module',
+                'Two Detector Module',
+                '150-mm Integrating Sphere',
+            ]
+        ),
+        a_eln={'component': 'EnumEditQuantity'},
+        description="""
+        Modules containing multiple detectors for different wavelength ranges.
+        | Detector Module                      | Description          |
+        |--------------------------------------|----------------------|
+        | **Three Detector Module**            | Installed as standard module on Perkin-Elmer Lambda 1050 WB and NB spectrophotometers. Contains three detectors for different wavelength ranges: PMT, InGaAs, PbS. |
+        | **Two Detector Module**              | Installed on Perkin-Elmer Lambda 750, 900, 950 spectrophotometers. Contains two detectors for different wavelength ranges: PMT, PbS. |
+        | **150-mm Integrating Sphere**        | Includes an integrating sphere with a diameter of 150 mm which is equipped with PMT (R928) and InGaAs detector. The PMT covers 200-860.8 nm and the InGaAs detector covers 860.8-2500 nm. |
+        """,  # noqa: E501
     )
     light_source = SubSection(
         section_def=LampSettings,
         repeats=True,
     )
+    attenuator = SubSection(
+        section_def=Attenuator,
+    )
     monochromator = SubSection(
         section_def=MonochromatorSettings,
         repeats=True,
     )
-    detector = SubSection(
-        section_def=DetectorSettings,
-        repeats=True,
-    )
     monochromator_slit_width = SubSection(
         section_def=MonochromatorSlitWidth,
+        repeats=True,
+    )
+    detector = SubSection(
+        section_def=DetectorSettings,
         repeats=True,
     )
     detector_gain = SubSection(
@@ -984,6 +970,10 @@ class UVVisNirTransmissionSettings(ArchiveSection):
     )
     detector_integration_time = SubSection(
         section_def=DetectorIntegrationTime,
+        repeats=True,
+    )
+    accessory = SubSection(
+        section_def=Accessory,
         repeats=True,
     )
 
