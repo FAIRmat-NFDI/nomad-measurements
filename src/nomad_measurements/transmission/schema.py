@@ -1390,7 +1390,7 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
             ].wavelength_upper_limit = wavelength_value['wavelength']
             transmission.transmission_settings.detector_integration_time[
                 idx
-            ].detector_integration_time = wavelength_value['value']
+            ].integration_time = wavelength_value['value']
             if idx - 1 >= 0:
                 transmission.transmission_settings.detector_integration_time[
                     idx
