@@ -945,14 +945,14 @@ class UVVisNirTransmissionSettings(ArchiveSection):
         | **150-mm Integrating Sphere**        | Includes an integrating sphere with a diameter of 150 mm which is equipped with PMT (R928) and InGaAs detector. The PMT covers 200-860.8 nm and the InGaAs detector covers 860.8-2500 nm. |
         """,  # noqa: E501
     )
-    light_source = SubSection(
+    light_sources = SubSection(
         section_def=LampSettings,
         repeats=True,
     )
     attenuator = SubSection(
         section_def=AttenuatorSettings,
     )
-    monochromator = SubSection(
+    monochromators = SubSection(
         section_def=MonochromatorSettings,
         repeats=True,
     )
@@ -960,7 +960,7 @@ class UVVisNirTransmissionSettings(ArchiveSection):
         section_def=MonochromatorSlitWidth,
         repeats=True,
     )
-    detector = SubSection(
+    detectors = SubSection(
         section_def=DetectorSettings,
         repeats=True,
     )
@@ -972,7 +972,7 @@ class UVVisNirTransmissionSettings(ArchiveSection):
         section_def=DetectorIntegrationTime,
         repeats=True,
     )
-    accessory = SubSection(
+    accessories = SubSection(
         section_def=Accessory,
         repeats=True,
     )
@@ -1214,8 +1214,10 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
             i = 0
             for light_source in instrument_reference.reference.light_sources:
                 if light_source.type in lamps:
-                    transmission.m_setdefault(f'transmission_settings/light_source/{i}')
-                    transmission.transmission_settings.light_source[
+                    transmission.m_setdefault(
+                        f'transmission_settings/light_sources/{i}'
+                    )
+                    transmission.transmission_settings.light_sources[
                         i
                     ].lamp = light_source
                     i += 1
@@ -1227,16 +1229,16 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
         if (
             lamp_change_points is not None
             and len(lamp_change_points)
-            == len(transmission.transmission_settings.light_source) - 1
+            == len(transmission.transmission_settings.light_sources) - 1
         ):
             for idx, lamp_change_point in enumerate(lamp_change_points):
-                transmission.transmission_settings.light_source[
+                transmission.transmission_settings.light_sources[
                     idx
                 ].wavelength_upper_limit = lamp_change_point
-                transmission.transmission_settings.light_source[
+                transmission.transmission_settings.light_sources[
                     idx + 1
                 ].wavelength_lower_limit = lamp_change_point
-        for light_source_setting in transmission.transmission_settings.light_source:
+        for light_source_setting in transmission.transmission_settings.light_sources:
             light_source_setting.normalize(archive, logger)
 
         # add settings: detector
@@ -1268,8 +1270,8 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
             i = 0
             for detector in instrument_reference.reference.detectors:
                 if detector.type in detector_list:
-                    transmission.m_setdefault(f'transmission_settings/detector/{i}')
-                    transmission.transmission_settings.detector[i].detector = detector
+                    transmission.m_setdefault(f'transmission_settings/detectors/{i}')
+                    transmission.transmission_settings.detectors[i].detector = detector
                     i += 1
         except Exception as e:
             logger.warning(
@@ -1279,24 +1281,24 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
         if (
             detector_change_points is not None
             and len(detector_change_points)
-            == len(transmission.transmission_settings.detector) - 1
+            == len(transmission.transmission_settings.detectors) - 1
         ):
             for idx, change_point in enumerate(detector_change_points):
-                transmission.transmission_settings.detector[
+                transmission.transmission_settings.detectors[
                     idx
                 ].wavelength_upper_limit = change_point
-                transmission.transmission_settings.detector[
+                transmission.transmission_settings.detectors[
                     idx + 1
                 ].wavelength_lower_limit = change_point
-        for detector_setting in transmission.transmission_settings.detector:
+        for detector_setting in transmission.transmission_settings.detectors:
             detector_setting.normalize(archive, logger)
 
-        # add settings: monochromator
+        # add settings: monochromators
         try:
             i = 0
             for monochromator in instrument_reference.reference.monochromators:
-                transmission.m_setdefault(f'transmission_settings/monochromator/{i}')
-                transmission.transmission_settings.monochromator[
+                transmission.m_setdefault(f'transmission_settings/monochromators/{i}')
+                transmission.transmission_settings.monochromators[
                     i
                 ].monochromator = monochromator
                 i += 1
@@ -1308,16 +1310,16 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
         if (
             monochromator_change_points is not None
             and len(monochromator_change_points)
-            == len(transmission.transmission_settings.monochromator) - 1
+            == len(transmission.transmission_settings.monochromators) - 1
         ):
             for idx, change_point in enumerate(monochromator_change_points):
-                transmission.transmission_settings.monochromator[
+                transmission.transmission_settings.monochromators[
                     idx
                 ].wavelength_upper_limit = change_point
-                transmission.transmission_settings.monochromator[
+                transmission.transmission_settings.monochromators[
                     idx + 1
                 ].wavelength_lower_limit = change_point
-        for monochromator_setting in transmission.transmission_settings.monochromator:
+        for monochromator_setting in transmission.transmission_settings.monochromators:
             monochromator_setting.normalize(archive, logger)
 
         # add settings: monochromator slit width
