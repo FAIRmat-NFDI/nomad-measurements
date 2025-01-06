@@ -526,7 +526,7 @@ class Aperture(Accessory):
 
 class SettingOverWavelengthRange(ArchiveSection):
     """
-    An instrument setting set over a range of wavelength.
+    An instrument setting set over a wavelength range.
     """
 
     m_def = Section(
@@ -654,9 +654,9 @@ class MonochromatorSettings(SettingOverWavelengthRange):
     )
 
 
-class NIRGain(SettingOverWavelengthRange):
+class DetectorGain(SettingOverWavelengthRange):
     """
-    NIR gain factor of detectors used in transmission spectrophotometry over a range of
+    Gain factor of the detector used in transmission spectrophotometry over a range of
     wavelength.
     """
 
@@ -667,22 +667,22 @@ class NIRGain(SettingOverWavelengthRange):
                     'name',
                     'wavelength_lower_limit',
                     'wavelength_upper_limit',
-                    'nir_gain_factor',
+                    'gain',
                 ],
             ),
         ),
     )
-    nir_gain_factor = Quantity(
+    gain = Quantity(
         type=np.float64,
-        description='NIR gain factor of the detector.',
+        description='Gain factor of the detector used over a wavelength range.',
         a_eln={'component': 'NumberEditQuantity'},
         unit='dimensionless',
     )
 
 
-class IntegrationTime(SettingOverWavelengthRange):
+class DetectorIntegrationTime(SettingOverWavelengthRange):
     """
-    Integration time of the detectors used in transmission spectrophotometry over a
+    Integration time of the detector used in transmission spectrophotometry over a
     wavelength range.
     """
 
@@ -700,7 +700,9 @@ class IntegrationTime(SettingOverWavelengthRange):
     )
     integration_time = Quantity(
         type=np.float64,
-        description='Integration time value.',
+        description="""
+        Integration time of the detector used in the given wavelength range.
+        """,
         a_eln={
             'component': 'NumberEditQuantity',
             'defaultDisplayUnit': 's',
@@ -976,12 +978,12 @@ class UVVisNirTransmissionSettings(ArchiveSection):
         section_def=MonochromatorSlitWidth,
         repeats=True,
     )
-    nir_gain = SubSection(
-        section_def=NIRGain,
+    detector_gain = SubSection(
+        section_def=DetectorGain,
         repeats=True,
     )
-    integration_time = SubSection(
-        section_def=IntegrationTime,
+    detector_integration_time = SubSection(
+        section_def=DetectorIntegrationTime,
         repeats=True,
     )
 
@@ -1371,37 +1373,41 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
 
         # add settings: NIR gain
         for idx, wavelength_value in enumerate(data_dict['detector_NIR_gain']):
-            transmission.m_setdefault(f'transmission_settings/nir_gain/{idx}')
-            transmission.transmission_settings.nir_gain[
+            transmission.m_setdefault(f'transmission_settings/detector_gain/{idx}')
+            transmission.transmission_settings.detector_gain[
                 idx
             ].wavelength_upper_limit = wavelength_value['wavelength']
-            transmission.transmission_settings.nir_gain[
+            transmission.transmission_settings.detector_gain[
                 idx
-            ].nir_gain_factor = wavelength_value['value']
+            ].gain = wavelength_value['value']
             if idx - 1 >= 0:
-                transmission.transmission_settings.nir_gain[
+                transmission.transmission_settings.detector_gain[
                     idx
                 ].wavelength_lower_limit = data_dict['detector_NIR_gain'][idx - 1][
                     'wavelength'
                 ]
-            transmission.transmission_settings.nir_gain[idx].normalize(archive, logger)
+            transmission.transmission_settings.detector_gain[idx].normalize(
+                archive, logger
+            )
 
         # add settings: integration time
         for idx, wavelength_value in enumerate(data_dict['detector_integration_time']):
-            transmission.m_setdefault(f'transmission_settings/integration_time/{idx}')
-            transmission.transmission_settings.integration_time[
+            transmission.m_setdefault(
+                f'transmission_settings/detector_integration_time/{idx}'
+            )
+            transmission.transmission_settings.detector_integration_time[
                 idx
             ].wavelength_upper_limit = wavelength_value['wavelength']
-            transmission.transmission_settings.integration_time[
+            transmission.transmission_settings.detector_integration_time[
                 idx
-            ].integration_time = wavelength_value['value']
+            ].detector_integration_time = wavelength_value['value']
             if idx - 1 >= 0:
-                transmission.transmission_settings.integration_time[
+                transmission.transmission_settings.detector_integration_time[
                     idx
                 ].wavelength_lower_limit = data_dict['detector_integration_time'][
                     idx - 1
                 ]['wavelength']
-            transmission.transmission_settings.integration_time[idx].normalize(
+            transmission.transmission_settings.detector_integration_time[idx].normalize(
                 archive, logger
             )
 
