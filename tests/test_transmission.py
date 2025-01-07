@@ -42,4 +42,15 @@ def test_normalize_all(parsed_measurement_archive, caplog):
         caplog (pytest.fixture): Fixture to capture errors from the logger.
     """
     normalize_all(parsed_measurement_archive)
-    # TODO test the normalized data
+
+    # testing normalized data for a single file
+    if parsed_measurement_archive.data.data_file == 'KTF-D.Probe.Raw.asc':
+        assert (
+            parsed_measurement_archive.data.transmission_settings.sample_beam_position
+            == 'Front'
+        )
+        assert parsed_measurement_archive.data.results[0].wavelength.shape == (1001,)
+        assert (
+            'UV-Vis-NIR Transmission Spectrophotometry'
+            in parsed_measurement_archive.results.eln.methods
+        )
