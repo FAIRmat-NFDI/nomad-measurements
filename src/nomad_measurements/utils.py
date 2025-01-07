@@ -269,7 +269,7 @@ class HDF5Handler:
             validate_path (bool): If True, the dataset path is validated.
         """
         if not params:
-            self.logger.warning('Dataset `params` must be provided.')
+            self.logger.warning('Dataset `params` not provided.')
             return
 
         dataset = DatasetModel(
@@ -309,7 +309,7 @@ class HDF5Handler:
             params (dict): The attributes to be added.
         """
         if not params:
-            self.logger.warning('Attribute `params` must be provided.')
+            self.logger.warning('Attribute `params` not provided.')
             return
         self._hdf5_attributes[path] = params
 
@@ -324,7 +324,10 @@ class HDF5Handler:
         """
         if path is None:
             return
-        file_path, dataset_path = path.split('#')
+        if '#' not in path:
+            file_path, dataset_path = None, path
+        else:
+            file_path, dataset_path = path.rsplit('#', 1)
 
         # find path in the instance variables
         value = None
@@ -336,6 +339,8 @@ class HDF5Handler:
                     value *= ureg(units)
             return value
 
+        if not file_path:
+            return
         file_name = file_path.rsplit('/raw/', 1)[1]
         with h5py.File(self.archive.m_context.raw_file(file_name, 'rb')) as h5:
             if dataset_path not in h5:
