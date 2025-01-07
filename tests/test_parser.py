@@ -15,44 +15,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import os
-
 import pytest
-from nomad.client import normalize_all, parse
+from nomad.client import normalize_all
 
-
-@pytest.fixture(
-    name='parsed_archive',
-    params=[
-        'XRD-918-16_10.xrdml',
-        'm54313_om2th_10.xrdml',
-        'm82762_rc1mm_1_16dg_src_slit_phi-101_3dg_-420_mesh_long.xrdml',
-        '23-012-AG_2thomegascan_long.brml',
-        'EJZ060_13_004_RSM.brml',
-        'Omega-2Theta_scan_high_temperature.rasx',
-        'RSM_111_sdd=350.rasx',
-        'TwoTheta_scan_powder.rasx',
-    ],
-)
-def fixture_parsed_archive(request):
-    """
-    Sets up data for testing and cleans up after the test.
-    """
-    rel_file = os.path.join('tests', 'data', 'xrd', request.param)
-    file_archive = parse(rel_file)[0]
-    measurement = os.path.join(
-        'tests',
-        'data',
-        'xrd',
-        '.'.join(request.param.split('.')[:-1]) + '.archive.json',
-    )
-    assert file_archive.data.measurement.m_proxy_value == os.path.abspath(measurement)
-    measurement_archive = parse(measurement)[0]
-
-    yield measurement_archive
-
-    if os.path.exists(measurement):
-        os.remove(measurement)
+test_files = [
+    'tests/data/xrd/XRD-918-16_10.xrdml',
+    'tests/data/xrd/m54313_om2th_10.xrdml',
+    'tests/data/xrd/m82762_rc1mm_1_16dg_src_slit_phi-101_3dg_-420_mesh_long.xrdml',
+    'tests/data/xrd/23-012-AG_2thomegascan_long.brml',
+    'tests/data/xrd/EJZ060_13_004_RSM.brml',
+    'tests/data/xrd/Omega-2Theta_scan_high_temperature.rasx',
+    'tests/data/xrd/RSM_111_sdd=350.rasx',
+    'tests/data/xrd/TwoTheta_scan_powder.rasx',
+]
 
 
 @pytest.mark.parametrize(
