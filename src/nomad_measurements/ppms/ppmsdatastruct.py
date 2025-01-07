@@ -30,6 +30,17 @@ from nomad.metainfo import (
     Section,
     SubSection,
 )
+from nomad.datamodel.metainfo.eln import (
+    CompositeSystem,
+)
+
+class PPMSSample(CompositeSystem):
+    name = Quantity(type=str, description='FILL')
+    type = Quantity(type=str, description='FILL')
+    material = Quantity(type=str, description='FILL')
+    comment = Quantity(type=str, description='FILL')
+    lead_separation = Quantity(type=str, description='FILL')
+    cross_section = Quantity(type=str, description='FILL')
 
 
 class PPMSData(ArchiveSection):

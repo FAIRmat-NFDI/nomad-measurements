@@ -21,6 +21,7 @@ from typing import (
     TYPE_CHECKING,
 )
 
+from nomad.config import config
 from nomad.datamodel import ClientContext, EntryArchive
 from nomad.datamodel.data import (
     EntryData,
@@ -41,9 +42,22 @@ from nomad.datamodel.metainfo.basesections import (
     BaseSection,
 )
 
-from nomad_measurements.ppms.schema import PPMSMeasurement
+from nomad_measurements.ppms.schema import (
+    PPMSMeasurement,
+    PPMSETOMeasurement,
+    PPMSACTMeasurement,
+)
 from nomad_measurements.utils import create_archive
 
+configuration = config.get_plugin_entry_point(
+    'nomad_measurements.ppms:eto_parser'
+)
+configuration = config.get_plugin_entry_point(
+    'nomad_measurements.ppms:act_parser'
+)
+configuration = config.get_plugin_entry_point(
+    'nomad_measurements.ppms:sequence_parser'
+)
 
 def find_matching_sequence_file(archive, entry, logger):
     if isinstance(archive.m_context, ClientContext):
@@ -84,22 +98,37 @@ class PPMSFile(EntryData):
         ),
     )
 
-
 class PPMSParser(MatchingParser):
-    ppms_measurement: str = MatchingParser
-
+    def set_entrydata_definition(self):
+        self.entrydata_definition = PPMSMeasurement
+    
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
-        self.ppms_measurement = PPMSMeasurement
-
+        self.set_entrydata_definition()
         data_file = mainfile.split('/')[-1]
         data_file_with_path = mainfile.split('raw/')[-1]
-        entry = self.ppms_measurement()
+        entry = self.entrydata_definition()
         entry.data_file = data_file_with_path
         file_name = f'{data_file[:-4]}.archive.json'
-        # entry.normalize(archive, logger)
         find_matching_sequence_file(archive, entry, logger)
-        archive.data = PPMSFile(measurement=create_archive(entry, archive, file_name))
+        archive.data = PPMSFile(
+            measurement=create_archive(entry, archive, file_name)
+        )
         archive.metadata.entry_name = data_file + ' measurement file'
+
+class PPMSETOParser(PPMSParser):
+    def set_entrydata_definition(self):
+        self.entrydata_definition = PPMSETOMeasurement
+
+    def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
+        super().parse(mainfile, archive, logger)
+
+
+class PPMSACTParser(PPMSParser):
+    def set_entrydata_definition(self):
+        self.entrydata_definition = PPMSACTMeasurement
+
+    def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
+        super().parse(mainfile, archive, logger)
 
 
 class PPMSSequenceFile(BaseSection, EntryData):
@@ -111,11 +140,12 @@ class PPMSSequenceFile(BaseSection, EntryData):
 
 
 class PPMSSequenceParser(MatchingParser):
-    ppms_sequence: str = MatchingParser
+    def set_entrydata_definition(self):
+        self.entrydata_definition = PPMSSequenceFile
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
-        self.ppms_sequence = PPMSSequenceFile
+        self.set_entrydata_definition()
         data_file = mainfile.split('/')[-1]
         data_file_with_path = mainfile.split('raw/')[-1]
-        archive.data = self.ppms_sequence(file_path=data_file_with_path)
+        archive.data = self.entrydata_definition(file_path=data_file_with_path)
         archive.metadata.entry_name = data_file + ' sequence file'
