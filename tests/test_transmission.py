@@ -15,43 +15,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import os
-
 import pytest
-from nomad.client import normalize_all, parse
+from nomad.client import normalize_all
+
+test_files = [
+    'tests/data/transmission/3DM_test01.Probe.Raw.asc',
+    'tests/data/transmission/F4-P3HT 1-10 0,5 mgml.Probe.Raw.asc',
+    'tests/data/transmission/KTF-D.Probe.Raw.asc',
+    'tests/data/transmission/Sample5926.Probe.Raw.asc',
+    'tests/data/transmission/sphere_test01.Probe.Raw.asc',
+]
+log_levels = ['error', 'critical']
 
 
-@pytest.fixture(
-    params=[
-        '3DM_test01.Probe.Raw.asc',
-        'F4-P3HT 1-10 0,5 mgml.Probe.Raw.asc',
-        'KTF-D.Probe.Raw.asc',
-        'Sample5926.Probe.Raw.asc',
-        'sphere_test01.Probe.Raw.asc',
-    ]
+@pytest.mark.parametrize(
+    'parsed_measurement_archive, caplog',
+    [(file, log_level) for file in test_files for log_level in log_levels],
+    indirect=True,
 )
-def parsed_archive(request):
+def test_normalize_all(parsed_measurement_archive, caplog):
     """
-    Sets up data for testing and cleans up after the test.
+    Tests the normalization of the parsed archive.
+
+    Args:
+        parsed_archive (pytest.fixture): Fixture to handle the parsing of archive.
+        caplog (pytest.fixture): Fixture to capture errors from the logger.
     """
-    rel_file = os.path.join(
-        os.path.dirname(__file__), '../data/transmission', request.param
-    )
-    file_archive = parse(rel_file)[0]
-    measurement = os.path.join(
-        os.path.dirname(__file__),
-        '../data/transmission',
-        '.'.join(request.param.split('.')[:-1]) + '.archive.json',
-    )
-    assert file_archive.data.measurement.m_proxy_value == os.path.abspath(measurement)
-    measurement_archive = parse(measurement)[0]
-
-    yield measurement_archive
-
-    if os.path.exists(measurement):
-        os.remove(measurement)
-
-
-def test_normalize_all(parsed_archive):
-    normalize_all(parsed_archive)
+    normalize_all(parsed_measurement_archive)
     # TODO test the normalized data
