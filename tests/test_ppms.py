@@ -18,8 +18,7 @@
 import pytest
 from nomad.client import normalize_all
 
-
-#Test ETO funtionality
+# Test ETO funtionality
 
 test_files = [
     'tests/data/ppms/ETO_Ch1_TMR_Ch2_Hall.dat',
@@ -52,8 +51,7 @@ def test_normalize_eto(parsed_measurement_archive, caplog):
     assert len(parsed_measurement_archive.data.figures) == 5  # Noqa: PLR2004
 
 
-
-#Test ACT funtionality
+# Test ACT funtionality
 
 test_files = [
     'tests/data/ppms/ACT_Ch1_Hall_Ch2_TMR.dat',
@@ -74,15 +72,40 @@ def test_normalize_act(parsed_measurement_archive, caplog):
         parsed_archive (pytest.fixture): Fixture to handle the parsing of archive.
         caplog (pytest.fixture): Fixture to capture errors from the logger.
     """
-    normalize_all(parsed_measurement_archive)    
-    
-    assert (
-        parsed_measurement_archive.data.software
-        == 'ACTRANSPORT,2.0,1.1'
-    )
+    normalize_all(parsed_measurement_archive)
+
+    assert parsed_measurement_archive.data.software == 'ACTRANSPORT,2.0,1.1'
     #  assert len(parsed_measurement_archive.data.steps) == 70 #Noqa: PLR2004
     assert len(parsed_measurement_archive.data.data) == 8  # Noqa: PLR2004
     assert len(parsed_measurement_archive.data.data[4].time_stamp) == 794  # Noqa: PLR2004
     assert len(parsed_measurement_archive.data.figures) == 8  # Noqa: PLR2004
 
 
+# Test ACMS funtionality
+
+test_files = [
+    'tests/data/ppms/ACMS_test.dat',
+]
+log_levels = ['error', 'critical']
+
+
+@pytest.mark.parametrize(
+    'parsed_measurement_archive, caplog',
+    [(file, log_level) for file in test_files for log_level in log_levels],
+    indirect=True,
+)
+def test_normalize_acms(parsed_measurement_archive, caplog):
+    """
+    Tests the normalization of the parsed archive.
+
+    Args:
+        parsed_archive (pytest.fixture): Fixture to handle the parsing of archive.
+        caplog (pytest.fixture): Fixture to capture errors from the logger.
+    """
+    normalize_all(parsed_measurement_archive)
+
+    assert parsed_measurement_archive.data.software == 'ACMS,1.0,1.1'
+    #  assert len(parsed_measurement_archive.data.steps) == 70 #Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data) == 4  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data[3].time_stamp) == 67  # Noqa: PLR2004
+    # assert len(parsed_measurement_archive.data.figures) == 8  # Noqa: PLR2004

@@ -15,13 +15,12 @@
 # limitations under the License.
 #
 
+import re
+from io import StringIO
 from typing import (
     TYPE_CHECKING,
 )
 
-
-import re
-from io import StringIO
 import pandas as pd
 from nomad.datamodel.data import (
     EntryData,
@@ -49,9 +48,10 @@ from nomad_measurements.ppms.ppmsdatastruct import (
     PPMSSample,
 )
 from nomad_measurements.ppms.ppmsfunctions import (
-    get_fileopentime,
     find_ppms_steps_from_sequence,
+    get_fileopentime,
     get_ppms_steps_from_data,
+    split_ppms_data_acms,
     split_ppms_data_act,
     split_ppms_data_eto,
 )
@@ -67,12 +67,10 @@ if TYPE_CHECKING:
 from nomad.config import config
 from nomad.metainfo import SchemaPackage
 
-configuration = config.get_plugin_entry_point(
-    'nomad_measurements.ppms:eto_schema'
-)
-configuration = config.get_plugin_entry_point(
-    'nomad_measurements.ppms:act_schema'
-)
+configuration = config.get_plugin_entry_point('nomad_measurements.ppms:eto_schema')
+configuration = config.get_plugin_entry_point('nomad_measurements.ppms:act_schema')
+configuration = config.get_plugin_entry_point('nomad_measurements.ppms:acms_schema')
+
 
 class Sample(CompositeSystem):
     name = Quantity(type=str, description='FILL')
@@ -122,7 +120,7 @@ class PPMSMeasurement(Measurement):
         a_browser=dict(adaptor='RawFileAdaptor'),
     )
 
-    #Additional parameters for separating the measurements
+    # Additional parameters for separating the measurements
     temperature_tolerance = Quantity(
         type=float,
         unit='kelvin',
@@ -154,7 +152,7 @@ class PPMSMeasurement(Measurement):
             header_section = header_match.group(1).strip()
             header_lines = header_section.split('\n')
 
-            if len(self.samples)==0:
+            if len(self.samples) == 0:
                 for i in ['1', '2']:
                     sample_headers = [
                         line
@@ -168,9 +166,7 @@ class PPMSMeasurement(Measurement):
                             key = parts[-1].lower().replace('sample' + i + '_', '')
                             if hasattr(sample, key):
                                 setattr(sample, key, ', '.join(parts[1:-1]))
-                        self.m_add_sub_section(
-                            PPMSMeasurement.samples, sample
-                        )
+                        self.m_add_sub_section(PPMSMeasurement.samples, sample)
 
             for line in header_lines:
                 if line.startswith('FILEOPENTIME'):
@@ -200,10 +196,11 @@ class PPMSMeasurement(Measurement):
                             float(line.replace('FIELDTOLERANCE,', '').strip()),
                         )
 
+
 m_package_ppms_eto = SchemaPackage()
 
-class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
 
+class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
     def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
 
@@ -214,8 +211,7 @@ class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 data = file.read()
 
             header_match = re.search(r'\[Header\](.*?)\[Data\]', data, re.DOTALL)
-            header_section = header_match.group(1).strip()
-        
+
             data_section = header_match.string[header_match.end() :]
             data_section = data_section.replace(',Field', ',Magnetic Field')
             data_buffer = StringIO(data_section)
@@ -239,8 +235,6 @@ class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
             else:
                 self.steps = all_steps
 
-            
-            logger.info(runs_list)
             self.data = split_ppms_data_eto(data_df, runs_list)
 
             # Now create the according plots
@@ -270,12 +264,13 @@ class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
                     PlotlyFigure(label=data.name, figure=figure1.to_plotly_json())
                 )
 
+
 m_package_ppms_eto.__init_metainfo__()
 
 m_package_ppms_act = SchemaPackage()
 
-class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
 
+class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
     def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
 
@@ -286,8 +281,7 @@ class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 data = file.read()
 
             header_match = re.search(r'\[Header\](.*?)\[Data\]', data, re.DOTALL)
-            header_section = header_match.group(1).strip()
-        
+
             data_section = header_match.string[header_match.end() :]
             data_section = data_section.replace(',Field', ',Magnetic Field')
             data_buffer = StringIO(data_section)
@@ -311,8 +305,6 @@ class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
             else:
                 self.steps = all_steps
 
-            
-            logger.info(runs_list)
             self.data = split_ppms_data_act(data_df, runs_list)
 
             # Now create the according plots
@@ -342,4 +334,44 @@ class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
                     PlotlyFigure(label=data.name, figure=figure1.to_plotly_json())
                 )
 
+
 m_package_ppms_act.__init_metainfo__()
+
+m_package_ppms_acms = SchemaPackage()
+
+
+class PPMSACMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
+    def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
+        super().normalize(archive, logger)
+
+        if archive.data.data_file:
+            logger.info('Parsing PPMS measurement file.')
+
+            with archive.m_context.raw_file(self.data_file, 'r') as file:
+                data = file.read()
+
+            header_match = re.search(r'\[Header\](.*?)\[Data\]', data, re.DOTALL)
+
+            data_section = header_match.string[header_match.end() :]
+            data_section = data_section.replace(',Field', ',Magnetic Field')
+            data_buffer = StringIO(data_section)
+            data_df = pd.read_csv(
+                data_buffer,
+                header=0,
+                skipinitialspace=True,
+                sep=',',
+                engine='python',
+            )
+
+            all_steps, runs_list = get_ppms_steps_from_data(
+                data_df, self.temperature_tolerance, self.field_tolerance
+            )
+
+            if not self.sequence_file:
+                self.steps = all_steps
+
+            logger.info('Parsing ACMS measurement.')
+            self.data = split_ppms_data_acms(data_df, runs_list)
+
+
+m_package_ppms_acms.__init_metainfo__()

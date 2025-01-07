@@ -22,6 +22,8 @@ from datetime import datetime
 import numpy as np
 
 from nomad_measurements.ppms.ppmsdatastruct import (
+    ACMSData,
+    ACMSPPMSData,
     ACTChannelData,
     ACTData,
     ACTPPMSData,
@@ -570,6 +572,47 @@ def split_ppms_data_eto(data_full, runs):  # noqa: PLR0912
                 if hasattr(eto_channel, 'ETO_channel'):
                     setattr(eto_channel, 'ETO_channel', data[key])
                 data.m_add_sub_section(ETOPPMSData.eto_channels, eto_channel)
+
+        all_data.append(data)
+
+    return all_data
+
+
+def split_ppms_data_acms(data_full, runs):
+    all_data = []
+    for i in range(len(runs)):
+        block = data_full.iloc[runs[i][2] : runs[i][3]]
+        data = ACMSPPMSData()
+        data.measurement_type = runs[i][0]
+        if data.measurement_type == 'field':
+            data.name = 'Field sweep at ' + str(runs[i][1]) + ' K.'
+        if data.measurement_type == 'temperature':
+            data.name = 'Temperature sweep at ' + str(runs[i][1]) + ' Oe.'
+        data.title = data.name
+        other_data = [
+            key
+            for key in block.keys()
+            if 'ch1' not in key and 'ch2' not in key and 'map' not in key.lower()
+        ]
+        for key in other_data:
+            clean_key = (
+                key.split('(')[0].strip().replace(' ', '_').lower()
+            )  # .replace('time stamp','timestamp')
+            if hasattr(data, clean_key):
+                setattr(
+                    data,
+                    clean_key,
+                    block[key],  # * ureg(data_template[f'{key}/@units'])
+                )
+        map_data = [key for key in block.keys() if 'Map' in key]
+        if map_data:
+            for key in map_data:
+                map = ACMSData()
+                if hasattr(map, 'name'):
+                    setattr(map, 'name', key)
+                if hasattr(map, 'map'):
+                    setattr(map, 'map', block[key])
+                data.m_add_sub_section(ACMSPPMSData.maps, map)
 
         all_data.append(data)
 

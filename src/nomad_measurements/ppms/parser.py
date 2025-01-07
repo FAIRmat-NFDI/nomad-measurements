@@ -43,21 +43,18 @@ from nomad.datamodel.metainfo.basesections import (
 )
 
 from nomad_measurements.ppms.schema import (
-    PPMSMeasurement,
-    PPMSETOMeasurement,
+    PPMSACMSMeasurement,
     PPMSACTMeasurement,
+    PPMSETOMeasurement,
+    PPMSMeasurement,
 )
 from nomad_measurements.utils import create_archive
 
-configuration = config.get_plugin_entry_point(
-    'nomad_measurements.ppms:eto_parser'
-)
-configuration = config.get_plugin_entry_point(
-    'nomad_measurements.ppms:act_parser'
-)
-configuration = config.get_plugin_entry_point(
-    'nomad_measurements.ppms:sequence_parser'
-)
+configuration = config.get_plugin_entry_point('nomad_measurements.ppms:eto_parser')
+configuration = config.get_plugin_entry_point('nomad_measurements.ppms:act_parser')
+configuration = config.get_plugin_entry_point('nomad_measurements.ppms:acms_parser')
+configuration = config.get_plugin_entry_point('nomad_measurements.ppms:sequence_parser')
+
 
 def find_matching_sequence_file(archive, entry, logger):
     if isinstance(archive.m_context, ClientContext):
@@ -98,10 +95,11 @@ class PPMSFile(EntryData):
         ),
     )
 
+
 class PPMSParser(MatchingParser):
     def set_entrydata_definition(self):
         self.entrydata_definition = PPMSMeasurement
-    
+
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         self.set_entrydata_definition()
         data_file = mainfile.split('/')[-1]
@@ -110,10 +108,9 @@ class PPMSParser(MatchingParser):
         entry.data_file = data_file_with_path
         file_name = f'{data_file[:-4]}.archive.json'
         find_matching_sequence_file(archive, entry, logger)
-        archive.data = PPMSFile(
-            measurement=create_archive(entry, archive, file_name)
-        )
+        archive.data = PPMSFile(measurement=create_archive(entry, archive, file_name))
         archive.metadata.entry_name = data_file + ' measurement file'
+
 
 class PPMSETOParser(PPMSParser):
     def set_entrydata_definition(self):
@@ -126,6 +123,14 @@ class PPMSETOParser(PPMSParser):
 class PPMSACTParser(PPMSParser):
     def set_entrydata_definition(self):
         self.entrydata_definition = PPMSACTMeasurement
+
+    def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
+        super().parse(mainfile, archive, logger)
+
+
+class PPMSACMSParser(PPMSParser):
+    def set_entrydata_definition(self):
+        self.entrydata_definition = PPMSACMSMeasurement
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         super().parse(mainfile, archive, logger)
