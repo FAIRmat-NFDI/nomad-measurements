@@ -76,9 +76,8 @@ def fixture_parsed_measurement_archive(request):
     assert file_archive.data.measurement.m_proxy_value == os.path.abspath(
         rel_measurement_archive_path
     )
-    measurement_archive = parse(rel_measurement_archive_path)[0]
 
-    yield measurement_archive
+    yield parse(rel_measurement_archive_path)[0]
 
     if os.path.exists(rel_measurement_archive_path):
         os.remove(rel_measurement_archive_path)
