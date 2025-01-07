@@ -28,14 +28,15 @@ test_files = [
     'tests/data/xrd/RSM_111_sdd=350.rasx',
     'tests/data/xrd/TwoTheta_scan_powder.rasx',
 ]
+log_levels = ['error', 'critical']
 
 
 @pytest.mark.parametrize(
-    'caplog',
-    ['error', 'critical'],
+    'parsed_measurement_archive, caplog',
+    [(file, log_level) for file in test_files for log_level in log_levels],
     indirect=True,
 )
-def test_normalize_all(parsed_archive, caplog):
+def test_normalize_all(parsed_measurement_archive, caplog):
     """
     Tests the normalization of the parsed archive.
 
@@ -43,13 +44,19 @@ def test_normalize_all(parsed_archive, caplog):
         parsed_archive (pytest.fixture): Fixture to handle the parsing of archive.
         caplog (pytest.fixture): Fixture to capture errors from the logger.
     """
-    normalize_all(parsed_archive)
+    normalize_all(parsed_measurement_archive)
 
-    assert parsed_archive.data.xrd_settings.source.xray_tube_material == 'Cu'
-    assert parsed_archive.data.results[
+    assert (
+        parsed_measurement_archive.data.xrd_settings.source.xray_tube_material == 'Cu'
+    )
+    assert parsed_measurement_archive.data.results[
         0
     ].source_peak_wavelength.magnitude == pytest.approx(1.540598, 1e-2)
-    if len(parsed_archive.data.results[0].intensity.shape) == 1:
-        assert parsed_archive.results.properties.structural.diffraction_pattern[
-            0
-        ].incident_beam_wavelength.magnitude * 1e10 == pytest.approx(1.540598, 1e-2)
+    if len(parsed_measurement_archive.data.results[0].intensity.shape) == 1:
+        assert (
+            parsed_measurement_archive.results.properties.structural.diffraction_pattern[
+                0
+            ].incident_beam_wavelength.magnitude
+            * 1e10
+            == pytest.approx(1.540598, 1e-2)
+        )
