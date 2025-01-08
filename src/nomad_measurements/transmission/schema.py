@@ -474,13 +474,14 @@ class PolDepol(Accessory):
     )
 
     def normalize(self, archive, logger):
-        if self.mode is None or self.mode == 'Depolarizer':
-            if self.polarizer_angle is not None:
-                logger.warning(
-                    'Ambiguous polarizer angle: '
-                    'PolDepol accessory is not set to "Polarizer" mode, '
-                    'but `polarizer_angle` is set.'
-                )
+        if (
+            self.mode is None or self.mode == 'Depolarizer'
+        ) and self.polarizer_angle is not None:
+            logger.warning(
+                'Ambiguous polarizer angle: '
+                'PolDepol accessory is not set to "Polarizer" mode, '
+                'but `polarizer_angle` is set.'
+            )
         super().normalize(archive, logger)
 
 
@@ -566,16 +567,19 @@ class SettingOverWavelengthRange(ArchiveSection):
             upper_limit = self.wavelength_upper_limit.magnitude
         if self.wavelength_lower_limit is not None:
             lower_limit = self.wavelength_lower_limit.magnitude
-        if isinstance(upper_limit, float) and isinstance(lower_limit, float):
-            if upper_limit < lower_limit:
-                logger.warning(
-                    f'Upper limit of wavelength "{upper_limit}" should be greater than'
-                    f'lower limit of wavelength "{lower_limit}".'
-                )
-                upper_limit = '-'
-                lower_limit = '-'
-                self.wavelength_upper_limit = None
-                self.wavelength_lower_limit = None
+        if (
+            isinstance(upper_limit, float)
+            and isinstance(lower_limit, float)
+            and upper_limit < lower_limit
+        ):
+            logger.warning(
+                f'Upper limit of wavelength "{upper_limit}" should be greater than'
+                f'lower limit of wavelength "{lower_limit}".'
+            )
+            upper_limit = '-'
+            lower_limit = '-'
+            self.wavelength_upper_limit = None
+            self.wavelength_lower_limit = None
         self.name = f'[{lower_limit}, {upper_limit}]'
 
 
@@ -842,7 +846,7 @@ class UVVisNirTransmissionResult(MeasurementResult):
                 continue
 
             x_label = 'Wavelength'
-            xaxis_title = x_label + ' (nm)'
+            xaxis_title = f'{x_label} (nm)'
             x = self.wavelength.to('nm').magnitude
 
             y_label = key.capitalize()
@@ -1113,10 +1117,11 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
             user_id=archive.metadata.main_author.user_id,
         )
 
-        valid_instruments = []
-        for entry in search_result.data:
-            if entry['data']['serial_number'] == serial_number:
-                valid_instruments.append(entry)
+        valid_instruments = [
+            entry
+            for entry in search_result.data
+            if entry['data']['serial_number'] == serial_number
+        ]
 
         if not valid_instruments:
             logger.warning(
@@ -1401,14 +1406,14 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
             )
         transmission.transmission_settings.attenuator.normalize(archive, logger)
 
-        if self.get('transmission_settings'):
-            if self.transmission_settings.get('accessory'):
-                for idx, accessory in enumerate(self.transmission_settings.accessory):
-                    if isinstance(accessory, PolDepol):
-                        if accessory.mode == 'Polarizer':
-                            self.transmission_settings.accessory[
-                                idx
-                            ].polarizer_angle = data_dict['polarizer_angle']
+        if self.get('transmission_settings') and self.transmission_settings.get(
+            'accessory'
+        ):
+            for idx, accessory in enumerate(self.transmission_settings.accessory):
+                if isinstance(accessory, PolDepol) and accessory.mode == 'Polarizer':
+                    self.transmission_settings.accessory[
+                        idx
+                    ].polarizer_angle = data_dict['polarizer_angle']
 
         transmission.transmission_settings.normalize(archive, logger)
 

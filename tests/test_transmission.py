@@ -19,9 +19,9 @@ import pytest
 from nomad.client import normalize_all
 
 test_files = [
+    'tests/data/transmission/KTF-D.Probe.Raw.asc',
     'tests/data/transmission/3DM_test01.Probe.Raw.asc',
     'tests/data/transmission/F4-P3HT 1-10 0,5 mgml.Probe.Raw.asc',
-    'tests/data/transmission/KTF-D.Probe.Raw.asc',
     'tests/data/transmission/Sample5926.Probe.Raw.asc',
     'tests/data/transmission/sphere_test01.Probe.Raw.asc',
 ]
@@ -38,7 +38,23 @@ def test_normalize_all(parsed_measurement_archive, caplog):
     Tests the normalization of the parsed archive.
 
     Args:
-        parsed_archive (pytest.fixture): Fixture to handle the parsing of archive.
+        parsed_measurement_archive (pytest.fixture): Fixture to setup the archive.
+        caplog (pytest.fixture): Fixture to capture errors from the logger.
+    """
+    normalize_all(parsed_measurement_archive)
+
+
+@pytest.mark.parametrize(
+    'parsed_measurement_archive, caplog',
+    [(test_files[0], log_level) for log_level in log_levels],
+    indirect=True,
+)
+def test_normalized_data(parsed_measurement_archive, caplog):
+    """
+    Tests the normalized data for a single file.
+
+    Args:
+        parsed_measurement_archive (pytest.fixture): Fixture to setup the archive.
         caplog (pytest.fixture): Fixture to capture errors from the logger.
     """
     normalize_all(parsed_measurement_archive)
@@ -50,6 +66,7 @@ def test_normalize_all(parsed_measurement_archive, caplog):
             == 'Front'
         )
         assert parsed_measurement_archive.data.results[0].wavelength.shape == (1001,)
+        assert parsed_measurement_archive.data.results[0].transmittance.shape == (1001,)
         assert (
             'UV-Vis-NIR Transmission Spectrophotometry'
             in parsed_measurement_archive.results.eln.methods
