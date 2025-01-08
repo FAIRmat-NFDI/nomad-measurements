@@ -79,6 +79,19 @@ def merge_sections(  # noqa: PLR0912
     update: 'ArchiveSection',
     logger: 'BoundLogger' = None,
 ) -> None:
+    """
+    Unpopulated quantities and subsections in the `section` will be populated with the
+    values from the `update` section.
+    If a quantity is present in both sections but with different values, no change is
+    made.
+    If a repeating subsection is present in both sections, and they are of the same
+    length, the subsections will be merged recursively. Else, no change is made.
+
+    Args:
+        section (ArchiveSection): section to update.
+        update (ArchiveSection): section to update from.
+        logger (BoundLogger, optional): A structlog logger.
+    """
     if update is None:
         return
     if section is None:
