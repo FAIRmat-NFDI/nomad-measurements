@@ -50,6 +50,7 @@ schema = TransmissionSchemaEntryPoint(
 parser = TransmissionParserEntryPoint(
     name='Transmission Parser',
     description='Parser for data from Transmission Spectrophotometry.',
-    mainfile_mime_re='text/.*|application/zip',
-    mainfile_name_re='^.*\.asc$',
+    mainfile_mime_re=r'text/.*|application/zip',
+    mainfile_name_re=r'^.*\.asc$',
+    mainfile_contents_re=r'^PE UV',
 )
