@@ -43,6 +43,9 @@ plugins:
     - "nomad_measurements.xrd.parser:parser"
     - "nomad_measurements.transmission:schema"
     - "nomad_measurements.transmission:parser"
+    - "nomad_measurements.ppms:ppms_schema"
+    - "nomad_measurements.ppms:ppms_data_parser"
+    - "nomad_measurements.ppms:ppms_sequence_parser"
  ```
 
 ### Development
