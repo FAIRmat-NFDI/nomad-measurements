@@ -49,6 +49,7 @@ from nomad_measurements.ppms.ppmsdatastruct import (
 )
 from nomad_measurements.ppms.ppmsfunctions import (
     find_ppms_steps_from_sequence,
+    get_acms_ppms_steps_from_data,
     get_fileopentime,
     get_ppms_steps_from_data,
     split_ppms_data_acms,
@@ -341,11 +342,29 @@ m_package_ppms_acms = SchemaPackage()
 
 
 class PPMSACMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
+    # Additional parameters for separating the measurements
+    frequency_tolerance = Quantity(
+        type=float,
+        unit='hertz',
+        a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='hertz'),
+    )
+
+    amplitude_tolerance = Quantity(
+        type=float,
+        unit='gauss',
+        a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='gauss'),
+    )
+
     def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
 
         if archive.data.data_file:
             logger.info('Parsing PPMS measurement file.')
+            # For automatic step discovery, some parameters are needed:
+            if not self.temperature_tolerance:
+                self.frequency_tolerance = 10
+            if not self.amplitude_tolerance:
+                self.amplitude_tolerance = 0.1
 
             with archive.m_context.raw_file(self.data_file, 'r') as file:
                 data = file.read()
@@ -363,8 +382,8 @@ class PPMSACMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 engine='python',
             )
 
-            all_steps, runs_list = get_ppms_steps_from_data(
-                data_df, self.temperature_tolerance, self.field_tolerance
+            all_steps, runs_list = get_acms_ppms_steps_from_data(
+                data_df,
             )
 
             if not self.sequence_file:
@@ -372,6 +391,28 @@ class PPMSACMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
 
             logger.info('Parsing ACMS measurement.')
             self.data = split_ppms_data_acms(data_df, runs_list)
+
+            # Now create the according plots
+            import plotly.express as px
+            from plotly.subplots import make_subplots
+
+            for data in self.data:
+                if data.measurement_type == 'frequency':
+                    moment = px.scatter(x=data.frequency, y=data.moment)
+                    moment_derivative = px.scatter(
+                        x=data.frequency, y=data.moment_derivative
+                    )
+                    moment_second_derivative = px.scatter(
+                        x=data.frequency, y=data.moment_second_derivative
+                    )
+                figure1 = make_subplots(rows=3, cols=1, shared_xaxes=True)
+                figure1.add_trace(moment.data[0], row=1, col=1)
+                figure1.add_trace(moment_derivative.data[0], row=2, col=1)
+                figure1.add_trace(moment_second_derivative.data[0], row=3, col=1)
+                figure1.update_layout(height=400, width=716, title_text=data.name)
+                self.figures.append(
+                    PlotlyFigure(label=data.name, figure=figure1.to_plotly_json())
+                )
 
 
 m_package_ppms_acms.__init_metainfo__()

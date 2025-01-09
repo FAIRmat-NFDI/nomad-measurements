@@ -106,6 +106,6 @@ def test_normalize_acms(parsed_measurement_archive, caplog):
 
     assert parsed_measurement_archive.data.software == 'ACMS,1.0,1.1'
     #  assert len(parsed_measurement_archive.data.steps) == 70 #Noqa: PLR2004
-    assert len(parsed_measurement_archive.data.data) == 4  # Noqa: PLR2004
-    assert len(parsed_measurement_archive.data.data[3].time_stamp) == 67  # Noqa: PLR2004
-    # assert len(parsed_measurement_archive.data.figures) == 8  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data) == 60  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data[0].time_stamp) == 23  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.figures) == 60  # Noqa: PLR2004
