@@ -16,6 +16,11 @@ Mapping (RSM) scans. Supports automatic parsing of data for the following file f
 - **UV-Vis-NIR Transmission**: Supports automatic parsing of data for the following 
 file formats (read more [here](explanation/schemas.md#transmission-spectrophotometry)):
   - Perkin Elmers: `*.asc`
+ 
+- **Physical Properies Measurement System (PPMS)**: Supports automatic parsing of
+measurement files and sequence files from the Quantum Design PPMS. For now, ETO and 
+ACT modes are supported. Supported file formats:
+  - QuantumDesign PPMS: `*.dat ` and `*.seq`
 
 Additional measurement techniques are actively being developed and will be included soon, including:
 
