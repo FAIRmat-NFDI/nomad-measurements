@@ -15,68 +15,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import os
-
 import pytest
-from nomad.client import normalize_all, parse
+from nomad.client import normalize_all
 
+# Test ETO funtionality
 
-@pytest.fixture(
-    name='parsed_archive',
-    params=[
-        'ETO_Ch1_TMR_Ch2_Hall.dat',
-        #  'ETO_Ch1_TMR_Ch2_Hall.seq',
-    ],
-)
-def fixture_parsed_archive(request):
-    """
-    Sets up data for testing and cleans up after the test.
-    """
-    rel_file = os.path.join('tests', 'data', 'ppms', request.param)
-    file_archive = parse(rel_file)[0]
-    if request.param.endswith('.dat'):
-        measurement = os.path.join(
-            'tests',
-            'data',
-            'ppms',
-            '.'.join(request.param.split('.')[:-1]) + '.archive.json',
-        )
-        assert file_archive.data.measurement.m_proxy_value == os.path.abspath(
-            measurement
-        )
-    elif request.param.endswith('.seq'):
-        measurement = os.path.join(
-            'tests',
-            'data',
-            'ppms',
-            '.'.join(request.param.split('.')[:-1]) + '.seq',
-        )
-        assert file_archive.data.file_path == os.path.abspath(measurement)
-    measurement_archive = parse(measurement)[0]
-
-    yield measurement_archive
-
-    if request.param.endswith('.dat'):
-        if os.path.exists(measurement):
-            os.remove(measurement)
-        additional_files = [
-            'ETO_Ch1_TMR_Ch2_Hall_field_sweep_2.0_K.dat',
-            'ETO_Ch1_TMR_Ch2_Hall_field_sweep_2.5_K.dat',
-            'ETO_Ch1_TMR_Ch2_Hall_field_sweep_3.0_K.dat',
-            'ETO_Ch1_TMR_Ch2_Hall_field_sweep_3.5_K.dat',
-            'ETO_Ch1_TMR_Ch2_Hall_field_sweep_4.0_K.dat',
-        ]
-        for filename in additional_files:
-            if os.path.exists(os.path.join('tests', 'data', 'ppms', filename)):
-                os.remove(os.path.join('tests', 'data', 'ppms', filename))
+test_files = [
+    'tests/data/ppms/ETO_Ch1_TMR_Ch2_Hall.dat',
+]
+log_levels = ['error', 'critical']
 
 
 @pytest.mark.parametrize(
-    'caplog',
-    ['error', 'critical'],
+    'parsed_measurement_archive, caplog',
+    [(file, log_level) for file in test_files for log_level in log_levels],
     indirect=True,
 )
-def test_normalize_all(parsed_archive, caplog):
+def test_normalize_eto(parsed_measurement_archive, caplog):
     """
     Tests the normalization of the parsed archive.
 
@@ -84,13 +39,73 @@ def test_normalize_all(parsed_archive, caplog):
         parsed_archive (pytest.fixture): Fixture to handle the parsing of archive.
         caplog (pytest.fixture): Fixture to capture errors from the logger.
     """
-    normalize_all(parsed_archive)
+    normalize_all(parsed_measurement_archive)
 
     assert (
-        parsed_archive.data.software
+        parsed_measurement_archive.data.software
         == 'Electrical Transport Option, Release 1.2.0 Build 0'
     )
-    #  assert len(parsed_archive.data.steps) == 70 #Noqa: PLR2004
-    assert len(parsed_archive.data.data) == 5  # Noqa: PLR2004
-    assert len(parsed_archive.data.data[4].time_stamp) == 3623  # Noqa: PLR2004
-    assert len(parsed_archive.data.figures) == 5  # Noqa: PLR2004
+    #  assert len(parsed_measurement_archive.data.steps) == 70 #Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data) == 5  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data[4].time_stamp) == 3623  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.figures) == 5  # Noqa: PLR2004
+
+
+# Test ACT funtionality
+
+test_files = [
+    'tests/data/ppms/ACT_Ch1_Hall_Ch2_TMR.dat',
+]
+log_levels = ['error', 'critical']
+
+
+@pytest.mark.parametrize(
+    'parsed_measurement_archive, caplog',
+    [(file, log_level) for file in test_files for log_level in log_levels],
+    indirect=True,
+)
+def test_normalize_act(parsed_measurement_archive, caplog):
+    """
+    Tests the normalization of the parsed archive.
+
+    Args:
+        parsed_archive (pytest.fixture): Fixture to handle the parsing of archive.
+        caplog (pytest.fixture): Fixture to capture errors from the logger.
+    """
+    normalize_all(parsed_measurement_archive)
+
+    assert parsed_measurement_archive.data.software == 'ACTRANSPORT,2.0,1.1'
+    #  assert len(parsed_measurement_archive.data.steps) == 70 #Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data) == 8  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data[4].time_stamp) == 794  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.figures) == 8  # Noqa: PLR2004
+
+
+# Test ACMS funtionality
+
+test_files = [
+    'tests/data/ppms/ACMS_test.dat',
+]
+log_levels = ['error', 'critical']
+
+
+@pytest.mark.parametrize(
+    'parsed_measurement_archive, caplog',
+    [(file, log_level) for file in test_files for log_level in log_levels],
+    indirect=True,
+)
+def test_normalize_acms(parsed_measurement_archive, caplog):
+    """
+    Tests the normalization of the parsed archive.
+
+    Args:
+        parsed_archive (pytest.fixture): Fixture to handle the parsing of archive.
+        caplog (pytest.fixture): Fixture to capture errors from the logger.
+    """
+    normalize_all(parsed_measurement_archive)
+
+    assert parsed_measurement_archive.data.software == 'ACMS,1.0,1.1'
+    #  assert len(parsed_measurement_archive.data.steps) == 70 #Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data) == 60  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data[0].time_stamp) == 23  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.figures) == 60  # Noqa: PLR2004

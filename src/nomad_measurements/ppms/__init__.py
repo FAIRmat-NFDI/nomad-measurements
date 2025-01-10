@@ -5,19 +5,57 @@ from nomad.config.models.plugins import (
 from pydantic import Field
 
 
-class DataParserEntryPoint(ParserEntryPoint):
+class DataParserEntryPointETO(ParserEntryPoint):
+    parameter: int = Field(0, description='Custom configuration parameter')
+
     def load(self):
-        from nomad_measurements.ppms.parser import PPMSParser
+        from nomad_measurements.ppms.parser import PPMSETOParser
 
-        return PPMSParser(**self.dict())
+        return PPMSETOParser(**self.dict())
 
 
-ppms_data_parser = DataParserEntryPoint(
-    name='PpmsDataParser',
+eto_parser = DataParserEntryPointETO(
+    name='DataParser',
     description='New parser entry point configuration.',
     mainfile_name_re=r'.+\.dat',
     mainfile_mime_re='text/plain|application/x-wine-extension-ini',
-    mainfile_contents_re='BYAPP,',
+    mainfile_contents_re=r'BYAPP, Electrical Transport Option',
+)
+
+
+class DataParserEntryPointACT(ParserEntryPoint):
+    parameter: int = Field(0, description='Custom configuration parameter')
+
+    def load(self):
+        from nomad_measurements.ppms.parser import PPMSACTParser
+
+        return PPMSACTParser(**self.dict())
+
+
+act_parser = DataParserEntryPointACT(
+    name='DataParser',
+    description='New parser entry point configuration.',
+    mainfile_name_re=r'.+\.dat',
+    mainfile_mime_re='text/plain|application/x-wine-extension-ini',
+    mainfile_contents_re=r'BYAPP,\s*ACTRANSPORT',
+)
+
+
+class DataParserEntryPointACMS(ParserEntryPoint):
+    parameter: int = Field(0, description='Custom configuration parameter')
+
+    def load(self):
+        from nomad_measurements.ppms.parser import PPMSACMSParser
+
+        return PPMSACMSParser(**self.dict())
+
+
+acms_parser = DataParserEntryPointACMS(
+    name='DataParser',
+    description='New parser entry point configuration.',
+    mainfile_name_re=r'.+\.dat',
+    mainfile_mime_re='text/plain|application/x-wine-extension-ini',
+    mainfile_contents_re=r'BYAPP,\s*ACMS',
 )
 
 
@@ -28,7 +66,7 @@ class SqcParserEntryPoint(ParserEntryPoint):
         return PPMSSequenceParser(**self.dict())
 
 
-ppms_sequence_parser = SqcParserEntryPoint(
+sequence_parser = SqcParserEntryPoint(
     name='PpmsSequenceParser',
     description='New parser entry point configuration.',
     mainfile_name_re=r'.+\.seq',
@@ -36,16 +74,46 @@ ppms_sequence_parser = SqcParserEntryPoint(
 )
 
 
-class PPMSSchemaEntryPoint(SchemaPackageEntryPoint):
+class PPMSETOEntryPoint(SchemaPackageEntryPoint):
     parameter: int = Field(0, description='Custom configuration parameter')
 
     def load(self):
-        from nomad_measurements.ppms.schema import m_package
+        from nomad_measurements.ppms.schema import m_package_ppms_eto
 
-        return m_package
+        return m_package_ppms_eto
 
 
-ppms_schema = PPMSSchemaEntryPoint(
-    name='NewSchemaPackage',
+eto_schema = PPMSETOEntryPoint(
+    name='PPMSETOEntryPoint',
+    description='New schema package entry point configuration.',
+)
+
+
+class PPMSACTEntryPoint(SchemaPackageEntryPoint):
+    parameter: int = Field(0, description='Custom configuration parameter')
+
+    def load(self):
+        from nomad_measurements.ppms.schema import m_package_ppms_act
+
+        return m_package_ppms_act
+
+
+act_schema = PPMSACTEntryPoint(
+    name='PPMSACTEntryPoint',
+    description='New schema package entry point configuration.',
+)
+
+
+class PPMSACMSEntryPoint(SchemaPackageEntryPoint):
+    parameter: int = Field(0, description='Custom configuration parameter')
+
+    def load(self):
+        from nomad_measurements.ppms.schema import m_package_ppms_acms
+
+        return m_package_ppms_acms
+
+
+acms_schema = PPMSACMSEntryPoint(
+    name='PPMSACMSEntryPoint',
     description='New schema package entry point configuration.',
 )

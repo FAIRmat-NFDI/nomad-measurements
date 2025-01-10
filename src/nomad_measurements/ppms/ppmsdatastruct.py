@@ -24,12 +24,24 @@ from nomad.datamodel.data import (
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
 )
+from nomad.datamodel.metainfo.eln import (
+    CompositeSystem,
+)
 from nomad.metainfo import (
     MEnum,
     Quantity,
     Section,
     SubSection,
 )
+
+
+class PPMSSample(CompositeSystem):
+    name = Quantity(type=str, description='FILL')
+    type = Quantity(type=str, description='FILL')
+    material = Quantity(type=str, description='FILL')
+    comment = Quantity(type=str, description='FILL')
+    lead_separation = Quantity(type=str, description='FILL')
+    cross_section = Quantity(type=str, description='FILL')
 
 
 class PPMSData(ArchiveSection):
@@ -141,7 +153,7 @@ class ETOPPMSData(PPMSData):
         type=np.dtype(np.float64), shape=['*'], description='FILL'
     )
     channels = SubSection(section_def=ETOChannelData, repeats=True)
-    eto_channels = SubSection(section_def=ETOData, repeats=True)
+    maps = SubSection(section_def=ETOData, repeats=True)
 
 
 class ACTData(ArchiveSection):
@@ -301,3 +313,151 @@ class ACTPPMSData(PPMSData):
     )
     channels = SubSection(section_def=ACTChannelData, repeats=True)
     maps = SubSection(section_def=ACTData, repeats=True)
+
+
+class ACMSData(ArchiveSection):
+    """Maps data section in ACMS"""
+
+    m_def = Section(
+        label_quantity='name',
+    )
+    name = Quantity(
+        type=str, description='FILL', a_eln={'component': 'StringEditQuantity'}
+    )
+    map = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+
+
+class ACMSPPMSData(PPMSData):
+    """Data section in ACMS"""
+
+    m_def = Section(
+        a_eln=dict(lane_width='600px'),
+    )
+    time_stamp = Quantity(
+        type=np.dtype(np.float64), unit='second', shape=['*'], description='FILL'
+    )
+    temperature = Quantity(
+        type=np.dtype(np.float64), unit='kelvin', shape=['*'], description='FILL'
+    )
+    magnetic_field = Quantity(
+        type=np.dtype(np.float64), unit='gauss', shape=['*'], description='FILL'
+    )
+    frequency = Quantity(
+        type=np.dtype(np.float64), unit='Hz', shape=['*'], description='FILL'
+    )
+    amplitude = Quantity(
+        type=np.dtype(np.float64), unit='gauss', shape=['*'], description='FILL'
+    )
+    moment_dc = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    moment_std_err = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    moment_derivative = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    moment_second_derivative = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    moment = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    phase = Quantity(
+        type=np.dtype(np.float64), unit='deg', shape=['*'], description='FILL'
+    )
+    calcoil_derivative = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    calcoil_second_derivative = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    calcoil = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    cc_phase = Quantity(
+        type=np.dtype(np.float64), unit='deg', shape=['*'], description='FILL'
+    )
+    count = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    gain = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    measure_type = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    elapsed = Quantity(
+        type=np.dtype(np.float64), unit='second', shape=['*'], description='FILL'
+    )
+    sample_center = Quantity(
+        type=np.dtype(np.float64), unit='cm', shape=['*'], description='FILL'
+    )
+    max_signal = Quantity(
+        type=np.dtype(np.float64), unit='V', shape=['*'], description='FILL'
+    )
+    ppms_status = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    dsp_status = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    min_temperature = Quantity(
+        type=np.dtype(np.float64), unit='K', shape=['*'], description='FILL'
+    )
+    max_temperature = Quantity(
+        type=np.dtype(np.float64), unit='K', shape=['*'], description='FILL'
+    )
+    min_field = Quantity(
+        type=np.dtype(np.float64), unit='gauss', shape=['*'], description='FILL'
+    )
+    max_field = Quantity(
+        type=np.dtype(np.float64), unit='gauss', shape=['*'], description='FILL'
+    )
+    dc_position = Quantity(
+        type=np.dtype(np.float64), unit='cm', shape=['*'], description='FILL'
+    )
+    ppms_temperature = Quantity(
+        type=np.dtype(np.float64), unit='K', shape=['*'], description='FILL'
+    )
+    ppms_position = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    bridge_1_resistance = Quantity(
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
+    )
+    bridge_1_excitation = Quantity(
+        type=np.dtype(np.float64), unit='uA', shape=['*'], description='FILL'
+    )
+    bridge_2_resistance = Quantity(
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
+    )
+    bridge_2_excitation = Quantity(
+        type=np.dtype(np.float64), unit='uA', shape=['*'], description='FILL'
+    )
+    bridge_3_resistance = Quantity(
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
+    )
+    bridge_3_excitation = Quantity(
+        type=np.dtype(np.float64), unit='uA', shape=['*'], description='FILL'
+    )
+    bridge_4_resistance = Quantity(
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
+    )
+    bridge_4_excitation = Quantity(
+        type=np.dtype(np.float64), unit='uA', shape=['*'], description='FILL'
+    )
+    signal_1_vin = Quantity(
+        type=np.dtype(np.float64), unit='V', shape=['*'], description='FILL'
+    )
+    signal_2_vin = Quantity(
+        type=np.dtype(np.float64), unit='V', shape=['*'], description='FILL'
+    )
+    digital_inputs = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    drive_1_iout = Quantity(
+        type=np.dtype(np.float64), unit='mA', shape=['*'], description='FILL'
+    )
+    drive_1_ipower = Quantity(
+        type=np.dtype(np.float64), unit='W', shape=['*'], description='FILL'
+    )
+    drive_2_iout = Quantity(
+        type=np.dtype(np.float64), unit='mA', shape=['*'], description='FILL'
+    )
+    drive_2_ipower = Quantity(
+        type=np.dtype(np.float64), unit='W', shape=['*'], description='FILL'
+    )
+    pressure = Quantity(
+        type=np.dtype(np.float64), unit='torr', shape=['*'], description='FILL'
+    )
+    #!TODO: change unit to emu or similar, for now lux=emu
+    maps = SubSection(section_def=ACMSData, repeats=True)
