@@ -95,7 +95,6 @@ log_levels = ['error', 'critical']
     indirect=True,
 )
 def test_normalize_acms(parsed_measurement_archive, caplog):
-
     """
     Tests the normalization of the parsed archive.
 

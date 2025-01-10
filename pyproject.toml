@@ -143,5 +143,7 @@ ppms_eto_parser = "nomad_measurements.ppms:eto_parser"
 ppms_act_parser = "nomad_measurements.ppms:act_parser"
 ppms_acms_parser = "nomad_measurements.ppms:acms_parser"
 ppms_sequence_parser = "nomad_measurements.ppms:sequence_parser"
+transmission_schema = "nomad_measurements.transmission:schema"
+transmission_parser = "nomad_measurements.transmission:parser"
 
 [tool.setuptools_scm]
