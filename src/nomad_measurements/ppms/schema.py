@@ -170,32 +170,30 @@ class PPMSMeasurement(Measurement):
                         self.m_add_sub_section(PPMSMeasurement.samples, sample)
 
             for line in header_lines:
-                if line.startswith('FILEOPENTIME'):
-                    if hasattr(self, 'datetime'):
-                        iso_date = get_fileopentime(line)
-                        if iso_date == 'Not found.':
-                            logger.error(
-                                'FILEOPENTIME not understood. Check the format.'
-                            )
-                        else:
-                            setattr(self, 'datetime', iso_date)
-                if line.startswith('BYAPP'):
-                    if hasattr(self, 'software'):
-                        setattr(self, 'software', line.replace('BYAPP,', '').strip())
-                if line.startswith('TEMPERATURETOLERANCE'):
-                    if hasattr(self, 'temperature_tolerance'):
-                        setattr(
-                            self,
-                            'temperature_tolerance',
-                            float(line.replace('TEMPERATURETOLERANCE,', '').strip()),
-                        )
-                if line.startswith('FIELDTOLERANCE'):
-                    if hasattr(self, 'field_tolerance'):
-                        setattr(
-                            self,
-                            'field_tolerance',
-                            float(line.replace('FIELDTOLERANCE,', '').strip()),
-                        )
+                if line.startswith('FILEOPENTIME') and hasattr(self, 'datetime'):
+                    iso_date = get_fileopentime(line)
+                    if iso_date == 'Not found.':
+                        logger.error('FILEOPENTIME not understood. Check the format.')
+                    else:
+                        setattr(self, 'datetime', iso_date)
+                if line.startswith('BYAPP') and hasattr(self, 'software'):
+                    setattr(self, 'software', line.replace('BYAPP,', '').strip())
+                if line.startswith('TEMPERATURETOLERANCE') and hasattr(
+                    self, 'temperature_tolerance'
+                ):
+                    setattr(
+                        self,
+                        'temperature_tolerance',
+                        float(line.replace('TEMPERATURETOLERANCE,', '').strip()),
+                    )
+                if line.startswith('FIELDTOLERANCE') and hasattr(
+                    self, 'field_tolerance'
+                ):
+                    setattr(
+                        self,
+                        'field_tolerance',
+                        float(line.replace('FIELDTOLERANCE,', '').strip()),
+                    )
 
 
 m_package_ppms_eto = SchemaPackage()

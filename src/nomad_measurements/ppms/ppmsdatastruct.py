@@ -153,7 +153,7 @@ class ETOPPMSData(PPMSData):
         type=np.dtype(np.float64), shape=['*'], description='FILL'
     )
     channels = SubSection(section_def=ETOChannelData, repeats=True)
-    eto_channels = SubSection(section_def=ETOData, repeats=True)
+    maps = SubSection(section_def=ETOData, repeats=True)
 
 
 class ACTData(ArchiveSection):
