@@ -524,7 +524,7 @@ class XRDResult1D(XRDResult):
         )
         fig_line_log.update_traces(
             hovertemplate=(
-                '<i>Intensity</i>: %{y:.2f}<br>' '|<em>q</em>|: %{x} Å<sup>-1</sup>'
+                '<i>Intensity</i>: %{y:.2f}<br>|<em>q</em>|: %{x} Å<sup>-1</sup>'
             ),
         )
         plot_json = fig_line_log.to_plotly_json()
