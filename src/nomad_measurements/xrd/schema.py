@@ -22,19 +22,25 @@ from typing import (
 )
 
 import numpy as np
+import pint
 import plotly.express as px
 from fairmat_readers_xrd import (
     read_bruker_brml,
     read_panalytical_xrdml,
     read_rigaku_rasx,
 )
+from nomad.config import config
 from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
 )
+from nomad.datamodel.hdf5 import (
+    HDF5Reference,
+)
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
     ELNComponentEnum,
+    H5WebAnnotation,
 )
 from nomad.datamodel.metainfo.basesections import (
     CompositeSystemReference,
@@ -42,10 +48,7 @@ from nomad.datamodel.metainfo.basesections import (
     MeasurementResult,
     ReadableIdentifiers,
 )
-from nomad.datamodel.metainfo.plot import (
-    PlotlyFigure,
-    PlotSection,
-)
+from nomad.datamodel.metainfo.plot import PlotlyFigure
 from nomad.datamodel.results import (
     DiffractionPattern,
     MeasurementMethod,
@@ -67,11 +70,14 @@ from scipy.interpolate import griddata
 from nomad_measurements.general import (
     NOMADMeasurementsCategory,
 )
-from nomad_measurements.utils import get_bounding_range_2d, merge_sections
-from nomad_measurements.xrd.nx import write_nx_section_and_create_file
+from nomad_measurements.utils import (
+    HDF5Handler,
+    get_bounding_range_2d,
+    merge_sections,
+)
+from nomad_measurements.xrd.nx import NEXUS_DATASET_PATHS
 
 if TYPE_CHECKING:
-    import pint
     from nomad.datamodel.datamodel import (
         EntryArchive,
     )
@@ -80,15 +86,14 @@ if TYPE_CHECKING:
     )
 
 
-
 m_package = SchemaPackage(aliases=['nomad_measurements.xrd.parser.parser'])
 
 
 def calculate_two_theta_or_q(
-    wavelength: 'pint.Quantity',
-    q: 'pint.Quantity' = None,
-    two_theta: 'pint.Quantity' = None,
-) -> tuple['pint.Quantity', 'pint.Quantity']:
+    wavelength: pint.Quantity,
+    q: pint.Quantity = None,
+    two_theta: pint.Quantity = None,
+) -> tuple[pint.Quantity, pint.Quantity]:
     """
     Calculate the two-theta array from the scattering vector (q) or vice-versa,
     given the wavelength of the X-ray source.
@@ -110,10 +115,10 @@ def calculate_two_theta_or_q(
     return q, two_theta
 
 
-def calculate_q_vectors_RSM(
-    wavelength: 'pint.Quantity',
-    two_theta: 'pint.Quantity',
-    omega: 'pint.Quantity',
+def calculate_q_vectors_rsm(
+    wavelength: pint.Quantity,
+    two_theta: pint.Quantity,
+    omega: pint.Quantity,
 ):
     """
     Calculate the q-vectors for RSM scans in coplanar configuration.
@@ -262,6 +267,205 @@ class XRDSettings(ArchiveSection):
     source = SubSection(section_def=XRayTubeSource)
 
 
+class XRDResultPlotIntensity(ArchiveSection):
+    m_def = Section(
+        a_h5web=H5WebAnnotation(
+            axes=['two_theta', 'omega', 'phi', 'chi'], signal='intensity'
+        )
+    )
+    intensity = Quantity(
+        type=HDF5Reference,
+        description='The count at each 2-theta value, dimensionless',
+    )
+    two_theta = Quantity(
+        type=HDF5Reference,
+        description='The 2-theta range of the diffractogram',
+    )
+    omega = Quantity(
+        type=HDF5Reference,
+        description='The omega range of the diffractogram',
+    )
+
+    def normalize(self, archive, logger):
+        super().normalize(archive, logger)
+        prefix = '/ENTRY[entry]/experiment_result'
+        try:
+            hdf5_handler = self.m_parent.m_parent.hdf5_handler
+            assert isinstance(hdf5_handler, HDF5Handler)
+        except (AttributeError, AssertionError):
+            return
+
+        if self.intensity is None or self.two_theta is None:
+            return
+
+        hdf5_handler.add_dataset(
+            path=f'{prefix}/plot_intensity/two_theta',
+            params=dict(
+                data=f'{prefix}/two_theta',
+                archive_path='data.results[0].plot_intensity.two_theta',
+                internal_reference=True,
+            ),
+            validate_path=False,
+        )
+        hdf5_handler.add_dataset(
+            path=f'{prefix}/plot_intensity/intensity',
+            params=dict(
+                data=f'{prefix}/intensity',
+                archive_path='data.results[0].plot_intensity.intensity',
+                internal_reference=True,
+            ),
+            validate_path=False,
+        )
+        hdf5_handler.add_attribute(
+            path=f'{prefix}/plot_intensity',
+            params=dict(
+                axes='two_theta',
+                signal='intensity',
+                NX_class='NXdata',
+            ),
+        )
+        for var_axis in ['omega', 'phi', 'chi']:
+            if self.get(var_axis) is not None:
+                hdf5_handler.add_dataset(
+                    path=f'{prefix}/plot_intensity/{var_axis}',
+                    params=dict(
+                        data=f'{prefix}/{var_axis}',
+                        archive_path=f'data.results[0].plot_intensity.{var_axis}',
+                        internal_reference=True,
+                    ),
+                    validate_path=False,
+                )
+                hdf5_handler.add_attribute(
+                    path=f'{prefix}/plot_intensity',
+                    params=dict(
+                        axes=[var_axis, 'two_theta'],
+                        signal='intensity',
+                        NX_class='NXdata',
+                    ),
+                )
+                break
+
+        hdf5_handler.write_file()
+
+
+class XRDResultPlotIntensityScatteringVector(ArchiveSection):
+    m_def = Section(
+        a_h5web=H5WebAnnotation(
+            axes=['q_parallel', 'q_perpendicular', 'q_norm'], signal='intensity'
+        )
+    )
+    intensity = Quantity(
+        type=HDF5Reference,
+        description="""
+        The count at each q value. In case of RSM, it contains interpolated values of
+        `intensity` at regularized grid of `q` vectors.
+        """,
+    )
+    q_norm = Quantity(
+        type=HDF5Reference,
+        description='The q range of the diffractogram',
+    )
+    q_parallel = Quantity(
+        type=HDF5Reference,
+        description='The regularized grid of `q_parallel` range for plotting.',
+    )
+    q_perpendicular = Quantity(
+        type=HDF5Reference,
+        description='The regularized grid of `q_perpendicular` range for plotting.',
+    )
+
+    def normalize(self, archive, logger):
+        super().normalize(archive, logger)
+        prefix = '/ENTRY[entry]/experiment_result'
+        try:
+            hdf5_handler = self.m_parent.m_parent.hdf5_handler
+            assert isinstance(hdf5_handler, HDF5Handler)
+        except (AttributeError, AssertionError):
+            return
+
+        if self.intensity is None:
+            return
+
+        if self.q_norm is not None:
+            hdf5_handler.add_dataset(
+                path=f'{prefix}/plot_intensity_scattering_vector/intensity',
+                params=dict(
+                    data=f'{prefix}/intensity',
+                    archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
+                    internal_reference=True,
+                ),
+                validate_path=False,
+            )
+            hdf5_handler.add_dataset(
+                path=f'{prefix}/plot_intensity_scattering_vector/q_norm',
+                params=dict(
+                    data=f'{prefix}/q_norm',
+                    archive_path='data.results[0].plot_intensity_scattering_vector.q_norm',
+                    internal_reference=True,
+                ),
+                validate_path=False,
+            )
+            hdf5_handler.add_attribute(
+                path=f'{prefix}/plot_intensity_scattering_vector',
+                params=dict(
+                    axes='q_norm',
+                    signal='intensity',
+                    NX_class='NXdata',
+                ),
+            )
+        elif self.q_parallel is not None and self.q_perpendicular is not None:
+            intensity = hdf5_handler.read_dataset(self.intensity)
+            q_parallel = hdf5_handler.read_dataset(self.q_parallel)
+            q_perpendicular = hdf5_handler.read_dataset(self.q_perpendicular)
+            # q_vectors lead to irregular grid
+            # generate a regular grid using interpolation
+            x = q_parallel.to('1/angstrom').magnitude.flatten()
+            y = q_perpendicular.to('1/angstrom').magnitude.flatten()
+            x_regular = np.linspace(x.min(), x.max(), intensity.shape[0])
+            y_regular = np.linspace(y.min(), y.max(), intensity.shape[1])
+            x_grid, y_grid = np.meshgrid(x_regular, y_regular)
+            z_interpolated = griddata(
+                points=(x, y),
+                values=intensity.flatten(),
+                xi=(x_grid, y_grid),
+                method='linear',
+                fill_value=intensity.min(),
+            )
+            hdf5_handler.add_dataset(
+                path=f'{prefix}/plot_intensity_scattering_vector/q_parallel',
+                params=dict(
+                    data=x_regular,
+                    archive_path='data.results[0].plot_intensity_scattering_vector.q_parallel',
+                ),
+                validate_path=False,
+            )
+            hdf5_handler.add_dataset(
+                path=f'{prefix}/plot_intensity_scattering_vector/q_perpendicular',
+                params=dict(
+                    data=y_regular,
+                    archive_path='data.results[0].plot_intensity_scattering_vector.q_perpendicular',
+                ),
+                validate_path=False,
+            )
+            hdf5_handler.add_dataset(
+                path=f'{prefix}/plot_intensity_scattering_vector/intensity',
+                params=dict(
+                    data=z_interpolated,
+                    archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
+                ),
+                validate_path=False,
+            )
+            hdf5_handler.add_attribute(
+                path=f'{prefix}/plot_intensity_scattering_vector',
+                params=dict(
+                    axes=['q_perpendicular', 'q_parallel'],
+                    signal='intensity',
+                    NX_class='NXdata',
+                ),
+            )
+        hdf5_handler.write_file()
+
+
 class XRDResult(MeasurementResult):
     """
     Section containing the result of an X-ray diffraction scan.
@@ -269,52 +473,28 @@ class XRDResult(MeasurementResult):
 
     m_def = Section()
 
-    array_index = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        description=(
-            'A placeholder for the indices of vectorial quantities. '
-            'Used as x-axis for plots within quantities.'
-        ),
-        a_display={'visible': False},
-    )
     intensity = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        unit='dimensionless',
+        type=HDF5Reference,
         description='The count at each 2-theta value, dimensionless',
-        a_plot={'x': 'array_index', 'y': 'intensity'},
     )
     two_theta = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        unit='deg',
+        type=HDF5Reference,
         description='The 2-theta range of the diffractogram',
-        a_plot={'x': 'array_index', 'y': 'two_theta'},
     )
     q_norm = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        unit='meter**(-1)',
+        type=HDF5Reference,
         description='The norm of scattering vector *Q* of the diffractogram',
-        a_plot={'x': 'array_index', 'y': 'q_norm'},
     )
     omega = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        unit='deg',
+        type=HDF5Reference,
         description='The omega range of the diffractogram',
     )
     phi = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        unit='deg',
+        type=HDF5Reference,
         description='The phi range of the diffractogram',
     )
     chi = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*'],
-        unit='deg',
+        type=HDF5Reference,
         description='The chi range of the diffractogram',
     )
     source_peak_wavelength = Quantity(
@@ -328,10 +508,12 @@ class XRDResult(MeasurementResult):
         description='Axis scanned',
     )
     integration_time = Quantity(
-        type=np.dtype(np.float64),
-        unit='s',
-        shape=['*'],
+        type=HDF5Reference,
         description='Integration time per channel',
+    )
+    plot_intensity = SubSection(section_def=XRDResultPlotIntensity)
+    plot_intensity_scattering_vector = SubSection(
+        section_def=XRDResultPlotIntensityScatteringVector
     )
 
 
@@ -340,9 +522,7 @@ class XRDResult1D(XRDResult):
     Section containing the result of a 1D X-ray diffraction scan.
     """
 
-    m_def = Section()
-
-    def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+    def generate_plots(self):
         """
         Plot the 1D diffractogram.
 
@@ -355,12 +535,20 @@ class XRDResult1D(XRDResult):
             (dict, dict): line_linear, line_log
         """
         plots = []
-        if self.two_theta is None or self.intensity is None:
+
+        try:
+            hdf5_handler = self.m_parent.hdf5_handler
+            assert isinstance(hdf5_handler, HDF5Handler)
+        except (AttributeError, AssertionError):
             return plots
 
-        x = self.two_theta.to('degree').magnitude
-        y = self.intensity.magnitude
+        two_theta = hdf5_handler.read_dataset(self.two_theta)
+        intensity = hdf5_handler.read_dataset(self.intensity)
+        if two_theta is None or intensity is None:
+            return plots
 
+        x = two_theta.to('degree').magnitude
+        y = intensity.magnitude
         fig_line_linear = px.line(
             x=x,
             y=y,
@@ -446,10 +634,11 @@ class XRDResult1D(XRDResult):
             )
         )
 
-        if self.q_norm is None:
+        q_norm = hdf5_handler.read_dataset(self.q_norm)
+        if q_norm is None:
             return plots
 
-        x = self.q_norm.to('1/angstrom').magnitude
+        x = q_norm.to('1/angstrom').magnitude
         fig_line_log = px.line(
             x=x,
             y=y,
@@ -512,12 +701,45 @@ class XRDResult1D(XRDResult):
                 self.name = f'{self.scan_axis} Scan Result'
             else:
                 self.name = 'XRD Scan Result'
+
+        try:
+            hdf5_handler = self.m_parent.hdf5_handler
+            assert isinstance(hdf5_handler, HDF5Handler)
+        except (AttributeError, AssertionError):
+            return
+
         if self.source_peak_wavelength is not None:
-            self.q_norm, self.two_theta = calculate_two_theta_or_q(
+            q_norm = hdf5_handler.read_dataset(self.q_norm)
+            two_theta = hdf5_handler.read_dataset(self.two_theta)
+            q_norm, two_theta = calculate_two_theta_or_q(
                 wavelength=self.source_peak_wavelength,
-                two_theta=self.two_theta,
-                q=self.q_norm,
+                two_theta=two_theta,
+                q=q_norm,
             )
+            hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/q_norm',
+                params=dict(
+                    data=q_norm,
+                    archive_path='data.results[0].q_norm',
+                ),
+            )
+            hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/two_theta',
+                params=dict(
+                    data=two_theta,
+                    archive_path='data.results[0].two_theta',
+                ),
+            )
+            hdf5_handler.write_file()
+            self.m_setdefault('plot_intensity_scattering_vector')
+            self.plot_intensity_scattering_vector.intensity = self.intensity
+            self.plot_intensity_scattering_vector.q_norm = self.q_norm
+            self.plot_intensity_scattering_vector.normalize(archive, logger)
+
+        self.m_setdefault('plot_intensity')
+        self.plot_intensity.intensity = self.intensity
+        self.plot_intensity.two_theta = self.two_theta
+        self.plot_intensity.normalize(archive, logger)
 
 
 class XRDResultRSM(XRDResult):
@@ -525,27 +747,16 @@ class XRDResultRSM(XRDResult):
     Section containing the result of a Reciprocal Space Map (RSM) scan.
     """
 
-    m_def = Section()
     q_parallel = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*', '*'],
-        unit='meter**(-1)',
+        type=HDF5Reference,
         description='The scattering vector *Q_parallel* of the diffractogram',
     )
     q_perpendicular = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*', '*'],
-        unit='meter**(-1)',
+        type=HDF5Reference,
         description='The scattering vector *Q_perpendicular* of the diffractogram',
     )
-    intensity = Quantity(
-        type=np.dtype(np.float64),
-        shape=['*', '*'],
-        unit='dimensionless',
-        description='The count at each position, dimensionless',
-    )
 
-    def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+    def generate_plots(self):
         """
         Plot the 2D RSM diffractogram.
 
@@ -558,14 +769,24 @@ class XRDResultRSM(XRDResult):
             (dict, dict): json_2theta_omega, json_q_vector
         """
         plots = []
-        if self.two_theta is None or self.intensity is None or self.omega is None:
+
+        try:
+            hdf5_handler = self.m_parent.hdf5_handler
+            assert isinstance(hdf5_handler, HDF5Handler)
+        except (AttributeError, AssertionError):
+            return plots
+
+        two_theta = hdf5_handler.read_dataset(self.two_theta)
+        intensity = hdf5_handler.read_dataset(self.intensity)
+        omega = hdf5_handler.read_dataset(self.omega)
+        if two_theta is None or intensity is None or omega is None:
             return plots
 
         # Plot for 2theta-omega RSM
         # Zero values in intensity become -inf in log scale and are not plotted
-        x = self.omega.to('degree').magnitude
-        y = self.two_theta.to('degree').magnitude
-        z = self.intensity.magnitude
+        x = omega.to('degree').magnitude
+        y = two_theta.to('degree').magnitude
+        z = intensity.magnitude
         log_z = np.log10(z)
         x_range, y_range = get_bounding_range_2d(x, y)
 
@@ -633,9 +854,11 @@ class XRDResultRSM(XRDResult):
         )
 
         # Plot for RSM in Q-vectors
-        if self.q_parallel is not None and self.q_perpendicular is not None:
-            x = self.q_parallel.to('1/angstrom').magnitude.flatten()
-            y = self.q_perpendicular.to('1/angstrom').magnitude.flatten()
+        q_parallel = hdf5_handler.read_dataset(self.q_parallel)
+        q_perpendicular = hdf5_handler.read_dataset(self.q_perpendicular)
+        if q_parallel is not None and q_perpendicular is not None:
+            x = q_parallel.to('1/angstrom').magnitude.flatten()
+            y = q_perpendicular.to('1/angstrom').magnitude.flatten()
             # q_vectors lead to irregular grid
             # generate a regular grid using interpolation
             x_regular = np.linspace(x.min(), x.max(), z.shape[0])
@@ -718,21 +941,58 @@ class XRDResultRSM(XRDResult):
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         super().normalize(archive, logger)
+
         if self.name is None:
             self.name = 'RSM Scan Result'
-        var_axis = 'omega'
-        if self.source_peak_wavelength is not None:
-            for var_axis in ['omega', 'chi', 'phi']:
-                if (
-                    self[var_axis] is not None
-                    and len(np.unique(self[var_axis].magnitude)) > 1
-                ):
-                    self.q_parallel, self.q_perpendicular = calculate_q_vectors_RSM(
-                        wavelength=self.source_peak_wavelength,
-                        two_theta=self.two_theta * np.ones_like(self.intensity),
-                        omega=self[var_axis],
-                    )
-                    break
+
+        try:
+            hdf5_handler = self.m_parent.hdf5_handler
+            assert isinstance(hdf5_handler, HDF5Handler)
+        except (AttributeError, AssertionError):
+            return
+
+        var_axis = None
+        for axis in ['omega', 'chi', 'phi']:
+            axis_value = hdf5_handler.read_dataset(getattr(self, axis))
+            if axis_value is not None and len(np.unique(axis_value.magnitude)) > 1:
+                var_axis = axis
+                break
+
+        if self.source_peak_wavelength is not None and var_axis is not None:
+            two_theta = hdf5_handler.read_dataset(self.two_theta)
+            intensity = hdf5_handler.read_dataset(self.intensity)
+            q_parallel, q_perpendicular = calculate_q_vectors_rsm(
+                wavelength=self.source_peak_wavelength,
+                two_theta=two_theta * np.ones_like(intensity),
+                omega=hdf5_handler.read_dataset(getattr(self, var_axis)),
+            )
+            hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/q_parallel',
+                params=dict(
+                    data=q_parallel,
+                    archive_path='data.results[0].q_parallel',
+                ),
+            )
+            hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/q_perpendicular',
+                params=dict(
+                    data=q_perpendicular,
+                    archive_path='data.results[0].q_perpendicular',
+                ),
+            )
+            hdf5_handler.write_file()
+            self.m_setdefault('plot_intensity_scattering_vector')
+            self.plot_intensity_scattering_vector.intensity = self.intensity
+            self.plot_intensity_scattering_vector.q_parallel = self.q_parallel
+            self.plot_intensity_scattering_vector.q_perpendicular = self.q_perpendicular
+            self.plot_intensity_scattering_vector.normalize(archive, logger)
+
+        if var_axis is not None:
+            self.m_setdefault('plot_intensity')
+            self.plot_intensity.intensity = self.intensity
+            self.plot_intensity.two_theta = self.two_theta
+            self.plot_intensity.m_set(var_axis, getattr(self, var_axis))
+            self.plot_intensity.normalize(archive, logger)
 
 
 class XRayDiffraction(Measurement):
@@ -799,21 +1059,6 @@ class XRayDiffraction(Measurement):
             archive.results = Results()
         if not archive.results.properties:
             archive.results.properties = Properties()
-        if not archive.results.properties.structural:
-            diffraction_patterns = []
-            for result in self.results:
-                if len(result.intensity.shape) == 1:
-                    diffraction_patterns.append(
-                        DiffractionPattern(
-                            incident_beam_wavelength=result.source_peak_wavelength,
-                            two_theta_angles=result.two_theta,
-                            intensity=result.intensity,
-                            q_vector=result.q_norm,
-                        )
-                    )
-            archive.results.properties.structural = StructuralProperties(
-                diffraction_pattern=diffraction_patterns
-            )
         if not archive.results.method:
             archive.results.method = Method(
                 method_name='XRD',
@@ -822,8 +1067,31 @@ class XRayDiffraction(Measurement):
                 ),
             )
 
+        try:
+            hdf5_handler = self.hdf5_handler
+        except AttributeError:
+            return
+        if not archive.results.properties.structural:
+            diffraction_patterns = []
+            for result in self.results:
+                intensity = hdf5_handler.read_dataset(result.intensity)
+                if len(intensity.shape) == 1:
+                    two_theta = hdf5_handler.read_dataset(result.two_theta)
+                    q_norm = hdf5_handler.read_dataset(result.q_norm)
+                    diffraction_patterns.append(
+                        DiffractionPattern(
+                            incident_beam_wavelength=result.source_peak_wavelength,
+                            two_theta_angles=two_theta,
+                            intensity=intensity,
+                            q_vector=q_norm,
+                        )
+                    )
+            archive.results.properties.structural = StructuralProperties(
+                diffraction_pattern=diffraction_patterns
+            )
 
-class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
+
+class ELNXRayDiffraction(XRayDiffraction, EntryData):
     """
     Example section for how XRayDiffraction can be implemented with a general reader for
     common XRD file types.
@@ -838,6 +1106,12 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         a_template={
             'measurement_identifiers': {},
         },
+        a_h5web=H5WebAnnotation(
+            paths=[
+                'results/0/plot_intensity',
+                'results/0/plot_intensity_scattering_vector',
+            ]
+        ),
     )
     data_file = Quantity(
         type=str,
@@ -846,6 +1120,14 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             component=ELNComponentEnum.FileEditQuantity,
         ),
     )
+    auxiliary_file = Quantity(
+        type=str,
+        description='Auxiliary file (like .h5 or .nxs) containing the entry data.',
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.FileEditQuantity,
+        ),
+    )
+    hdf5_handler = None
     measurement_identifiers = SubSection(
         section_def=ReadableIdentifiers,
     )
@@ -853,21 +1135,11 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
     )
-    generate_nexus_file = Quantity(
-        type=bool,
-        description='Whether or not to generate a NeXus output file (if possible).',
-        default=True,
-        a_eln=ELNAnnotation(
-            component=ELNComponentEnum.BoolEditQuantity,
-            label='Generate NeXus file',
-        ),
-    )
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
         """
         Method for getting the correct read and write functions for the current data
         file.
-
         Returns:
             tuple[Callable, Callable]: The read, write functions.
         """
@@ -896,49 +1168,81 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         metadata_dict: dict = xrd_dict.get('metadata', {})
         source_dict: dict = metadata_dict.get('source', {})
 
-        scan_type = metadata_dict.get('scan_type', None)
-        if scan_type == 'line':
-            result = XRDResult1D(
-                intensity=xrd_dict.get('intensity', None),
-                two_theta=xrd_dict.get('2Theta', None),
-                omega=xrd_dict.get('Omega', None),
-                chi=xrd_dict.get('Chi', None),
-                phi=xrd_dict.get('Phi', None),
-                scan_axis=metadata_dict.get('scan_axis', None),
-                integration_time=xrd_dict.get('countTime', None),
-            )
-            result.normalize(archive, logger)
+        scan_type = metadata_dict.get('scan_type')
+        if scan_type not in ['line', 'rsm']:
+            logger.error(f'Scan type `{scan_type}` is not supported.')
+            return
 
+        # Create a new result section
+        results = []
+        result = None
+        if scan_type == 'line':
+            result = XRDResult1D()
         elif scan_type == 'rsm':
-            result = XRDResultRSM(
-                intensity=xrd_dict.get('intensity', None),
-                two_theta=xrd_dict.get('2Theta', None),
-                omega=xrd_dict.get('Omega', None),
-                chi=xrd_dict.get('Chi', None),
-                phi=xrd_dict.get('Phi', None),
-                scan_axis=metadata_dict.get('scan_axis', None),
-                integration_time=xrd_dict.get('countTime', None),
+            result = XRDResultRSM()
+
+        if result is not None:
+            result.scan_axis = metadata_dict.get('scan_axis')
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/intensity',
+                params=dict(
+                    data=xrd_dict.get('intensity'),
+                    archive_path='data.results[0].intensity',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/two_theta',
+                params=dict(
+                    data=xrd_dict.get('2Theta'),
+                    archive_path='data.results[0].two_theta',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/omega',
+                params=dict(
+                    data=xrd_dict.get('Omega'),
+                    archive_path='data.results[0].omega',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/chi',
+                params=dict(
+                    data=xrd_dict.get('Chi'),
+                    archive_path='data.results[0].chi',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/phi',
+                params=dict(
+                    data=xrd_dict.get('Phi'),
+                    archive_path='data.results[0].phi',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_config/count_time',
+                params=dict(
+                    data=xrd_dict.get('countTime'),
+                    archive_path='data.results[0].integration_time',
+                ),
             )
             result.normalize(archive, logger)
-        else:
-            raise NotImplementedError(f'Scan type `{scan_type}` is not supported.')
+            results.append(result)
 
         source = XRayTubeSource(
-            xray_tube_material=source_dict.get('anode_material', None),
-            kalpha_one=source_dict.get('kAlpha1', None),
-            kalpha_two=source_dict.get('kAlpha2', None),
-            ratio_kalphatwo_kalphaone=source_dict.get('ratioKAlpha2KAlpha1', None),
-            kbeta=source_dict.get('kBeta', None),
-            xray_tube_voltage=source_dict.get('voltage', None),
-            xray_tube_current=source_dict.get('current', None),
+            xray_tube_material=source_dict.get('anode_material'),
+            kalpha_one=source_dict.get('kAlpha1'),
+            kalpha_two=source_dict.get('kAlpha2'),
+            ratio_kalphatwo_kalphaone=source_dict.get('ratioKAlpha2KAlpha1'),
+            kbeta=source_dict.get('kBeta'),
+            xray_tube_voltage=source_dict.get('voltage'),
+            xray_tube_current=source_dict.get('current'),
         )
         source.normalize(archive, logger)
-
         xrd_settings = XRDSettings(source=source)
         xrd_settings.normalize(archive, logger)
 
         samples = []
-        if metadata_dict.get('sample_id', None) is not None:
+        if metadata_dict.get('sample_id') is not None:
             sample = CompositeSystemReference(
                 lab_id=metadata_dict['sample_id'],
             )
@@ -946,11 +1250,22 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             samples.append(sample)
 
         xrd = ELNXRayDiffraction(
-            results=[result],
+            results=results,
             xrd_settings=xrd_settings,
             samples=samples,
         )
+
         merge_sections(self, xrd, logger)
+
+    def backward_compatibility(self):
+        """
+        Method for backward compatibility.
+        """
+        # Migration to using HFD5References: removing exisiting results
+        if self.get('results'):
+            self.results = []
+        if self.get('figures'):
+            self.figures = []
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
@@ -961,7 +1276,16 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             normalized.
             logger (BoundLogger): A structlog logger.
         """
+        self.backward_compatibility()
         if self.data_file is not None:
+            self.auxiliary_file = f'{self.data_file}.nxs'
+            self.hdf5_handler = HDF5Handler(
+                filename=self.auxiliary_file,
+                archive=archive,
+                logger=logger,
+                valid_dataset_paths=NEXUS_DATASET_PATHS,
+                nexus=True,
+            )
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:
                 logger.warn(
@@ -971,15 +1295,10 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                 with archive.m_context.raw_file(self.data_file) as file:
                     xrd_dict = read_function(file.name, logger)
                 write_function(xrd_dict, archive, logger)
+                self.hdf5_handler.write_file()
+                if self.hdf5_handler.data_file != self.auxiliary_file:
+                    self.auxiliary_file = self.hdf5_handler.data_file
         super().normalize(archive, logger)
-        if not self.results:
-            return
-
-        scan_type = xrd_dict.get('metadata', {}).get('scan_type', None)
-        if self.generate_nexus_file and self.data_file is not None:
-            write_nx_section_and_create_file(archive, logger, scan_type=scan_type)
-
-        self.figures = self.results[0].generate_plots(archive, logger)
 
 
 class RawFileXRDData(EntryData):
