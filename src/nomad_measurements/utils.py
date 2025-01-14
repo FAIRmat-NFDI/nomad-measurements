@@ -592,6 +592,10 @@ class HDF5Handler:
         ):
             resolved_section.m_set(quantity_name, ref)
 
+    def __del__(self):
+        if self._hdf5_datasets or self._hdf5_attributes:
+            self.write_file()
+
 
 def resolve_path(section: 'ArchiveSection', path: str, logger: 'BoundLogger' = None):
     """
