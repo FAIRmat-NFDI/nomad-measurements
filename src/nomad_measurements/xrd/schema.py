@@ -287,6 +287,14 @@ class XRDResultPlotIntensity(ArchiveSection):
         type=HDF5Reference,
         description='The omega range of the diffractogram',
     )
+    phi = Quantity(
+        type=HDF5Reference,
+        description='The phi range of the diffractogram',
+    )
+    chi = Quantity(
+        type=HDF5Reference,
+        description='The chi range of the diffractogram',
+    )
 
     def normalize(self, archive, logger):
         super().normalize(archive, logger)
@@ -295,9 +303,6 @@ class XRDResultPlotIntensity(ArchiveSection):
             hdf5_handler = self.m_parent.m_parent.hdf5_handler
             assert isinstance(hdf5_handler, HDF5Handler)
         except (AttributeError, AssertionError):
-            return
-
-        if self.intensity is None or self.two_theta is None:
             return
 
         hdf5_handler.add_dataset(
@@ -326,8 +331,15 @@ class XRDResultPlotIntensity(ArchiveSection):
                 NX_class='NXdata',
             ),
         )
+        if isinstance(self.m_parent, XRDResult1D):
+            return
+
         for var_axis in ['omega', 'phi', 'chi']:
-            if self.get(var_axis) is not None:
+            var_axis_data = hdf5_handler.read_dataset(
+                path=f'data.results[0].{var_axis}',
+                is_archive_path=True,
+            )
+            if var_axis_data is not None:
                 hdf5_handler.add_dataset(
                     path=f'{prefix}/plot_intensity/{var_axis}',
                     params=dict(
@@ -346,8 +358,6 @@ class XRDResultPlotIntensity(ArchiveSection):
                     ),
                 )
                 break
-
-        hdf5_handler.write_file()
 
 
 class XRDResultPlotIntensityScatteringVector(ArchiveSection):
@@ -385,10 +395,24 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
         except (AttributeError, AssertionError):
             return
 
-        if self.intensity is None:
-            return
+        intensity = hdf5_handler.read_dataset(
+            path='data.results[0].intensity',
+            is_archive_path=True,
+        )
+        q_norm = hdf5_handler.read_dataset(
+            path='data.results[0].q_norm',
+            is_archive_path=True,
+        )
+        q_parallel = hdf5_handler.read_dataset(
+            path='data.results[0].q_parallel',
+            is_archive_path=True,
+        )
+        q_perpendicular = hdf5_handler.read_dataset(
+            path='data.results[0].q_perpendicular',
+            is_archive_path=True,
+        )
 
-        if self.q_norm is not None:
+        if q_norm is not None:
             hdf5_handler.add_dataset(
                 path=f'{prefix}/plot_intensity_scattering_vector/intensity',
                 params=dict(
@@ -415,10 +439,7 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
                     NX_class='NXdata',
                 ),
             )
-        elif self.q_parallel is not None and self.q_perpendicular is not None:
-            intensity = hdf5_handler.read_dataset(self.intensity)
-            q_parallel = hdf5_handler.read_dataset(self.q_parallel)
-            q_perpendicular = hdf5_handler.read_dataset(self.q_perpendicular)
+        elif q_parallel is not None and q_perpendicular is not None:
             # q_vectors lead to irregular grid
             # generate a regular grid using interpolation
             x = q_parallel.to('1/angstrom').magnitude.flatten()
@@ -465,7 +486,6 @@ class XRDResultPlotIntensityScatteringVector(ArchiveSection):
                     NX_class='NXdata',
                 ),
             )
-        hdf5_handler.write_file()
 
 
 class XRDResult(MeasurementResult):
@@ -544,8 +564,14 @@ class XRDResult1D(XRDResult):
         except (AttributeError, AssertionError):
             return plots
 
-        two_theta = hdf5_handler.read_dataset(self.two_theta)
-        intensity = hdf5_handler.read_dataset(self.intensity)
+        two_theta = hdf5_handler.read_dataset(
+            path='data.results[0].two_theta',
+            is_archive_path=True,
+        )
+        intensity = hdf5_handler.read_dataset(
+            path='data.results[0].intensity',
+            is_archive_path=True,
+        )
         if two_theta is None or intensity is None:
             return plots
 
@@ -636,7 +662,10 @@ class XRDResult1D(XRDResult):
             )
         )
 
-        q_norm = hdf5_handler.read_dataset(self.q_norm)
+        q_norm = hdf5_handler.read_dataset(
+            path='data.results[0].q_norm',
+            is_archive_path=True,
+        )
         if q_norm is None:
             return plots
 
@@ -710,9 +739,22 @@ class XRDResult1D(XRDResult):
         except (AttributeError, AssertionError):
             return
 
+        intensity = hdf5_handler.read_dataset(
+            path='data.results[0].intensity',
+            is_archive_path=True,
+        )
+        two_theta = hdf5_handler.read_dataset(
+            path='data.results[0].two_theta',
+            is_archive_path=True,
+        )
+        if intensity is None or two_theta is None:
+            return
+
         if self.source_peak_wavelength is not None:
-            q_norm = hdf5_handler.read_dataset(self.q_norm)
-            two_theta = hdf5_handler.read_dataset(self.two_theta)
+            q_norm = hdf5_handler.read_dataset(
+                path='data.results[0].q_norm',
+                is_archive_path=True,
+            )
             q_norm, two_theta = calculate_two_theta_or_q(
                 wavelength=self.source_peak_wavelength,
                 two_theta=two_theta,
@@ -732,15 +774,10 @@ class XRDResult1D(XRDResult):
                     archive_path='data.results[0].two_theta',
                 ),
             )
-            hdf5_handler.write_file()
             self.m_setdefault('plot_intensity_scattering_vector')
-            self.plot_intensity_scattering_vector.intensity = self.intensity
-            self.plot_intensity_scattering_vector.q_norm = self.q_norm
             self.plot_intensity_scattering_vector.normalize(archive, logger)
 
         self.m_setdefault('plot_intensity')
-        self.plot_intensity.intensity = self.intensity
-        self.plot_intensity.two_theta = self.two_theta
         self.plot_intensity.normalize(archive, logger)
 
 
@@ -778,9 +815,18 @@ class XRDResultRSM(XRDResult):
         except (AttributeError, AssertionError):
             return plots
 
-        two_theta = hdf5_handler.read_dataset(self.two_theta)
-        intensity = hdf5_handler.read_dataset(self.intensity)
-        omega = hdf5_handler.read_dataset(self.omega)
+        two_theta = hdf5_handler.read_dataset(
+            path='data.results[0].two_theta',
+            is_archive_path=True,
+        )
+        intensity = hdf5_handler.read_dataset(
+            path='data.results[0].intensity',
+            is_archive_path=True,
+        )
+        omega = hdf5_handler.read_dataset(
+            path='data.results[0].omega',
+            is_archive_path=True,
+        )
         if two_theta is None or intensity is None or omega is None:
             return plots
 
@@ -856,8 +902,14 @@ class XRDResultRSM(XRDResult):
         )
 
         # Plot for RSM in Q-vectors
-        q_parallel = hdf5_handler.read_dataset(self.q_parallel)
-        q_perpendicular = hdf5_handler.read_dataset(self.q_perpendicular)
+        q_parallel = hdf5_handler.read_dataset(
+            path='data.results[0].q_parallel',
+            is_archive_path=True,
+        )
+        q_perpendicular = hdf5_handler.read_dataset(
+            path='data.results[0].q_perpendicular',
+            is_archive_path=True,
+        )
         if q_parallel is not None and q_perpendicular is not None:
             x = q_parallel.to('1/angstrom').magnitude.flatten()
             y = q_perpendicular.to('1/angstrom').magnitude.flatten()
@@ -953,20 +1005,34 @@ class XRDResultRSM(XRDResult):
         except (AttributeError, AssertionError):
             return
 
+        intensity = hdf5_handler.read_dataset(
+            path='data.results[0].intensity',
+            is_archive_path=True,
+        )
+        two_theta = hdf5_handler.read_dataset(
+            path='data.results[0].two_theta',
+            is_archive_path=True,
+        )
         var_axis = None
         for axis in ['omega', 'chi', 'phi']:
-            axis_value = hdf5_handler.read_dataset(getattr(self, axis))
+            axis_value = hdf5_handler.read_dataset(
+                path=f'data.results[0].{axis}',
+                is_archive_path=True,
+            )
             if axis_value is not None and len(np.unique(axis_value.magnitude)) > 1:
                 var_axis = axis
                 break
+        if intensity is None or two_theta is None or var_axis is None:
+            return
 
-        if self.source_peak_wavelength is not None and var_axis is not None:
-            two_theta = hdf5_handler.read_dataset(self.two_theta)
-            intensity = hdf5_handler.read_dataset(self.intensity)
+        if self.source_peak_wavelength is not None:
             q_parallel, q_perpendicular = calculate_q_vectors_rsm(
                 wavelength=self.source_peak_wavelength,
                 two_theta=two_theta * np.ones_like(intensity),
-                omega=hdf5_handler.read_dataset(getattr(self, var_axis)),
+                omega=hdf5_handler.read_dataset(
+                    path=f'data.results[0].{var_axis}',
+                    is_archive_path=True,
+                ),
             )
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/q_parallel',
@@ -982,19 +1048,11 @@ class XRDResultRSM(XRDResult):
                     archive_path='data.results[0].q_perpendicular',
                 ),
             )
-            hdf5_handler.write_file()
             self.m_setdefault('plot_intensity_scattering_vector')
-            self.plot_intensity_scattering_vector.intensity = self.intensity
-            self.plot_intensity_scattering_vector.q_parallel = self.q_parallel
-            self.plot_intensity_scattering_vector.q_perpendicular = self.q_perpendicular
             self.plot_intensity_scattering_vector.normalize(archive, logger)
 
-        if var_axis is not None:
-            self.m_setdefault('plot_intensity')
-            self.plot_intensity.intensity = self.intensity
-            self.plot_intensity.two_theta = self.two_theta
-            self.plot_intensity.m_set(var_axis, getattr(self, var_axis))
-            self.plot_intensity.normalize(archive, logger)
+        self.m_setdefault('plot_intensity')
+        self.plot_intensity.normalize(archive, logger)
 
 
 class XRayDiffraction(Measurement):
@@ -1076,10 +1134,16 @@ class XRayDiffraction(Measurement):
         if not archive.results.properties.structural:
             diffraction_patterns = []
             for result in self.results:
-                intensity = hdf5_handler.read_dataset(result.intensity)
+                intensity = hdf5_handler.read_dataset(
+                    'data.results[0].intensity', is_archive_path=True
+                )
                 if len(intensity.shape) == 1:
-                    two_theta = hdf5_handler.read_dataset(result.two_theta)
-                    q_norm = hdf5_handler.read_dataset(result.q_norm)
+                    two_theta = hdf5_handler.read_dataset(
+                        'data.results[0].two_theta', is_archive_path=True
+                    )
+                    q_norm = hdf5_handler.read_dataset(
+                        'data.results[0].q_norm', is_archive_path=True
+                    )
                     diffraction_patterns.append(
                         DiffractionPattern(
                             incident_beam_wavelength=result.source_peak_wavelength,
@@ -1302,10 +1366,12 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                 with archive.m_context.raw_file(self.data_file) as file:
                     xrd_dict = read_function(file.name, logger)
                 write_function(xrd_dict, archive, logger)
-                self.hdf5_handler.write_file()
-                if self.hdf5_handler.data_file != self.auxiliary_file:
-                    self.auxiliary_file = self.hdf5_handler.data_file
 
+        super().normalize(archive, logger)
+
+        self.hdf5_handler.write_file()
+        if self.hdf5_handler.data_file != self.auxiliary_file:
+            self.auxiliary_file = self.hdf5_handler.data_file
         if archive.m_context.raw_path_exists(
             self.auxiliary_file
         ) and self.auxiliary_file.endswith('.nxs'):
@@ -1316,8 +1382,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                 archive.metadata.upload_id, nx_entry_id
             )
             self.nexus_results = f'{ref_to_nx_entry_data}'
-
-        super().normalize(archive, logger)
 
 
 class RawFileXRDData(EntryData):
