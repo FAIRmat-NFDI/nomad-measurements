@@ -511,10 +511,6 @@ class HDF5Handler:
                 else:
                     self.logger.warning(f'Path "{key}" not found to add attribute.')
 
-        # reset hdf5 datasets and atttributes
-        self._hdf5_datasets = collections.OrderedDict()
-        self._hdf5_attributes = collections.OrderedDict()
-
     def populate_nx_dataset_and_attribute(self, attr_dict: dict, dataset_dict: dict):
         """Construct datasets and attributes for nexus and populate."""
 
