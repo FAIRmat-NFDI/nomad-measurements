@@ -52,6 +52,8 @@ if TYPE_CHECKING:
     )
 
 
+# import debugpy
+# debugpy.debug_this_thread()
 class NXFileGenerationError(Exception):
     pass
 
@@ -371,6 +373,7 @@ class HDF5Handler:
         """
         if self.nexus:
             try:
+                delete_entry_file(archive=self.archive, mainfile=self.data_file)
                 self._write_nx_file()
             except Exception as e:
                 self.nexus = False
@@ -378,13 +381,17 @@ class HDF5Handler:
                     f"""NeXusFileGenerationError: Encountered '{e}' error while creating
                     nexus file. Creating h5 file instead."""
                 )
-                if self.archive.m_context.raw_path_exists(self.data_file):
-                    os.remove(
-                        os.path.join(self.archive.m_context.raw_path(), self.data_file)
-                    )
+                delete_entry_file(
+                    archive=self.archive, mainfile=self.data_file, delete_entry=True
+                )
                 self._write_hdf5_file()
         else:
             self._write_hdf5_file()
+
+        if self.data_file.endswith('.nxs'):
+            self.archive.m_context.process_updated_raw_file(
+                    self.data_file, allow_modify=True
+                )
 
     def _write_nx_file(self):
         """
@@ -392,7 +399,6 @@ class HDF5Handler:
         to the `hdf5_data_dict` before creating the nexus file. This provides a NeXus
         view of the data in addition to storing array data.
         """
-        from nomad.processing.data import Entry
 
         app_def = 'NXxrd_pan'
         nxdl_root, nxdl_f_path = get_nxdl_root_and_path(app_def)
@@ -436,18 +442,9 @@ class HDF5Handler:
         nx_full_file_path = os.path.join(
             self.archive.m_context.raw_path(), self.data_file
         )
-
-        if self.archive.m_context.raw_path_exists(self.data_file):
-            os.remove(nx_full_file_path)
         pynxtools_writer(
             data=template, nxdl_f_path=nxdl_f_path, output_path=nx_full_file_path
         ).write()
-
-        entry_list = Entry.objects(
-            upload_id=self.archive.m_context.upload_id, mainfile=self.data_file
-        )
-        if not entry_list:
-            self.archive.m_context.process_updated_raw_file(self.data_file)
 
     def _write_hdf5_file(self):  # noqa: PLR0912
         """
@@ -597,6 +594,26 @@ class HDF5Handler:
         ):
             resolved_section.m_set(quantity_name, ref)
 
+
+def delete_entry_file(archive, mainfile, delete_entry=False):
+    """ """
+    from nomad.processing import Upload, Entry
+    from nomad.search import delete_by_query
+    from nomad.files import StagingUploadFiles
+
+    if archive.m_context.raw_path_exists(mainfile) and (entry := Entry.objects(
+            upload_id=archive.m_context.upload_id, mainfile=mainfile
+        ).first()):
+        upload = Upload.objects(upload_id=archive.m_context.upload_id).first()
+        if upload.published:
+            raise PermissionError('Published entry cannot be deleted.')
+        if entry:
+            query = {'entry_id': entry.entry_id}
+            delete_by_query(query)
+        if delete_entry and entry:
+            entry.delete()
+        stagingUploadFiles = StagingUploadFiles(archive.m_context.upload_id)
+        stagingUploadFiles.delete_rawfiles(path=mainfile)
 
 def resolve_path(section: 'ArchiveSection', path: str, logger: 'BoundLogger' = None):
     """
