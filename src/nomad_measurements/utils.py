@@ -474,10 +474,11 @@ class HDF5Handler:
             self.archive.m_context.raw_file(self.data_file, mode), 'a'
         ) as h5:
             for key, value in self._hdf5_datasets.items():
-                if value.data is None:
+                data = value.data
+                if data is None:
                     self.logger.warning(f'No data found for "{key}". Skipping.')
                     continue
-                elif value.internal_reference:
+                if value.internal_reference:
                     # resolve the internal reference
                     try:
                         data = h5[self._remove_nexus_annotations(value.data)]
@@ -486,15 +487,19 @@ class HDF5Handler:
                             f'Internal reference "{value.data}" not found. Skipping.'
                         )
                         continue
-                else:
-                    data = value.data
 
                 group_name, dataset_name = key.rsplit('/', 1)
                 group = h5.require_group(group_name)
 
                 if key in h5:
-                    group[dataset_name][...] = data
+                    # remove the existing dataset if any
+                    del h5[key]
+
+                if value.internal_reference:
+                    # create a hard link to the existing dataset
+                    group[dataset_name] = data
                 else:
+                    # create the dataset
                     group.create_dataset(
                         name=dataset_name,
                         data=data,
