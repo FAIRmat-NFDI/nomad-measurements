@@ -1349,7 +1349,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         """
         self.backward_compatibility()
         if self.data_file is not None:
-            self.auxiliary_file = f'{self.data_file}.nxs'
+            self.auxiliary_file = f'{self.data_file.rsplit(".", 1)[0]}.nxs'
             self.hdf5_handler = HDF5Handler(
                 filename=self.auxiliary_file,
                 archive=archive,
