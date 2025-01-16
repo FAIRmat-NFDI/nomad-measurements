@@ -31,11 +31,19 @@ test_files = [
     'tests/data/xrd/TwoTheta_scan_powder.rasx',
 ]
 log_levels = ['error', 'critical']
+clean_up_extensions = ['.archive.json', '.nxs', '.h5']
 
 
 @pytest.mark.parametrize(
     'parsed_measurement_archive, caplog',
-    [(file, log_level) for file in test_files for log_level in log_levels],
+    [
+        (
+            (file, clean_up_extensions),
+            log_level,
+        )
+        for file in test_files
+        for log_level in log_levels
+    ],
     indirect=True,
 )
 def test_normalize_all(parsed_measurement_archive, caplog):
