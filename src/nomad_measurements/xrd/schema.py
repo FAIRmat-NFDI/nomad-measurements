@@ -1193,6 +1193,14 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             component=ELNComponentEnum.FileEditQuantity,
         ),
     )
+    overwrite_auxiliary_file = Quantity(
+        type=bool,
+        default=True,
+        description='Overwrite the auxiliary file with the current data.',
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.BoolEditQuantity,
+        ),
+    )
     hdf5_handler = None
     measurement_identifiers = SubSection(
         section_def=ReadableIdentifiers,
@@ -1368,12 +1376,14 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
 
         super().normalize(archive, logger)
 
-        self.hdf5_handler.write_file()
+        if self.overwrite_auxiliary_file:
+            self.hdf5_handler.write_file()
+            self.overwrite_auxiliary_file = False
         if self.hdf5_handler.data_file != self.auxiliary_file:
             self.auxiliary_file = self.hdf5_handler.data_file
-        if archive.m_context.raw_path_exists(
-            self.auxiliary_file
-        ) and self.auxiliary_file.endswith('.nxs'):
+
+        self.nexus_results = None
+        if self.auxiliary_file.endswith('.nxs'):
             nx_entry_id = get_entry_id_from_file_name(
                 archive=archive, file_name=self.auxiliary_file
             )
