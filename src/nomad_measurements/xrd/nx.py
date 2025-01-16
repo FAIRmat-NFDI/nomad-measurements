@@ -35,7 +35,9 @@ NEXUS_DATASET_MAP = {
     '/ENTRY[entry]/experiment_result/phi': 'archive.data.results[0].phi',
     '/ENTRY[entry]/experiment_result/q_norm': 'archive.data.results[0].q_norm',
     '/ENTRY[entry]/experiment_result/q_parallel': 'archive.data.results[0].q_parallel',
-    '/ENTRY[entry]/experiment_result/q_perpendicular': 'archive.data.results[0].q_perpendicular',
+    '/ENTRY[entry]/experiment_result/q_perpendicular': (
+        'archive.data.results[0].q_perpendicular'
+    ),
     '/ENTRY[entry]/method': 'archive.data.method',
     '/ENTRY[entry]/measurement_type': 'archive.data.diffraction_method_name',
     '/ENTRY[entry]/experiment_result/@signal': 'intensity',
