@@ -17,6 +17,7 @@
 #
 import pytest
 from nomad.client import normalize_all
+
 from nomad_measurements.xrd.schema import XRDResult1D
 
 test_files = [
