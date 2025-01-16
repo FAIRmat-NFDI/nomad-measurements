@@ -77,7 +77,7 @@ from nomad_measurements.utils import (
     get_reference,
     merge_sections,
 )
-from nomad_measurements.xrd.nx import NEXUS_DATASET_PATHS
+from nomad_measurements.xrd.nx import NEXUS_DATASET_MAP
 
 if TYPE_CHECKING:
     from nomad.datamodel.datamodel import (
@@ -1354,8 +1354,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                 filename=self.auxiliary_file,
                 archive=archive,
                 logger=logger,
-                valid_dataset_paths=NEXUS_DATASET_PATHS,
-                nexus=True,
+                nexus_dataset_map=NEXUS_DATASET_MAP,
             )
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:

@@ -38,8 +38,6 @@ from pynxtools.dataconverter.helpers import (
 from pynxtools.dataconverter.template import Template
 from pynxtools.dataconverter.writer import Writer as pynxtools_writer
 
-from nomad_measurements.xrd.nx import CONCEPT_MAP
-
 if TYPE_CHECKING:
     from nomad.datamodel.data import (
         ArchiveSection,
@@ -217,8 +215,7 @@ class HDF5Handler:
         filename: str,
         archive: 'EntryArchive',
         logger: 'BoundLogger',
-        valid_dataset_paths: list = None,
-        nexus: bool = False,
+        nexus_dataset_map: dict = None,
     ):
         """
         Initialize the handler.
@@ -227,8 +224,8 @@ class HDF5Handler:
             filename (str): The name of the auxiliary file.
             archive (EntryArchive): The NOMAD archive.
             logger (BoundLogger): A structlog logger.
-            valid_dataset_paths (list): The list of valid dataset paths.
-            nexus (bool): If True, the file is created as a NeXus file.
+            nexus_dataset_map (dict): The NeXus dataset map containing the nexus file
+                dataset paths and the corresponding archive paths.
         """
         if not filename.endswith(('.nxs', '.h5')):
             raise ValueError('Only .h5 or .nxs files are supported.')
@@ -236,10 +233,12 @@ class HDF5Handler:
         self.data_file = filename
         self.archive = archive
         self.logger = logger
-        self.valid_dataset_paths = []
-        if valid_dataset_paths:
-            self.valid_dataset_paths = valid_dataset_paths
-        self.nexus = nexus
+
+        self.nexus = True if nexus_dataset_map else False
+        self.nexus_dataset_map = nexus_dataset_map
+        self.valid_dataset_paths = (
+            list(nexus_dataset_map.keys()) if nexus_dataset_map else []
+        )
 
         self._hdf5_datasets = collections.OrderedDict()
         self._hdf5_attributes = collections.OrderedDict()
@@ -519,7 +518,9 @@ class HDF5Handler:
     def populate_nx_dataset_and_attribute(self, attr_dict: dict, dataset_dict: dict):
         """Construct datasets and attributes for nexus and populate."""
 
-        for nx_path, arch_path in CONCEPT_MAP.items():
+        for nx_path, arch_path in self.nexus_dataset_map.items():
+            if nx_path in self._hdf5_datasets or nx_path in self._hdf5_attributes:
+                continue
             if arch_path.startswith('archive.'):
                 data = resolve_path(self.archive, arch_path.split('archive.', 1)[1])
             else:

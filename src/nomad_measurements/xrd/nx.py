@@ -16,35 +16,30 @@
 # limitations under the License.
 #
 
-NEXUS_DATASET_PATHS = [
-    '/ENTRY[entry]/experiment_result/intensity',
-    '/ENTRY[entry]/experiment_result/two_theta',
-    '/ENTRY[entry]/experiment_result/omega',
-    '/ENTRY[entry]/experiment_result/chi',
-    '/ENTRY[entry]/experiment_result/phi',
-    '/ENTRY[entry]/experiment_config/count_time',
-    '/ENTRY[entry]/experiment_result/q_norm',
-    '/ENTRY[entry]/experiment_result/q_parallel',
-    '/ENTRY[entry]/experiment_result/q_perpendicular',
-    '/ENTRY[entry]/method',
-    '/ENTRY[entry]/measurement_type',
-    '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis',
-    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material',
-    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current',
-    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage',
-    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one',
-    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two',
-    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone',
-    '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta',
-]
+"""
+The following connects the nexus file paths to the archive paths.
+The nexus file paths come from the nexus_definitions available at:
+https://github.com/FAIRmat-NFDI/nexus_definitions/ in the following file:
+`contributed_definitions/NXxrd_pan.nxdl.xml`.
+The archive paths are the paths in the NOMAD archive defined in the class:
+`nomad_measurement.xrd.schema.ELNXRayDiffraction`.
+"""
 
-
-CONCEPT_MAP = {
+NEXUS_DATASET_MAP = {
     '/ENTRY[entry]/@default': 'experiment_result',
     '/ENTRY[entry]/definition': 'NXxrd_pan',
+    '/ENTRY[entry]/experiment_result/intensity': 'archive.data.results[0].intensity',
+    '/ENTRY[entry]/experiment_result/two_theta': 'archive.data.results[0].two_theta',
+    '/ENTRY[entry]/experiment_result/omega': 'archive.data.results[0].omega',
+    '/ENTRY[entry]/experiment_result/chi': 'archive.data.results[0].chi',
+    '/ENTRY[entry]/experiment_result/phi': 'archive.data.results[0].phi',
+    '/ENTRY[entry]/experiment_result/q_norm': 'archive.data.results[0].q_norm',
+    '/ENTRY[entry]/experiment_result/q_parallel': 'archive.data.results[0].q_parallel',
+    '/ENTRY[entry]/experiment_result/q_perpendicular': 'archive.data.results[0].q_perpendicular',
     '/ENTRY[entry]/method': 'archive.data.method',
     '/ENTRY[entry]/measurement_type': 'archive.data.diffraction_method_name',
     '/ENTRY[entry]/experiment_result/@signal': 'intensity',
+    '/ENTRY[entry]/experiment_config/count_time': 'archive.data.results[0].count_time',
     '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis': (
         'archive.data.results[0].scan_axis'
     ),
