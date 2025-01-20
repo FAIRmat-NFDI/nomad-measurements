@@ -377,10 +377,6 @@ class HDF5Handler:
                     f"""NeXusFileGenerationError: Encountered '{e}' error while creating
                     nexus file. Creating h5 file instead."""
                 )
-                if self.archive.m_context.raw_path_exists(self.data_file):
-                    os.remove(
-                        os.path.join(self.archive.m_context.raw_path(), self.data_file)
-                    )
                 self._write_hdf5_file()
         else:
             self._write_hdf5_file()
@@ -436,8 +432,6 @@ class HDF5Handler:
             self.archive.m_context.raw_path(), self.data_file
         )
 
-        if self.archive.m_context.raw_path_exists(self.data_file):
-            os.remove(nx_full_file_path)
         pynxtools_writer(
             data=template, nxdl_f_path=nxdl_f_path, output_path=nx_full_file_path
         ).write()
