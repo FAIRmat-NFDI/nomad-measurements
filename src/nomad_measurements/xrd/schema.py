@@ -1129,7 +1129,8 @@ class XRayDiffraction(Measurement):
 
         try:
             hdf5_handler = self.hdf5_handler
-        except AttributeError:
+            assert isinstance(hdf5_handler, HDF5Handler)
+        except (AttributeError, AssertionError):
             return
         if not archive.results.properties.structural:
             diffraction_patterns = []
@@ -1200,7 +1201,11 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             component=ELNComponentEnum.BoolEditQuantity,
         ),
     )
-    hdf5_handler = None
+    nexus_results = Quantity(
+        type=ArchiveSection,
+        description='Reference to the NeXus entry.',
+        a_eln=ELNAnnotation(component=ELNComponentEnum.ReferenceEditQuantity),
+    )
     measurement_identifiers = SubSection(
         section_def=ReadableIdentifiers,
     )
@@ -1208,11 +1213,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
     )
-    nexus_results = Quantity(
-        type=ArchiveSection,
-        description='Reference to the NeXus entry.',
-        a_eln=ELNAnnotation(component=ELNComponentEnum.ReferenceEditQuantity),
-    )
+    hdf5_handler = None
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
         """
