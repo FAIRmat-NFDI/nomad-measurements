@@ -296,6 +296,12 @@ class HDF5Handler:
         self._hdf5_datasets[path] = dataset
         if dataset.archive_path:
             self._hdf5_path_map[dataset.archive_path] = path
+            self._set_hdf5_reference(
+                self.archive,
+                dataset.archive_path,
+                f'/uploads/{self.archive.m_context.upload_id}/raw'
+                f'/{self.data_file}#{self._remove_nexus_annotations(path)}',
+            )
 
     def add_attribute(
         self,
@@ -411,13 +417,6 @@ class HDF5Handler:
             except KeyError:
                 template['optional'][nx_path] = dset.data
 
-            hdf5_path = self._remove_nexus_annotations(nx_path)
-            self._set_hdf5_reference(
-                self.archive,
-                dset.archive_path,
-                f'/uploads/{self.archive.m_context.upload_id}/raw'
-                f'/{self.data_file}#{hdf5_path}',
-            )
         for nx_path, attr_d in list(self._hdf5_attributes.items()) + list(
             attr_dict.items()
         ):
@@ -497,12 +496,6 @@ class HDF5Handler:
                         name=dataset_name,
                         data=data,
                     )
-                self._set_hdf5_reference(
-                    self.archive,
-                    value.archive_path,
-                    f'/uploads/{self.archive.m_context.upload_id}/raw'
-                    f'/{self.data_file}#{key}',
-                )
             for key, value in self._hdf5_attributes.items():
                 if key in h5:
                     h5[key].attrs.update(value)
