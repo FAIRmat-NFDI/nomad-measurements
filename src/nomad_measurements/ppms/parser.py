@@ -47,6 +47,7 @@ from nomad_measurements.ppms.schema import (
     PPMSACTMeasurement,
     PPMSETOMeasurement,
     PPMSMeasurement,
+    PPMSMPMSMeasurement,
 )
 from nomad_measurements.utils import create_archive
 
@@ -54,6 +55,7 @@ configuration = config.get_plugin_entry_point('nomad_measurements.ppms:eto_parse
 configuration = config.get_plugin_entry_point('nomad_measurements.ppms:act_parser')
 configuration = config.get_plugin_entry_point('nomad_measurements.ppms:acms_parser')
 configuration = config.get_plugin_entry_point('nomad_measurements.ppms:sequence_parser')
+configuration = config.get_plugin_entry_point('nomad_measurements.ppms:mpms_parser')
 
 
 def find_matching_sequence_file(archive, entry, logger):
@@ -115,6 +117,14 @@ class PPMSParser(MatchingParser):
 class PPMSETOParser(PPMSParser):
     def set_entrydata_definition(self):
         self.entrydata_definition = PPMSETOMeasurement
+
+    def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
+        super().parse(mainfile, archive, logger)
+
+
+class PPMSMPMSParser(PPMSParser):
+    def set_entrydata_definition(self):
+        self.entrydata_definition = PPMSMPMSMeasurement
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         super().parse(mainfile, archive, logger)

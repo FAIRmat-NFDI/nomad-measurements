@@ -31,6 +31,8 @@ from nomad_measurements.ppms.ppmsdatastruct import (
     ETOChannelData,
     ETOData,
     ETOPPMSData,
+    MPMSData,
+    MPMSPPMSData,
 )
 from nomad_measurements.ppms.ppmssteps import (
     PPMSMeasurementACTResistanceStep,
@@ -707,6 +709,25 @@ def split_ppms_data_eto(data_full, runs):  # noqa: PLR0912
         read_other_data(data, block)
         read_channel_data(data, block, ETOPPMSData, ETOChannelData)
         read_map_data(data, block, ETOPPMSData, ETOData, 'ETO Channel', 'ETO_Channel')
+
+        all_data.append(data)
+
+    return all_data
+
+
+def split_ppms_data_mpms(data_full, runs):
+    all_data = []
+    for i in range(len(runs)):
+        block = data_full.iloc[runs[i][2] : runs[i][3]]
+        data = MPMSPPMSData()
+        data.measurement_type = runs[i][0]
+        if data.measurement_type == 'field':
+            data.name = 'Field sweep at ' + str(runs[i][1]) + ' K.'
+        if data.measurement_type == 'temperature':
+            data.name = 'Temperature sweep at ' + str(runs[i][1]) + ' Oe.'
+        data.title = data.name
+        read_other_data(data, block)
+        read_map_data(data, block, MPMSPPMSData, MPMSData)
 
         all_data.append(data)
 

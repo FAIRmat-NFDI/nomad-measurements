@@ -109,3 +109,33 @@ def test_normalize_acms(parsed_measurement_archive, caplog):
     assert len(parsed_measurement_archive.data.data) == 60  # Noqa: PLR2004
     assert len(parsed_measurement_archive.data.data[0].time_stamp) == 23  # Noqa: PLR2004
     assert len(parsed_measurement_archive.data.figures) == 60  # Noqa: PLR2004
+
+
+# Test MPMS funtionality
+
+test_files = [
+    'tests/data/ppms/MPMS_test.dat',
+]
+log_levels = ['error', 'critical']
+
+
+@pytest.mark.parametrize(
+    'parsed_measurement_archive, caplog',
+    [(file, log_level) for file in test_files for log_level in log_levels],
+    indirect=True,
+)
+def test_normalize_mpms(parsed_measurement_archive, caplog):
+    """
+    Tests the normalization of the parsed archive.
+
+    Args:
+        parsed_archive (pytest.fixture): Fixture to handle the parsing of archive.
+        caplog (pytest.fixture): Fixture to capture errors from the logger.
+    """
+    normalize_all(parsed_measurement_archive)
+
+    assert parsed_measurement_archive.data.software == 'MPMS3,1.0,1.1'
+    #  assert len(parsed_measurement_archive.data.steps) == 70 #Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data) == 3  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data[0].time_stamp) == 374  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.figures) == 3  # Noqa: PLR2004

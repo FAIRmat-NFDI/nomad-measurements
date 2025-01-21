@@ -41,6 +41,24 @@ act_parser = DataParserEntryPointACT(
 )
 
 
+class DataParserEntryPointMPMS(ParserEntryPoint):
+    parameter: int = Field(0, description='Custom configuration parameter')
+
+    def load(self):
+        from nomad_measurements.ppms.parser import PPMSMPMSParser
+
+        return PPMSMPMSParser(**self.dict())
+
+
+mpms_parser = DataParserEntryPointMPMS(
+    name='DataParser',
+    description='New parser entry point configuration.',
+    mainfile_name_re=r'.+\.dat',
+    mainfile_mime_re='text/plain|application/x-wine-extension-ini',
+    mainfile_contents_re=r'BYAPP,\s*MPMS',
+)
+
+
 class DataParserEntryPointACMS(ParserEntryPoint):
     parameter: int = Field(0, description='Custom configuration parameter')
 
@@ -115,5 +133,20 @@ class PPMSACMSEntryPoint(SchemaPackageEntryPoint):
 
 acms_schema = PPMSACMSEntryPoint(
     name='PPMSACMSEntryPoint',
+    description='New schema package entry point configuration.',
+)
+
+
+class PPMSMPMSEntryPoint(SchemaPackageEntryPoint):
+    parameter: int = Field(0, description='Custom configuration parameter')
+
+    def load(self):
+        from nomad_measurements.ppms.schema import m_package_ppms_mpms
+
+        return m_package_ppms_mpms
+
+
+mpms_schema = PPMSMPMSEntryPoint(
+    name='PPMSMPMSEntryPoint',
     description='New schema package entry point configuration.',
 )

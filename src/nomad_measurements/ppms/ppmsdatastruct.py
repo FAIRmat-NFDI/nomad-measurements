@@ -461,3 +461,181 @@ class ACMSPPMSData(PPMSData):
     )
     #!TODO: change unit to emu or similar, for now lux=emu
     maps = SubSection(section_def=ACMSData, repeats=True)
+
+
+class MPMSData(ArchiveSection):
+    """Maps data section in MPMS"""
+
+    m_def = Section(
+        label_quantity='name',
+    )
+    name = Quantity(
+        type=str, description='FILL', a_eln={'component': 'StringEditQuantity'}
+    )
+    map = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+
+
+class MPMSPPMSData(PPMSData):
+    """Data section in MPMS"""
+
+    m_def = Section(
+        a_eln=dict(lane_width='600px'),
+    )
+    time_stamp = Quantity(
+        type=np.dtype(np.float64), unit='second', shape=['*'], description='FILL'
+    )
+    temperature = Quantity(
+        type=np.dtype(np.float64), unit='kelvin', shape=['*'], description='FILL'
+    )
+    magnetic_field = Quantity(
+        type=np.dtype(np.float64), unit='gauss', shape=['*'], description='FILL'
+    )
+    #!TODO: change unit to emu or similar, for now lux=emu
+    moment = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    moment_std_err = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    transport_action = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    averaging_time = Quantity(
+        type=np.dtype(np.float64), unit='second', shape=['*'], description='FILL'
+    )
+    frequency = Quantity(
+        type=np.dtype(np.float64), unit='Hz', shape=['*'], description='FILL'
+    )
+    peak_amplitude = Quantity(
+        type=np.dtype(np.float64), unit='mm', shape=['*'], description='FILL'
+    )
+    center_position = Quantity(
+        type=np.dtype(np.float64), unit='mm', shape=['*'], description='FILL'
+    )
+    lockin_signal_derivative = Quantity(
+        type=np.dtype(np.float64), unit='V', shape=['*'], description='FILL'
+    )
+    lockin_signal = Quantity(
+        type=np.dtype(np.float64), unit='V', shape=['*'], description='FILL'
+    )
+    range = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    moment_quad_signal = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    min_temperature = Quantity(
+        type=np.dtype(np.float64), unit='K', shape=['*'], description='FILL'
+    )
+    max_temperature = Quantity(
+        type=np.dtype(np.float64), unit='K', shape=['*'], description='FILL'
+    )
+    min_field = Quantity(
+        type=np.dtype(np.float64), unit='gauss', shape=['*'], description='FILL'
+    )
+    max_field = Quantity(
+        type=np.dtype(np.float64), unit='gauss', shape=['*'], description='FILL'
+    )
+    mass = Quantity(
+        type=np.dtype(np.float64), unit='g', shape=['*'], description='FILL'
+    )
+    motor_lag = Quantity(
+        type=np.dtype(np.float64), unit='deg', shape=['*'], description='FILL'
+    )
+    pressure = Quantity(
+        type=np.dtype(np.float64), unit='torr', shape=['*'], description='FILL'
+    )
+    measure_count = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    measurement_number = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    squid_status = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    motor_status = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    measure_status = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    motor_current = Quantity(
+        type=np.dtype(np.float64), unit='A', shape=['*'], description='FILL'
+    )
+    motor_temperature = Quantity(
+        type=np.dtype(np.float64), unit='celsius', shape=['*'], description='FILL'
+    )
+    temperature_status = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    field_status = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    chamber_status = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    chamber_temp = Quantity(
+        type=np.dtype(np.float64), unit='K', shape=['*'], description='FILL'
+    )
+    redirection_state = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    average_temp = Quantity(
+        type=np.dtype(np.float64), unit='K', shape=['*'], description='FILL'
+    )
+    rotation_angle = Quantity(
+        type=np.dtype(np.float64), unit='deg', shape=['*'], description='FILL'
+    )
+    rotator_state = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    dc_moment_fixed_ctr = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    dc_moment_err_fixed_ctr = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    dc_moment_free_ctr = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    dc_moment_err_free_ctr = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    dc_fixed_fit = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    dc_free_fit = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    dc_calculated_center = Quantity(
+        type=np.dtype(np.float64), unit='mm', shape=['*'], description='FILL'
+    )
+    dc_calculated_center_err = Quantity(
+        type=np.dtype(np.float64), unit='mm', shape=['*'], description='FILL'
+    )
+    dc_scan_length = Quantity(
+        type=np.dtype(np.float64), unit='mm', shape=['*'], description='FILL'
+    )
+    dc_scan_time = Quantity(
+        type=np.dtype(np.float64), unit='second', shape=['*'], description='FILL'
+    )
+    dc_number_of_points = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    dc_squid_drift = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    dc_min_v = Quantity(
+        type=np.dtype(np.float64), unit='V', shape=['*'], description='FILL'
+    )
+    dc_max_v = Quantity(
+        type=np.dtype(np.float64), unit='V', shape=['*'], description='FILL'
+    )
+    dc_scans_per_measure = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    sample_position = Quantity(
+        type=np.dtype(np.float64), unit='deg', shape=['*'], description='FILL'
+    )
+    chamber_pressure = Quantity(
+        type=np.dtype(np.float64), unit='torr', shape=['*'], description='FILL'
+    )
+    eto_measurement_mode = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    temperature_status = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    field_status = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    chamber_status = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    eto_status_code = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    maps = SubSection(section_def=MPMSData, repeats=True)
