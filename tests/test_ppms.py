@@ -139,3 +139,33 @@ def test_normalize_mpms(parsed_measurement_archive, caplog):
     assert len(parsed_measurement_archive.data.data) == 3  # Noqa: PLR2004
     assert len(parsed_measurement_archive.data.data[0].time_stamp) == 374  # Noqa: PLR2004
     assert len(parsed_measurement_archive.data.figures) == 3  # Noqa: PLR2004
+
+
+# Test Resistivity funtionality
+
+test_files = [
+    'tests/data/ppms/Resistivity_Ch1_TMR_Ch2_Hall_test.dat',
+]
+log_levels = ['error', 'critical']
+
+
+@pytest.mark.parametrize(
+    'parsed_measurement_archive, caplog',
+    [(file, log_level) for file in test_files for log_level in log_levels],
+    indirect=True,
+)
+def test_normalize_resistivity(parsed_measurement_archive, caplog):
+    """
+    Tests the normalization of the parsed archive.
+
+    Args:
+        parsed_archive (pytest.fixture): Fixture to handle the parsing of archive.
+        caplog (pytest.fixture): Fixture to capture errors from the logger.
+    """
+    normalize_all(parsed_measurement_archive)
+
+    assert parsed_measurement_archive.data.software == 'Resistivity, 2.1, 1.0'
+    #  assert len(parsed_measurement_archive.data.steps) == 70 #Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data) == 4  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data[0].time_stamp) == 199  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.figures) == 4  # Noqa: PLR2004

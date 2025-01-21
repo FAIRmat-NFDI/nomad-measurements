@@ -56,6 +56,7 @@ from nomad_measurements.ppms.ppmsfunctions import (
     split_ppms_data_act,
     split_ppms_data_eto,
     split_ppms_data_mpms,
+    split_ppms_data_resistivity,
 )
 from nomad_measurements.ppms.ppmssteps import (
     PPMSMeasurementStep,
@@ -73,6 +74,9 @@ configuration = config.get_plugin_entry_point('nomad_measurements.ppms:eto_schem
 configuration = config.get_plugin_entry_point('nomad_measurements.ppms:act_schema')
 configuration = config.get_plugin_entry_point('nomad_measurements.ppms:acms_schema')
 configuration = config.get_plugin_entry_point('nomad_measurements.ppms:mpms_schema')
+configuration = config.get_plugin_entry_point(
+    'nomad_measurements.ppms:resistivity_schema'
+)
 
 
 class Sample(CompositeSystem):
@@ -427,7 +431,7 @@ class PPMSMPMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
 
         ### Start of the PPMSMeasurement normalizer
         if archive.data.data_file:
-            logger.info('Parsing ETO measurement.')
+            logger.info('Parsing MPMS measurement.')
             with archive.m_context.raw_file(self.data_file, 'r') as file:
                 data = file.read()
 
@@ -476,3 +480,74 @@ class PPMSMPMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
 
 
 m_package_ppms_mpms.__init_metainfo__()
+
+
+m_package_ppms_resistivity = SchemaPackage()
+
+
+class PPMSResistivityMeasurement(PPMSMeasurement, PlotSection, EntryData):
+    def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
+        super().normalize(archive, logger)
+
+        ### Start of the PPMSMeasurement normalizer
+        if archive.data.data_file:
+            logger.info('Parsing Resistivity measurement.')
+            with archive.m_context.raw_file(self.data_file, 'r') as file:
+                data = file.read()
+
+            header_match = re.search(r'\[Header\](.*?)\[Data\]', data, re.DOTALL)
+
+            data_section = header_match.string[header_match.end() :]
+            data_section = data_section.replace(',Field', ',Magnetic Field')
+            data_buffer = StringIO(data_section)
+            data_df = pd.read_csv(
+                data_buffer,
+                header=0,
+                skipinitialspace=True,
+                sep=',',
+                engine='python',
+            )
+
+            all_steps, runs_list = get_ppms_steps_from_data(
+                data_df, self.temperature_tolerance, self.field_tolerance
+            )
+
+            if self.sequence_file:
+                logger.info('Parsing PPMS sequence file.')
+                with archive.m_context.raw_file(self.sequence_file, 'r') as file:
+                    sequence = file.readlines()
+                    self.steps = find_ppms_steps_from_sequence(sequence)
+            else:
+                self.steps = all_steps
+
+            self.data = split_ppms_data_resistivity(data_df, runs_list)
+
+        # Now create the according plots
+        import plotly.express as px
+        from plotly.subplots import make_subplots
+
+        for data in self.data:
+            if data.measurement_type == 'field':
+                resistivity_ch1 = px.scatter(
+                    x=data.magnetic_field, y=data.bridge_1_resistivity
+                )
+                resistivity_ch2 = px.scatter(
+                    x=data.magnetic_field, y=data.bridge_2_resistivity
+                )
+            if data.measurement_type == 'temperature':
+                resistivity_ch1 = px.scatter(
+                    x=data.temperature, y=data.bridge_1_resistivity
+                )
+                resistivity_ch2 = px.scatter(
+                    x=data.temperature, y=data.bridge_2_resistivity
+                )
+            figure1 = make_subplots(rows=2, cols=1, shared_xaxes=True)
+            figure1.add_trace(resistivity_ch1.data[0], row=1, col=1)
+            figure1.add_trace(resistivity_ch2.data[0], row=2, col=1)
+            figure1.update_layout(height=400, width=716, title_text=data.name)
+            self.figures.append(
+                PlotlyFigure(label=data.name, figure=figure1.to_plotly_json())
+            )
+
+
+m_package_ppms_resistivity.__init_metainfo__()

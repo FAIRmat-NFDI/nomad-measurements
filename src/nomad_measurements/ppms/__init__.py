@@ -59,6 +59,24 @@ mpms_parser = DataParserEntryPointMPMS(
 )
 
 
+class DataParserEntryPointResisitivity(ParserEntryPoint):
+    parameter: int = Field(0, description='Custom configuration parameter')
+
+    def load(self):
+        from nomad_measurements.ppms.parser import PPMSResistivityParser
+
+        return PPMSResistivityParser(**self.dict())
+
+
+resistivity_parser = DataParserEntryPointResisitivity(
+    name='DataParser',
+    description='New parser entry point configuration.',
+    mainfile_name_re=r'.+\.dat',
+    mainfile_mime_re='text/plain|application/x-wine-extension-ini',
+    mainfile_contents_re=r'BYAPP,\s*Resistivity',
+)
+
+
 class DataParserEntryPointACMS(ParserEntryPoint):
     parameter: int = Field(0, description='Custom configuration parameter')
 
@@ -147,6 +165,21 @@ class PPMSMPMSEntryPoint(SchemaPackageEntryPoint):
 
 
 mpms_schema = PPMSMPMSEntryPoint(
+    name='PPMSMPMSEntryPoint',
+    description='New schema package entry point configuration.',
+)
+
+
+class PPMSResistivityEntryPoint(SchemaPackageEntryPoint):
+    parameter: int = Field(0, description='Custom configuration parameter')
+
+    def load(self):
+        from nomad_measurements.ppms.schema import m_package_ppms_resistivity
+
+        return m_package_ppms_resistivity
+
+
+resistivity_schema = PPMSResistivityEntryPoint(
     name='PPMSMPMSEntryPoint',
     description='New schema package entry point configuration.',
 )

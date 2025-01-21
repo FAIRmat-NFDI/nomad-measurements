@@ -639,3 +639,75 @@ class MPMSPPMSData(PPMSData):
         type=np.dtype(np.float64), shape=['*'], description='FILL'
     )
     maps = SubSection(section_def=MPMSData, repeats=True)
+
+
+class ResistivityPPMSData(PPMSData):
+    """Data section in Resistivity"""
+
+    m_def = Section(
+        a_eln=dict(lane_width='600px'),
+    )
+    time_stamp = Quantity(
+        type=np.dtype(np.float64), unit='second', shape=['*'], description='FILL'
+    )
+    status = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    temperature = Quantity(
+        type=np.dtype(np.float64), unit='kelvin', shape=['*'], description='FILL'
+    )
+    magnetic_field = Quantity(
+        type=np.dtype(np.float64), unit='gauss', shape=['*'], description='FILL'
+    )
+    sample_position = Quantity(
+        type=np.dtype(np.float64), unit='deg', shape=['*'], description='FILL'
+    )
+    number_of_readings = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    bridge_1_resistance = Quantity(
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
+    )
+    bridge_1_resistivity = Quantity(
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
+    )
+    bridge_1_std_dev = Quantity(
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
+    )
+    bridge_1_excitation = Quantity(
+        type=np.dtype(np.float64), unit='uA', shape=['*'], description='FILL'
+    )
+    bridge_2_resistance = Quantity(
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
+    )
+    bridge_2_resistivity = Quantity(
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
+    )
+    bridge_2_std_dev = Quantity(
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
+    )
+    bridge_2_excitation = Quantity(
+        type=np.dtype(np.float64), unit='uA', shape=['*'], description='FILL'
+    )
+    bridge_3_resistance = Quantity(
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
+    )
+    bridge_3_resistivity = Quantity(
+        type=np.dtype(np.float64), unit='ohm*m', shape=['*'], description='FILL'
+    )
+    bridge_3_std_dev = Quantity(
+        type=np.dtype(np.float64), unit='ohm*m', shape=['*'], description='FILL'
+    )
+    bridge_3_excitation = Quantity(
+        type=np.dtype(np.float64), unit='uA', shape=['*'], description='FILL'
+    )
+    bridge_4_resistance = Quantity(
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
+    )
+    bridge_4_resistivity = Quantity(
+        type=np.dtype(np.float64), unit='ohm*m', shape=['*'], description='FILL'
+    )
+    bridge_4_std_dev = Quantity(
+        type=np.dtype(np.float64), unit='ohm*m', shape=['*'], description='FILL'
+    )
+    bridge_4_excitation = Quantity(
+        type=np.dtype(np.float64), unit='uA', shape=['*'], description='FILL'
+    )
