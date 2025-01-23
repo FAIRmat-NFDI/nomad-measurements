@@ -269,18 +269,21 @@ class HDF5Handler:
             validate_path (bool): If True, the dataset path is validated.
         """
         if not params:
-            self.logger.warning('Dataset `params` not provided.')
+            self.logger.warning(f'No params provided for path "{path}". Skipping.')
             return
 
         dataset = DatasetModel(
             **params,
         )
+        if dataset.data is None:
+            self.logger.warning(f'No data provided for the path "{path}". Skipping.')
+            return
         if (
             validate_path
             and self.valid_dataset_paths
             and path not in self.valid_dataset_paths
         ):
-            self.logger.warning(f'Invalid dataset path "{path}".')
+            self.logger.warning(f'Invalid dataset path "{path}". Skipping.')
             return
 
         # handle the pint.Quantity and add data
@@ -311,7 +314,7 @@ class HDF5Handler:
             params (dict): The attributes to be added.
         """
         if not params:
-            self.logger.warning('Attribute `params` not provided.')
+            self.logger.warning(f'No params provided for attribute {path}.')
             return
         self._hdf5_attributes[path] = params
 
@@ -459,9 +462,6 @@ class HDF5Handler:
         ) as h5:
             for key, value in self._hdf5_datasets.items():
                 data = value.data
-                if data is None:
-                    self.logger.warning(f'No data found for "{key}". Skipping.')
-                    continue
                 if value.internal_reference:
                     # resolve the internal reference
                     try:
