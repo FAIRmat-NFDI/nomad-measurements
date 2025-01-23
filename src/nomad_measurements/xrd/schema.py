@@ -1383,6 +1383,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             self.overwrite_auxiliary_file = False
             if self.hdf5_handler.data_file != self.auxiliary_file:
                 self.auxiliary_file = self.hdf5_handler.data_file
+        else:
+            self.hdf5_handler.set_hdf5_references()
 
         self.nexus_results = None
         if self.auxiliary_file.endswith('.nxs'):

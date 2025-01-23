@@ -296,12 +296,6 @@ class HDF5Handler:
         self._hdf5_datasets[path] = dataset
         if dataset.archive_path:
             self._hdf5_path_map[dataset.archive_path] = path
-            self._set_hdf5_reference(
-                self.archive,
-                dataset.archive_path,
-                f'/uploads/{self.archive.m_context.upload_id}/raw'
-                f'/{self.data_file}#{self._remove_nexus_annotations(path)}',
-            )
 
     def add_attribute(
         self,
@@ -386,6 +380,8 @@ class HDF5Handler:
                 self._write_hdf5_file()
         else:
             self._write_hdf5_file()
+
+        self.set_hdf5_references()
 
     def _write_nx_file(self):
         """
@@ -502,6 +498,20 @@ class HDF5Handler:
                 else:
                     self.logger.warning(f'Path "{key}" not found to add attribute.')
 
+    def set_hdf5_references(self):
+        """
+        Method for adding the HDF5 references to the archive quantities.
+        """
+        for key, value in self._hdf5_datasets.items():
+            if value.archive_path:
+                reference = self._remove_nexus_annotations(key)
+                self._set_hdf5_reference(
+                    self.archive,
+                    value.archive_path,
+                    f'/uploads/{self.archive.m_context.upload_id}/raw'
+                    f'/{self.data_file}#{reference}',
+                )
+
     def populate_nx_dataset_and_attribute(self, attr_dict: dict, dataset_dict: dict):
         """Construct datasets and attributes for nexus and populate."""
 
@@ -554,7 +564,6 @@ class HDF5Handler:
                 new_path += '/' + part.split('[')[0].strip().lower()
             else:
                 new_path += '/' + part
-        new_path = new_path.replace('.nxs', '.h5')
         return new_path
 
     @staticmethod
