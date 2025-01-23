@@ -270,6 +270,12 @@ class XRDSettings(ArchiveSection):
 
 
 class XRDResultPlotIntensity(ArchiveSection):
+    """
+    Section for plotting the intensity over 2-theta. A separate sub-section allows to
+    create a separate group in `.h5` file. Attributes are added to the group to generate
+    the plot.
+    """
+
     m_def = Section(
         a_h5web=H5WebAnnotation(
             axes=['two_theta', 'omega', 'phi', 'chi'], signal='intensity'
@@ -361,6 +367,12 @@ class XRDResultPlotIntensity(ArchiveSection):
 
 
 class XRDResultPlotIntensityScatteringVector(ArchiveSection):
+    """
+    Section for plotting the intensity over scattering vector. A separate sub-section
+    allows to create a separate group in `.h5` file. Attributes are added to the group
+    to generate the plot.
+    """
+
     m_def = Section(
         a_h5web=H5WebAnnotation(
             axes=['q_parallel', 'q_perpendicular', 'q_norm'], signal='intensity'
@@ -1357,12 +1369,17 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         """
         self.backward_compatibility()
         if self.data_file is not None:
-            self.auxiliary_file = f'{self.data_file.rsplit(".", 1)[0]}.nxs'
+            # TODO (ka-sarthak): use .nxs file once updating the flag through the
+            # normalizer works.
+            # self.auxiliary_file = f'{self.data_file.rsplit(".", 1)[0]}.nxs'
+            self.auxiliary_file = f'{self.data_file.rsplit(".", 1)[0]}.h5'
             self.hdf5_handler = HDF5Handler(
                 filename=self.auxiliary_file,
                 archive=archive,
                 logger=logger,
-                nexus_dataset_map=NEXUS_DATASET_MAP,
+                # TODO (ka-sarthak): use nexus dataset map once updating the flag
+                # through the normalizer works.
+                # nexus_dataset_map=NEXUS_DATASET_MAP,
             )
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:
@@ -1380,9 +1397,10 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             self.auxiliary_file
         ):
             self.hdf5_handler.write_file()
-            self.overwrite_auxiliary_file = False
             if self.hdf5_handler.data_file != self.auxiliary_file:
                 self.auxiliary_file = self.hdf5_handler.data_file
+            # TODO (ka-sarthak): update the flag through the normalizer once it works.
+            # self.overwrite_auxiliary_file = False
         else:
             self.hdf5_handler.set_hdf5_references()
 
