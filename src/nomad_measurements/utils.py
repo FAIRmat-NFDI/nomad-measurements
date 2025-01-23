@@ -389,7 +389,6 @@ class HDF5Handler:
         to the `hdf5_data_dict` before creating the nexus file. This provides a NeXus
         view of the data in addition to storing array data.
         """
-        from nomad.processing.data import Entry
 
         app_def = 'NXxrd_pan'
         nxdl_root, nxdl_f_path = get_nxdl_root_and_path(app_def)
@@ -430,12 +429,9 @@ class HDF5Handler:
         pynxtools_writer(
             data=template, nxdl_f_path=nxdl_f_path, output_path=nx_full_file_path
         ).write()
-
-        entry_list = Entry.objects(
-            upload_id=self.archive.m_context.upload_id, mainfile=self.data_file
+        self.archive.m_context.process_updated_raw_file(
+            self.data_file, allow_modify=True
         )
-        if not entry_list:
-            self.archive.m_context.process_updated_raw_file(self.data_file)
 
     def _write_hdf5_file(self):  # noqa: PLR0912
         """
