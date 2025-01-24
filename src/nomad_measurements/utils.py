@@ -234,7 +234,7 @@ class HDF5Handler:
         self.archive = archive
         self.logger = logger
 
-        self.nexus = True if nexus_dataset_map else False
+        self.nexus = bool(nexus_dataset_map)
         self.nexus_dataset_map = nexus_dataset_map
         self.valid_dataset_paths = (
             list(nexus_dataset_map.keys()) if nexus_dataset_map else []
@@ -344,8 +344,7 @@ class HDF5Handler:
         if dataset_path in self._hdf5_datasets:
             value = self._hdf5_datasets[dataset_path].data
             if dataset_path in self._hdf5_attributes:
-                units = self._hdf5_attributes[dataset_path].get('units')
-                if units:
+                if units := self._hdf5_attributes[dataset_path].get('units'):
                     value *= ureg(units)
             return value
 
@@ -554,13 +553,14 @@ class HDF5Handler:
             return path
 
         pattern = r'.*\[.*\]'
-        new_path = ''
-        for part in path.split('/')[1:]:
-            if re.match(pattern, part):
-                new_path += '/' + part.split('[')[0].strip().lower()
-            else:
-                new_path += '/' + part
-        return new_path
+        return ''.join(
+            (
+                '/' + part.split('[')[0].strip().lower()
+                if re.match(pattern, part)
+                else f'/{part}'
+            )
+            for part in path.split('/')[1:]
+        )
 
     @staticmethod
     def _set_hdf5_reference(
