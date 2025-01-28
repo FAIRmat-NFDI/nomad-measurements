@@ -2,12 +2,9 @@ from nomad.config.models.plugins import (
     ParserEntryPoint,
     SchemaPackageEntryPoint,
 )
-from pydantic import Field
 
 
 class DataParserEntryPointETO(ParserEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.parser import PPMSETOParser
 
@@ -15,8 +12,8 @@ class DataParserEntryPointETO(ParserEntryPoint):
 
 
 eto_parser = DataParserEntryPointETO(
-    name='DataParser',
-    description='New parser entry point configuration.',
+    name='DataParser for PPMS ETO',
+    description='Parser for PPMS files created by the ETO option.',
     mainfile_name_re=r'.+\.dat',
     mainfile_mime_re='text/plain|application/x-wine-extension-ini',
     mainfile_contents_re=r'BYAPP, Electrical Transport Option',
@@ -24,8 +21,6 @@ eto_parser = DataParserEntryPointETO(
 
 
 class DataParserEntryPointACT(ParserEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.parser import PPMSACTParser
 
@@ -33,8 +28,8 @@ class DataParserEntryPointACT(ParserEntryPoint):
 
 
 act_parser = DataParserEntryPointACT(
-    name='DataParser',
-    description='New parser entry point configuration.',
+    name='DataParser for PPMS ACT',
+    description='Parser for PPMS files created by the ACT option.',
     mainfile_name_re=r'.+\.dat',
     mainfile_mime_re='text/plain|application/x-wine-extension-ini',
     mainfile_contents_re=r'BYAPP,\s*ACTRANSPORT',
@@ -42,8 +37,6 @@ act_parser = DataParserEntryPointACT(
 
 
 class DataParserEntryPointACMS(ParserEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.parser import PPMSACMSParser
 
@@ -51,8 +44,8 @@ class DataParserEntryPointACMS(ParserEntryPoint):
 
 
 acms_parser = DataParserEntryPointACMS(
-    name='DataParser',
-    description='New parser entry point configuration.',
+    name='DataParser for PPMS ACMS',
+    description='Parser for PPMS files created by the ACMS option.',
     mainfile_name_re=r'.+\.dat',
     mainfile_mime_re='text/plain|application/x-wine-extension-ini',
     mainfile_contents_re=r'BYAPP,\s*ACMS',
@@ -68,15 +61,13 @@ class SqcParserEntryPoint(ParserEntryPoint):
 
 sequence_parser = SqcParserEntryPoint(
     name='PpmsSequenceParser',
-    description='New parser entry point configuration.',
+    description='Parser for PPMS sequence files.',
     mainfile_name_re=r'.+\.seq',
     mainfile_mime_re='text/plain',
 )
 
 
 class PPMSETOEntryPoint(SchemaPackageEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.schema import m_package_ppms_eto
 
@@ -84,14 +75,12 @@ class PPMSETOEntryPoint(SchemaPackageEntryPoint):
 
 
 eto_schema = PPMSETOEntryPoint(
-    name='PPMSETOEntryPoint',
-    description='New schema package entry point configuration.',
+    name='PPPMS ETO Schema',
+    description='Schema for PPMS measurements done by the ETO option.',
 )
 
 
 class PPMSACTEntryPoint(SchemaPackageEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.schema import m_package_ppms_act
 
@@ -99,14 +88,12 @@ class PPMSACTEntryPoint(SchemaPackageEntryPoint):
 
 
 act_schema = PPMSACTEntryPoint(
-    name='PPMSACTEntryPoint',
-    description='New schema package entry point configuration.',
+    name='PPMS ACT Schema',
+    description='Schema for PPMS measurements done by the ACT option.',
 )
 
 
 class PPMSACMSEntryPoint(SchemaPackageEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.schema import m_package_ppms_acms
 
@@ -114,6 +101,6 @@ class PPMSACMSEntryPoint(SchemaPackageEntryPoint):
 
 
 acms_schema = PPMSACMSEntryPoint(
-    name='PPMSACMSEntryPoint',
-    description='New schema package entry point configuration.',
+    name='PPMS ACMS Schema',
+    description='Schema for PPMS measurements done by the ACMS option.',
 )
