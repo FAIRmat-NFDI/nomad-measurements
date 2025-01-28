@@ -13,7 +13,9 @@ class DataParserEntryPointETO(ParserEntryPoint):
 
 eto_parser = DataParserEntryPointETO(
     name='DataParser for PPMS ETO',
-    description='Parser for PPMS files created by the ETO option.',
+    description="Parser for PPMS data files created by the ETO option. \
+        Parses files containing the 'BYAPP, Electrical Transport Option' line and \
+        extracts resistivities, temperatures, fields, and other relevant data. ",
     mainfile_name_re=r'.+\.dat',
     mainfile_mime_re='text/plain|application/x-wine-extension-ini',
     mainfile_contents_re=r'BYAPP, Electrical Transport Option',
@@ -29,7 +31,10 @@ class DataParserEntryPointACT(ParserEntryPoint):
 
 act_parser = DataParserEntryPointACT(
     name='DataParser for PPMS ACT',
-    description='Parser for PPMS files created by the ACT option.',
+    description="Parser for PPMS data files created by the ACT option. \
+        Parses files containing the 'BYAPP, ACTRANSPORT' (Alternating current\
+        transport) line and extracts resistivities, temperatures, fields, and other\
+        relevant data. ",
     mainfile_name_re=r'.+\.dat',
     mainfile_mime_re='text/plain|application/x-wine-extension-ini',
     mainfile_contents_re=r'BYAPP,\s*ACTRANSPORT',
@@ -45,7 +50,10 @@ class DataParserEntryPointACMS(ParserEntryPoint):
 
 acms_parser = DataParserEntryPointACMS(
     name='DataParser for PPMS ACMS',
-    description='Parser for PPMS files created by the ACMS option.',
+    description="Parser for PPMS data files created by the ACMS option. \
+        Parses files containing the 'BYAPP, ACMS' (Alternating current magnetic\
+        susceptibility) line and extracts resistivities, temperatures, fields, and \
+        other relevant data. ",
     mainfile_name_re=r'.+\.dat',
     mainfile_mime_re='text/plain|application/x-wine-extension-ini',
     mainfile_contents_re=r'BYAPP,\s*ACMS',
