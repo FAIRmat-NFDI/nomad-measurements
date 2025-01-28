@@ -2,12 +2,9 @@ from nomad.config.models.plugins import (
     ParserEntryPoint,
     SchemaPackageEntryPoint,
 )
-from pydantic import Field
 
 
 class DataParserEntryPointETO(ParserEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.parser import PPMSETOParser
 
@@ -15,8 +12,10 @@ class DataParserEntryPointETO(ParserEntryPoint):
 
 
 eto_parser = DataParserEntryPointETO(
-    name='DataParser',
-    description='New parser entry point configuration.',
+    name='DataParser for PPMS ETO',
+    description="Parser for PPMS data files created by the ETO option. \
+        Parses files containing the 'BYAPP, Electrical Transport Option' line and \
+        extracts resistivities, temperatures, fields, and other relevant data. ",
     mainfile_name_re=r'.+\.dat',
     mainfile_mime_re='text/plain|application/x-wine-extension-ini',
     mainfile_contents_re=r'BYAPP, Electrical Transport Option',
@@ -24,8 +23,6 @@ eto_parser = DataParserEntryPointETO(
 
 
 class DataParserEntryPointACT(ParserEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.parser import PPMSACTParser
 
@@ -33,8 +30,11 @@ class DataParserEntryPointACT(ParserEntryPoint):
 
 
 act_parser = DataParserEntryPointACT(
-    name='DataParser',
-    description='New parser entry point configuration.',
+    name='DataParser for PPMS ACT',
+    description="Parser for PPMS data files created by the ACT option. \
+        Parses files containing the 'BYAPP, ACTRANSPORT' (Alternating current\
+        transport) line and extracts resistivities, temperatures, fields, and other\
+        relevant data. ",
     mainfile_name_re=r'.+\.dat',
     mainfile_mime_re='text/plain|application/x-wine-extension-ini',
     mainfile_contents_re=r'BYAPP,\s*ACTRANSPORT',
@@ -42,8 +42,6 @@ act_parser = DataParserEntryPointACT(
 
 
 class DataParserEntryPointMPMS(ParserEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.parser import PPMSMPMSParser
 
@@ -51,8 +49,10 @@ class DataParserEntryPointMPMS(ParserEntryPoint):
 
 
 mpms_parser = DataParserEntryPointMPMS(
-    name='DataParser',
-    description='New parser entry point configuration.',
+    name='DataParser for PPMS MPMS',
+    description="Parser for PPMS data files created by the MPMS option. \
+        Parses files containing the 'BYAPP, MPMS' (Magnetic property measurement\
+        system) line and extracts temperatures, fields, and other relevant data. ",
     mainfile_name_re=r'.+\.dat',
     mainfile_mime_re='text/plain|application/x-wine-extension-ini',
     mainfile_contents_re=r'BYAPP,\s*MPMS',
@@ -60,8 +60,6 @@ mpms_parser = DataParserEntryPointMPMS(
 
 
 class DataParserEntryPointResisitivity(ParserEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.parser import PPMSResistivityParser
 
@@ -69,8 +67,10 @@ class DataParserEntryPointResisitivity(ParserEntryPoint):
 
 
 resistivity_parser = DataParserEntryPointResisitivity(
-    name='DataParser',
-    description='New parser entry point configuration.',
+    name='DataParser for PPMS Resistivity',
+    description="Parser for PPMS data files created by the Resistivity option. \
+        Parses files containing the 'BYAPP, Resistivity' line and extracts\
+        resistivities, temperatures, fields, and other relevant data. ",
     mainfile_name_re=r'.+\.dat',
     mainfile_mime_re='text/plain|application/x-wine-extension-ini',
     mainfile_contents_re=r'BYAPP,\s*Resistivity',
@@ -78,8 +78,6 @@ resistivity_parser = DataParserEntryPointResisitivity(
 
 
 class DataParserEntryPointACMS(ParserEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.parser import PPMSACMSParser
 
@@ -87,8 +85,11 @@ class DataParserEntryPointACMS(ParserEntryPoint):
 
 
 acms_parser = DataParserEntryPointACMS(
-    name='DataParser',
-    description='New parser entry point configuration.',
+    name='DataParser for PPMS ACMS',
+    description="Parser for PPMS data files created by the ACMS option. \
+        Parses files containing the 'BYAPP, ACMS' (Alternating current magnetic\
+        susceptibility) line and extracts resistivities, temperatures, fields, and \
+        other relevant data. ",
     mainfile_name_re=r'.+\.dat',
     mainfile_mime_re='text/plain|application/x-wine-extension-ini',
     mainfile_contents_re=r'BYAPP,\s*ACMS',
@@ -104,15 +105,13 @@ class SqcParserEntryPoint(ParserEntryPoint):
 
 sequence_parser = SqcParserEntryPoint(
     name='PpmsSequenceParser',
-    description='New parser entry point configuration.',
+    description='Parser for PPMS sequence files.',
     mainfile_name_re=r'.+\.seq',
     mainfile_mime_re='text/plain',
 )
 
 
 class PPMSETOEntryPoint(SchemaPackageEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.schema import m_package_ppms_eto
 
@@ -120,14 +119,12 @@ class PPMSETOEntryPoint(SchemaPackageEntryPoint):
 
 
 eto_schema = PPMSETOEntryPoint(
-    name='PPMSETOEntryPoint',
-    description='New schema package entry point configuration.',
+    name='PPPMS ETO Schema',
+    description='Schema for PPMS measurements done by the ETO option.',
 )
 
 
 class PPMSACTEntryPoint(SchemaPackageEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.schema import m_package_ppms_act
 
@@ -135,14 +132,12 @@ class PPMSACTEntryPoint(SchemaPackageEntryPoint):
 
 
 act_schema = PPMSACTEntryPoint(
-    name='PPMSACTEntryPoint',
-    description='New schema package entry point configuration.',
+    name='PPMS ACT Schema',
+    description='Schema for PPMS measurements done by the ACT option.',
 )
 
 
 class PPMSACMSEntryPoint(SchemaPackageEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.schema import m_package_ppms_acms
 
@@ -150,14 +145,12 @@ class PPMSACMSEntryPoint(SchemaPackageEntryPoint):
 
 
 acms_schema = PPMSACMSEntryPoint(
-    name='PPMSACMSEntryPoint',
-    description='New schema package entry point configuration.',
+    name='PPMS ACMS Schema',
+    description='Schema for PPMS measurements done by the ACMS option.',
 )
 
 
 class PPMSMPMSEntryPoint(SchemaPackageEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.schema import m_package_ppms_mpms
 
@@ -165,14 +158,12 @@ class PPMSMPMSEntryPoint(SchemaPackageEntryPoint):
 
 
 mpms_schema = PPMSMPMSEntryPoint(
-    name='PPMSMPMSEntryPoint',
-    description='New schema package entry point configuration.',
+    name='PPMS MPMS Schema',
+    description='Schema for PPMS measurements done by the MPMS option.',
 )
 
 
 class PPMSResistivityEntryPoint(SchemaPackageEntryPoint):
-    parameter: int = Field(0, description='Custom configuration parameter')
-
     def load(self):
         from nomad_measurements.ppms.schema import m_package_ppms_resistivity
 
@@ -180,6 +171,6 @@ class PPMSResistivityEntryPoint(SchemaPackageEntryPoint):
 
 
 resistivity_schema = PPMSResistivityEntryPoint(
-    name='PPMSMPMSEntryPoint',
-    description='New schema package entry point configuration.',
+    name='PPMS Resistivity Schema',
+    description='Schema for PPMS measurements done by the Resistivity option.',
 )
