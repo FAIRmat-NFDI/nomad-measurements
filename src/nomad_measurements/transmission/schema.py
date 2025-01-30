@@ -1117,11 +1117,12 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
             user_id=archive.metadata.main_author.user_id,
         )
 
-        valid_instruments = [
-            entry
-            for entry in search_result.data
-            if entry['data']['serial_number'] == serial_number
-        ]
+        valid_instruments = []
+        for entry in search_result.data:
+            if entry.get('data') is None or entry['data'].get('serial_number') is None:
+                continue
+            if entry['data']['serial_number'] == serial_number:
+                valid_instruments.append(entry)
 
         if not valid_instruments:
             logger.warning(
