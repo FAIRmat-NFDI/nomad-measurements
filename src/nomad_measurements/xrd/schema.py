@@ -982,26 +982,32 @@ class HDF5XRDResult1D(XRDResult):
     intensity = Quantity(
         type=HDF5Reference,
         description='The count at each 2-theta value, dimensionless',
+        shape=[],
     )
     two_theta = Quantity(
         type=HDF5Reference,
         description='The 2-theta range of the diffractogram',
+        shape=[],
     )
     q_norm = Quantity(
         type=HDF5Reference,
         description='The norm of scattering vector *Q* of the diffractogram',
+        shape=[],
     )
     omega = Quantity(
         type=HDF5Reference,
         description='The omega range of the diffractogram',
+        shape=[],
     )
     phi = Quantity(
         type=HDF5Reference,
         description='The phi range of the diffractogram',
+        shape=[],
     )
     chi = Quantity(
         type=HDF5Reference,
         description='The chi range of the diffractogram',
+        shape=[],
     )
     source_peak_wavelength = Quantity(
         type=np.dtype(np.float64),
@@ -1016,6 +1022,7 @@ class HDF5XRDResult1D(XRDResult):
     integration_time = Quantity(
         type=HDF5Reference,
         description='Integration time per channel',
+        shape=[],
     )
     plot_intensity = SubSection(section_def=PlotIntensity)
     plot_intensity_scattering_vector = SubSection(
