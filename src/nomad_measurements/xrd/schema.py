@@ -584,7 +584,7 @@ class XRDResult1D(XRDResult):
 
     m_def = Section()
 
-    def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+    def generate_plots(self):
         """
         Plot the 1D diffractogram.
 
@@ -787,7 +787,7 @@ class XRDResultRSM(XRDResult):
         description='The count at each position, dimensionless',
     )
 
-    def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+    def generate_plots(self):
         """
         Plot the 2D RSM diffractogram.
 
