@@ -338,7 +338,7 @@ class PlotIntensity(ArchiveSection):
                 NX_class='NXdata',
             ),
         )
-        if isinstance(self.m_parent, XRDResult1D):
+        if isinstance(self.m_parent, XRDResult1DHDF5):
             return
 
         for var_axis in ['omega', 'phi', 'chi']:
@@ -974,7 +974,7 @@ class XRDResultRSM(XRDResult):
                     break
 
 
-class HDF5XRDResult1D(XRDResult):
+class XRDResult1DHDF5(XRDResult):
     """
     Section containing the result of a 1D X-ray diffraction scan.
     """
@@ -1008,16 +1008,6 @@ class HDF5XRDResult1D(XRDResult):
         type=HDF5Reference,
         description='The chi range of the diffractogram',
         shape=[],
-    )
-    source_peak_wavelength = Quantity(
-        type=np.dtype(np.float64),
-        unit='angstrom',
-        description='Wavelength of the X-ray source. Used to convert from 2-theta to Q\
-        and vice-versa.',
-    )
-    scan_axis = Quantity(
-        type=str,
-        description='Axis scanned',
     )
     integration_time = Quantity(
         type=HDF5Reference,
@@ -1266,11 +1256,46 @@ class HDF5XRDResult1D(XRDResult):
         self.plot_intensity.normalize(archive, logger)
 
 
-class HDF5XRDResultRSM(XRDResult):
+class XRDResultRSMHDF5(XRDResult):
     """
     Section containing the result of a Reciprocal Space Map (RSM) scan.
     """
 
+    intensity = Quantity(
+        type=HDF5Reference,
+        description='The count at each 2-theta value, dimensionless',
+        shape=[],
+    )
+    two_theta = Quantity(
+        type=HDF5Reference,
+        description='The 2-theta range of the diffractogram',
+        shape=[],
+    )
+    q_norm = Quantity(
+        type=HDF5Reference,
+        description='The norm of scattering vector *Q* of the diffractogram',
+        shape=[],
+    )
+    omega = Quantity(
+        type=HDF5Reference,
+        description='The omega range of the diffractogram',
+        shape=[],
+    )
+    phi = Quantity(
+        type=HDF5Reference,
+        description='The phi range of the diffractogram',
+        shape=[],
+    )
+    chi = Quantity(
+        type=HDF5Reference,
+        description='The chi range of the diffractogram',
+        shape=[],
+    )
+    integration_time = Quantity(
+        type=HDF5Reference,
+        description='Integration time per channel',
+        shape=[],
+    )
     q_parallel = Quantity(
         type=HDF5Reference,
         description='The scattering vector *Q_parallel* of the diffractogram',
@@ -1278,6 +1303,10 @@ class HDF5XRDResultRSM(XRDResult):
     q_perpendicular = Quantity(
         type=HDF5Reference,
         description='The scattering vector *Q_perpendicular* of the diffractogram',
+    )
+    plot_intensity = SubSection(section_def=PlotIntensity)
+    plot_intensity_scattering_vector = SubSection(
+        section_def=PlotIntensityScatteringVector
     )
 
     def generate_plots(self):
@@ -1741,9 +1770,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         results = []
         result = None
         if scan_type == 'line':
-            result = HDF5XRDResult1D()
+            result = XRDResult1DHDF5()
         elif scan_type == 'rsm':
-            result = HDF5XRDResultRSM()
+            result = XRDResultRSMHDF5()
 
         if result is not None:
             result.scan_axis = metadata_dict.get('scan_axis')
