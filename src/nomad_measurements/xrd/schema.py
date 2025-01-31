@@ -270,7 +270,7 @@ class XRDSettings(ArchiveSection):
     source = SubSection(section_def=XRayTubeSource)
 
 
-class XRDResultPlotIntensity(ArchiveSection):
+class PlotIntensity(ArchiveSection):
     """
     Section for plotting the intensity over 2-theta. A separate sub-section allows to
     create a separate group in `.h5` file. Attributes are added to the group to generate
@@ -367,7 +367,7 @@ class XRDResultPlotIntensity(ArchiveSection):
                 break
 
 
-class XRDResultPlotIntensityScatteringVector(ArchiveSection):
+class PlotIntensityScatteringVector(ArchiveSection):
     """
     Section for plotting the intensity over scattering vector. A separate sub-section
     allows to create a separate group in `.h5` file. Attributes are added to the group
@@ -508,6 +508,477 @@ class XRDResult(MeasurementResult):
 
     m_def = Section()
 
+    array_index = Quantity(
+        type=np.dtype(np.float64),
+        shape=['*'],
+        description=(
+            'A placeholder for the indices of vectorial quantities. '
+            'Used as x-axis for plots within quantities.'
+        ),
+        a_display={'visible': False},
+    )
+    intensity = Quantity(
+        type=np.dtype(np.float64),
+        shape=['*'],
+        unit='dimensionless',
+        description='The count at each 2-theta value, dimensionless',
+        a_plot={'x': 'array_index', 'y': 'intensity'},
+    )
+    two_theta = Quantity(
+        type=np.dtype(np.float64),
+        shape=['*'],
+        unit='deg',
+        description='The 2-theta range of the diffractogram',
+        a_plot={'x': 'array_index', 'y': 'two_theta'},
+    )
+    q_norm = Quantity(
+        type=np.dtype(np.float64),
+        shape=['*'],
+        unit='meter**(-1)',
+        description='The norm of scattering vector *Q* of the diffractogram',
+        a_plot={'x': 'array_index', 'y': 'q_norm'},
+    )
+    omega = Quantity(
+        type=np.dtype(np.float64),
+        shape=['*'],
+        unit='deg',
+        description='The omega range of the diffractogram',
+    )
+    phi = Quantity(
+        type=np.dtype(np.float64),
+        shape=['*'],
+        unit='deg',
+        description='The phi range of the diffractogram',
+    )
+    chi = Quantity(
+        type=np.dtype(np.float64),
+        shape=['*'],
+        unit='deg',
+        description='The chi range of the diffractogram',
+    )
+    source_peak_wavelength = Quantity(
+        type=np.dtype(np.float64),
+        unit='angstrom',
+        description='Wavelength of the X-ray source. Used to convert from 2-theta to Q\
+        and vice-versa.',
+    )
+    scan_axis = Quantity(
+        type=str,
+        description='Axis scanned',
+    )
+    integration_time = Quantity(
+        type=np.dtype(np.float64),
+        unit='s',
+        shape=['*'],
+        description='Integration time per channel',
+    )
+
+
+class XRDResult1D(XRDResult):
+    """
+    Section containing the result of a 1D X-ray diffraction scan.
+    """
+
+    m_def = Section()
+
+    def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+        """
+        Plot the 1D diffractogram.
+
+        Args:
+            archive (EntryArchive): The archive containing the section that is being
+            normalized.
+            logger (BoundLogger): A structlog logger.
+
+        Returns:
+            (dict, dict): line_linear, line_log
+        """
+        plots = []
+        if self.two_theta is None or self.intensity is None:
+            return plots
+
+        x = self.two_theta.to('degree').magnitude
+        y = self.intensity.magnitude
+
+        fig_line_linear = px.line(
+            x=x,
+            y=y,
+        )
+        fig_line_linear.update_layout(
+            title={
+                'text': '<i>Intensity</i> over 2<i>θ</i> (linear scale)',
+                'x': 0.5,
+                'xanchor': 'center',
+            },
+            xaxis_title='2<i>θ</i> (°)',
+            yaxis_title='<i>Intensity</i>',
+            xaxis=dict(
+                fixedrange=False,
+            ),
+            yaxis=dict(
+                fixedrange=False,
+            ),
+            template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
+            width=600,
+            height=600,
+        )
+        fig_line_linear.update_traces(
+            hovertemplate='<i>Intensity</i>: %{y:.2f}<br>2<i>θ</i>: %{x}°',
+        )
+        plot_json = fig_line_linear.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
+        )
+        plots.append(
+            PlotlyFigure(
+                label='Intensity over 2θ (linear scale)',
+                index=1,
+                figure=plot_json,
+            )
+        )
+
+        fig_line_log = px.line(
+            x=x,
+            y=y,
+            log_y=True,
+        )
+        fig_line_log.update_layout(
+            title={
+                'text': '<i>Intensity</i> over 2<i>θ</i> (log scale)',
+                'x': 0.5,
+                'xanchor': 'center',
+            },
+            xaxis_title='2<i>θ</i> (°)',
+            yaxis_title='<i>Intensity</i>',
+            xaxis=dict(
+                fixedrange=False,
+            ),
+            yaxis=dict(
+                fixedrange=False,
+            ),
+            template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
+            width=600,
+            height=600,
+        )
+        fig_line_log.update_traces(
+            hovertemplate='<i>Intensity</i>: %{y:.2f}<br>2<i>θ</i>: %{x}°',
+        )
+        plot_json = fig_line_log.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
+        )
+        plots.append(
+            PlotlyFigure(
+                label='Intensity over 2θ (log scale)',
+                index=0,
+                figure=plot_json,
+            )
+        )
+
+        if self.q_norm is None:
+            return plots
+
+        x = self.q_norm.to('1/angstrom').magnitude
+        fig_line_log = px.line(
+            x=x,
+            y=y,
+            log_y=True,
+        )
+        fig_line_log.update_layout(
+            title={
+                'text': '<i>Intensity</i> over |<em>q</em>| (log scale)',
+                'x': 0.5,
+                'xanchor': 'center',
+            },
+            xaxis_title='|<em>q</em>| (Å<sup>-1</sup>)',
+            yaxis_title='<i>Intensity</i>',
+            xaxis=dict(
+                fixedrange=False,
+            ),
+            yaxis=dict(
+                fixedrange=False,
+            ),
+            template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
+            width=600,
+            height=600,
+        )
+        fig_line_log.update_traces(
+            hovertemplate=(
+                '<i>Intensity</i>: %{y:.2f}<br>|<em>q</em>|: %{x} Å<sup>-1</sup>'
+            ),
+        )
+        plot_json = fig_line_log.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
+        )
+        plots.append(
+            PlotlyFigure(
+                label='Intensity over q_norm (log scale)',
+                index=2,
+                figure=plot_json,
+            )
+        )
+
+        return plots
+
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+        """
+        The normalize function of the `XRDResult` section.
+
+        Args:
+            archive (EntryArchive): The archive containing the section that is being
+            normalized.
+            logger (BoundLogger): A structlog logger.
+        """
+        super().normalize(archive, logger)
+        if self.name is None:
+            if self.scan_axis:
+                self.name = f'{self.scan_axis} Scan Result'
+            else:
+                self.name = 'XRD Scan Result'
+        if self.source_peak_wavelength is not None:
+            self.q_norm, self.two_theta = calculate_two_theta_or_q(
+                wavelength=self.source_peak_wavelength,
+                two_theta=self.two_theta,
+                q=self.q_norm,
+            )
+
+
+class XRDResultRSM(XRDResult):
+    """
+    Section containing the result of a Reciprocal Space Map (RSM) scan.
+    """
+
+    m_def = Section()
+    q_parallel = Quantity(
+        type=np.dtype(np.float64),
+        shape=['*', '*'],
+        unit='meter**(-1)',
+        description='The scattering vector *Q_parallel* of the diffractogram',
+    )
+    q_perpendicular = Quantity(
+        type=np.dtype(np.float64),
+        shape=['*', '*'],
+        unit='meter**(-1)',
+        description='The scattering vector *Q_perpendicular* of the diffractogram',
+    )
+    intensity = Quantity(
+        type=np.dtype(np.float64),
+        shape=['*', '*'],
+        unit='dimensionless',
+        description='The count at each position, dimensionless',
+    )
+
+    def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+        """
+        Plot the 2D RSM diffractogram.
+
+        Args:
+            archive (EntryArchive): The archive containing the section that is being
+            normalized.
+            logger (BoundLogger): A structlog logger.
+
+        Returns:
+            (dict, dict): json_2theta_omega, json_q_vector
+        """
+        plots = []
+        if self.two_theta is None or self.intensity is None or self.omega is None:
+            return plots
+
+        # Plot for 2theta-omega RSM
+        # Zero values in intensity become -inf in log scale and are not plotted
+        x = self.omega.to('degree').magnitude
+        y = self.two_theta.to('degree').magnitude
+        z = self.intensity.magnitude
+        log_z = np.log10(z)
+        x_range, y_range = get_bounding_range_2d(x, y)
+
+        fig_2theta_omega = px.imshow(
+            img=np.around(log_z, 3).T,
+            x=np.around(x, 3),
+            y=np.around(y, 3),
+        )
+        fig_2theta_omega.update_coloraxes(
+            colorscale='inferno',
+            cmin=np.nanmin(log_z[log_z != -np.inf]),
+            cmax=log_z.max(),
+            colorbar={
+                'len': 0.9,
+                'title': 'log<sub>10</sub> <i>Intensity</i>',
+                'ticks': 'outside',
+                'tickformat': '5',
+            },
+        )
+        fig_2theta_omega.update_layout(
+            title={
+                'text': 'Reciprocal Space Map over 2<i>θ</i>-<i>ω</i>',
+                'x': 0.5,
+                'xanchor': 'center',
+            },
+            xaxis_title='<i>ω</i> (°)',
+            yaxis_title='2<i>θ</i> (°)',
+            xaxis=dict(
+                autorange=False,
+                fixedrange=False,
+                range=x_range,
+            ),
+            yaxis=dict(
+                autorange=False,
+                fixedrange=False,
+                range=y_range,
+            ),
+            template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
+            width=600,
+            height=600,
+        )
+        fig_2theta_omega.update_traces(
+            hovertemplate=(
+                '<i>Intensity</i>: 10<sup>%{z:.2f}</sup><br>'
+                '2<i>θ</i>: %{y}°<br>'
+                '<i>ω</i>: %{x}°'
+                '<extra></extra>'
+            )
+        )
+        plot_json = fig_2theta_omega.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
+        )
+        plots.append(
+            PlotlyFigure(
+                label='RSM 2θ-ω',
+                index=1,
+                figure=plot_json,
+            ),
+        )
+
+        # Plot for RSM in Q-vectors
+        if self.q_parallel is not None and self.q_perpendicular is not None:
+            x = self.q_parallel.to('1/angstrom').magnitude.flatten()
+            y = self.q_perpendicular.to('1/angstrom').magnitude.flatten()
+            # q_vectors lead to irregular grid
+            # generate a regular grid using interpolation
+            x_regular = np.linspace(x.min(), x.max(), z.shape[0])
+            y_regular = np.linspace(y.min(), y.max(), z.shape[1])
+            x_grid, y_grid = np.meshgrid(x_regular, y_regular)
+            z_interpolated = griddata(
+                points=(x, y),
+                values=z.flatten(),
+                xi=(x_grid, y_grid),
+                method='linear',
+                fill_value=z.min(),
+            )
+            log_z_interpolated = np.log10(z_interpolated)
+            x_range, y_range = get_bounding_range_2d(x_regular, y_regular)
+
+            fig_q_vector = px.imshow(
+                img=np.around(log_z_interpolated, 3),
+                x=np.around(x_regular, 3),
+                y=np.around(y_regular, 3),
+            )
+            fig_q_vector.update_coloraxes(
+                colorscale='inferno',
+                cmin=np.nanmin(log_z[log_z != -np.inf]),
+                cmax=log_z_interpolated.max(),
+                colorbar={
+                    'len': 0.9,
+                    'title': 'log<sub>10</sub> <i>Intensity</i>',
+                    'ticks': 'outside',
+                    'tickformat': '5',
+                },
+            )
+            fig_q_vector.update_layout(
+                title={
+                    'text': 'Reciprocal Space Map over Q-vectors',
+                    'x': 0.5,
+                    'xanchor': 'center',
+                },
+                xaxis_title='<i>q</i><sub>&#x2016;</sub> (Å<sup>-1</sup>)',  # q ‖
+                yaxis_title='<i>q</i><sub>&#x22A5;</sub> (Å<sup>-1</sup>)',  # q ⊥
+                xaxis=dict(
+                    autorange=False,
+                    fixedrange=False,
+                    range=x_range,
+                ),
+                yaxis=dict(
+                    autorange=False,
+                    fixedrange=False,
+                    range=y_range,
+                ),
+                template='plotly_white',
+                hovermode='closest',
+                hoverlabel=dict(
+                    bgcolor='white',
+                ),
+                dragmode='zoom',
+                width=600,
+                height=600,
+            )
+            fig_q_vector.update_traces(
+                hovertemplate=(
+                    '<i>Intensity</i>: 10<sup>%{z:.2f}</sup><br>'
+                    '<i>q</i><sub>&#x22A5;</sub>: %{y} Å<sup>-1</sup><br>'
+                    '<i>q</i><sub>&#x2016;</sub>: %{x} Å<sup>-1</sup>'
+                    '<extra></extra>'
+                )
+            )
+            plot_json = fig_q_vector.to_plotly_json()
+            plot_json['config'] = dict(
+                scrollZoom=False,
+            )
+            plots.append(
+                PlotlyFigure(
+                    label='RSM Q-vectors',
+                    index=0,
+                    figure=plot_json,
+                ),
+            )
+
+        return plots
+
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+        super().normalize(archive, logger)
+        if self.name is None:
+            self.name = 'RSM Scan Result'
+        var_axis = 'omega'
+        if self.source_peak_wavelength is not None:
+            for var_axis in ['omega', 'chi', 'phi']:
+                if (
+                    self[var_axis] is not None
+                    and len(np.unique(self[var_axis].magnitude)) > 1
+                ):
+                    self.q_parallel, self.q_perpendicular = calculate_q_vectors_rsm(
+                        wavelength=self.source_peak_wavelength,
+                        two_theta=self.two_theta * np.ones_like(self.intensity),
+                        omega=self[var_axis],
+                    )
+                    break
+
+
+class HDF5XRDResult1D(XRDResult):
+    """
+    Section containing the result of a 1D X-ray diffraction scan.
+    """
+
     intensity = Quantity(
         type=HDF5Reference,
         description='The count at each 2-theta value, dimensionless',
@@ -546,16 +1017,10 @@ class XRDResult(MeasurementResult):
         type=HDF5Reference,
         description='Integration time per channel',
     )
-    plot_intensity = SubSection(section_def=XRDResultPlotIntensity)
+    plot_intensity = SubSection(section_def=PlotIntensity)
     plot_intensity_scattering_vector = SubSection(
-        section_def=XRDResultPlotIntensityScatteringVector
+        section_def=PlotIntensityScatteringVector
     )
-
-
-class XRDResult1D(XRDResult):
-    """
-    Section containing the result of a 1D X-ray diffraction scan.
-    """
 
     def generate_plots(self):
         """
@@ -794,7 +1259,7 @@ class XRDResult1D(XRDResult):
         self.plot_intensity.normalize(archive, logger)
 
 
-class XRDResultRSM(XRDResult):
+class HDF5XRDResultRSM(XRDResult):
     """
     Section containing the result of a Reciprocal Space Map (RSM) scan.
     """
@@ -1269,9 +1734,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         results = []
         result = None
         if scan_type == 'line':
-            result = XRDResult1D()
+            result = HDF5XRDResult1D()
         elif scan_type == 'rsm':
-            result = XRDResultRSM()
+            result = HDF5XRDResultRSM()
 
         if result is not None:
             result.scan_axis = metadata_dict.get('scan_axis')
