@@ -40,7 +40,9 @@ from nomad.datamodel.hdf5 import (
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
     ELNComponentEnum,
+    Filter,
     H5WebAnnotation,
+    SectionProperties,
 )
 from nomad.datamodel.metainfo.basesections import (
     CompositeSystemReference,
@@ -579,7 +581,15 @@ class XRDResult1D(XRDResult):
     Section containing the result of a 1D X-ray diffraction scan.
     """
 
-    m_def = Section()
+    m_def = Section(
+        a_eln=ELNAnnotation(
+            properties=SectionProperties(
+                visible=Filter(
+                    exclude=['array_index'],
+                ),
+            ),
+        )
+    )
 
     def generate_plots(self):
         """
@@ -764,7 +774,15 @@ class XRDResultRSM(XRDResult):
     Section containing the result of a Reciprocal Space Map (RSM) scan.
     """
 
-    m_def = Section()
+    m_def = Section(
+        a_eln=ELNAnnotation(
+            properties=SectionProperties(
+                visible=Filter(
+                    exclude=['array_index'],
+                ),
+            ),
+        )
+    )
     q_parallel = Quantity(
         type=np.dtype(np.float64),
         shape=['*', '*'],
@@ -979,6 +997,15 @@ class XRDResult1DHDF5(XRDResult):
     Section containing the result of a 1D X-ray diffraction scan.
     """
 
+    m_def = Section(
+        a_eln=ELNAnnotation(
+            properties=SectionProperties(
+                visible=Filter(
+                    exclude=['array_index'],
+                ),
+            ),
+        )
+    )
     intensity = Quantity(
         type=HDF5Reference,
         description='The count at each 2-theta value, dimensionless',
@@ -1261,6 +1288,15 @@ class XRDResultRSMHDF5(XRDResult):
     Section containing the result of a Reciprocal Space Map (RSM) scan.
     """
 
+    m_def = Section(
+        a_eln=ELNAnnotation(
+            properties=SectionProperties(
+                visible=Filter(
+                    exclude=['array_index'],
+                ),
+            ),
+        )
+    )
     intensity = Quantity(
         type=HDF5Reference,
         description='The count at each 2-theta value, dimensionless',
