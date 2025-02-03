@@ -1117,6 +1117,10 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
             user_id=archive.metadata.main_author.user_id,
         )
 
+        logger.info(
+            f'search result: {search_result}\n{search_result.data}'
+            f'\n{search_result.data[0]}',
+        )
         valid_instruments = []
         for entry in search_result.data:
             if entry.get('data') is None or entry['data'].get('serial_number') is None:
