@@ -1105,41 +1105,62 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
         from nomad.search import search
 
         serial_number = data_dict['instrument_serial_number']
-        api_query = {
-            'entry_type:any': [
-                'Spectrophotometer',
-                'PerkinElmersLambdaSpectrophotometer',
-            ]
-        }
-        search_result = search(
-            owner='visible',
-            query=api_query,
-            user_id=archive.metadata.main_author.user_id,
-        )
-
-        valid_instruments = []
-        for entry in search_result.data:
-            if entry.get('data') is None or entry['data'].get('serial_number') is None:
-                continue
-            if entry['data']['serial_number'] == serial_number:
-                valid_instruments.append(entry)
-
-        if not valid_instruments:
+        if serial_number is None:
             logger.warning(
-                f'No "Spectrophotometer" instrument found with the serial '
-                f'number "{serial_number}". Creating an entry for the instrument.'
+                'Instrument serial number is not provided. Creating an entry for the '
+                'instrument.'
             )
             return self.create_instrument_entry(data_dict, archive, logger)
 
-        if len(valid_instruments) > 1:
+        search_result = []
+        search_result.extend(
+            search(
+                owner='visible',
+                query={
+                    'search_quantities': {
+                        'id': (
+                            'data.serial_number#nomad_measurements.transmission.schema.'
+                            'Spectrophotometer'
+                        ),
+                        'str_value': f'{serial_number}',
+                    },
+                },
+                user_id=archive.metadata.main_author.user_id,
+            ).data
+        )
+        search_result.extend(
+            search(
+                owner='visible',
+                query={
+                    'search_quantities': {
+                        'id': (
+                            'data.serial_number#nomad_measurements.transmission.schema.'
+                            'PerkinElmersLambdaSpectrophotometer'
+                        ),
+                        'str_value': f'{serial_number}',
+                    },
+                },
+                user_id=archive.metadata.main_author.user_id,
+            ).data
+        )
+
+        if not search_result:
+            logger.warning(
+                'No "Spectrophotometer" or "PerkinElmersLambdaSpectrophotometer" '
+                'instrument found with the serial number '
+                f'"{serial_number}". Creating an entry for the instrument.'
+            )
+            return self.create_instrument_entry(data_dict, archive, logger)
+
+        if len(search_result) > 1:
             logger.warning(
                 f'Multiple "Spectrophotometer" instruments found with the '
                 f'serial number "{serial_number}". Please select it manually.'
             )
             return None
 
-        upload_id = valid_instruments[0]['upload_id']
-        entry_id = valid_instruments[0]['entry_id']
+        upload_id = search_result[0]['upload_id']
+        entry_id = search_result[0]['entry_id']
         m_proxy_value = f'../uploads/{upload_id}/archive/{entry_id}#/data'
 
         return InstrumentReference(reference=m_proxy_value)
