@@ -69,6 +69,8 @@ if TYPE_CHECKING:
 
 from nomad.metainfo import SchemaPackage
 
+m_package = SchemaPackage()
+
 
 class Sample(CompositeSystem):
     name = Quantity(type=str, description='FILL')
@@ -193,9 +195,6 @@ class PPMSMeasurement(Measurement):
                     )
 
 
-m_package_ppms_eto = SchemaPackage()
-
-
 class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
     def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
@@ -261,11 +260,6 @@ class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 )
 
 
-m_package_ppms_eto.__init_metainfo__()
-
-m_package_ppms_act = SchemaPackage()
-
-
 class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
     def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
@@ -329,11 +323,6 @@ class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 self.figures.append(
                     PlotlyFigure(label=data.name, figure=figure1.to_plotly_json())
                 )
-
-
-m_package_ppms_act.__init_metainfo__()
-
-m_package_ppms_acms = SchemaPackage()
 
 
 class PPMSACMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
@@ -410,12 +399,6 @@ class PPMSACMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 )
 
 
-m_package_ppms_acms.__init_metainfo__()
-
-
-m_package_ppms_mpms = SchemaPackage()
-
-
 class PPMSMPMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
     def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
@@ -468,12 +451,6 @@ class PPMSMPMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
             self.figures.append(
                 PlotlyFigure(label=data.name, figure=figure1.to_plotly_json())
             )
-
-
-m_package_ppms_mpms.__init_metainfo__()
-
-
-m_package_ppms_resistivity = SchemaPackage()
 
 
 class PPMSResistivityMeasurement(PPMSMeasurement, PlotSection, EntryData):
@@ -541,4 +518,4 @@ class PPMSResistivityMeasurement(PPMSMeasurement, PlotSection, EntryData):
             )
 
 
-m_package_ppms_resistivity.__init_metainfo__()
+m_package.__init_metainfo__()
