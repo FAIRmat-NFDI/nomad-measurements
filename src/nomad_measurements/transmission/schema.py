@@ -1102,6 +1102,7 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
         if isinstance(archive.m_context, ClientContext):
             return None
 
+        from nomad.app.v1.models.models import Or
         from nomad.search import search
 
         serial_number = data_dict['instrument_serial_number']
@@ -1112,37 +1113,34 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
             )
             return self.create_instrument_entry(data_dict, archive, logger)
 
-        search_result = []
-        search_result.extend(
-            search(
-                owner='visible',
-                query={
-                    'search_quantities': {
-                        'id': (
-                            'data.serial_number#nomad_measurements.transmission.schema.'
-                            'Spectrophotometer'
-                        ),
-                        'str_value': f'{serial_number}',
-                    },
-                },
-                user_id=archive.metadata.main_author.user_id,
-            ).data
-        )
-        search_result.extend(
-            search(
-                owner='visible',
-                query={
-                    'search_quantities': {
-                        'id': (
-                            'data.serial_number#nomad_measurements.transmission.schema.'
-                            'PerkinElmersLambdaSpectrophotometer'
-                        ),
-                        'str_value': f'{serial_number}',
-                    },
-                },
-                user_id=archive.metadata.main_author.user_id,
-            ).data
-        )
+        search_result = search(
+            owner='visible',
+            query=Or(
+                **{
+                    'or': [
+                        {
+                            'search_quantities': {
+                                'id': (
+                                    'data.serial_number#nomad_measurements.transmission'
+                                    '.schema.Spectrophotometer'
+                                ),
+                                'str_value': f'{serial_number}',
+                            }
+                        },
+                        {
+                            'search_quantities': {
+                                'id': (
+                                    'data.serial_number#nomad_measurements.transmission'
+                                    '.schema.PerkinElmersLambdaSpectrophotometer'
+                                ),
+                                'str_value': f'{serial_number}',
+                            }
+                        },
+                    ]
+                }
+            ),
+            user_id=archive.metadata.main_author.user_id,
+        ).data
 
         if not search_result:
             logger.warning(
@@ -1154,7 +1152,7 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
 
         if len(search_result) > 1:
             logger.warning(
-                f'Multiple "Spectrophotometer" instruments found with the '
+                f'Multiple instruments found with the '
                 f'serial number "{serial_number}". Please select it manually.'
             )
             return None
