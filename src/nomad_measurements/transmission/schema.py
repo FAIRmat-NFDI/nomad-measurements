@@ -80,7 +80,6 @@ if TYPE_CHECKING:
     from nomad.datamodel.datamodel import EntryArchive
     from structlog.stdlib import BoundLogger
 
-from nomad.config import config
 
 m_package = SchemaPackage()
 

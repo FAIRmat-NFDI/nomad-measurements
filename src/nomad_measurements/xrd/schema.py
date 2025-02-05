@@ -79,7 +79,6 @@ if TYPE_CHECKING:
         BoundLogger,
     )
 
-from nomad.config import config
 
 m_package = SchemaPackage(aliases=['nomad_measurements.xrd.parser.parser'])
 
