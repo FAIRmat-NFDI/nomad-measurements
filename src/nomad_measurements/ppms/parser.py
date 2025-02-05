@@ -21,7 +21,6 @@ from typing import (
     TYPE_CHECKING,
 )
 
-from nomad.config import config
 from nomad.datamodel import ClientContext, EntryArchive
 from nomad.datamodel.data import (
     EntryData,
@@ -51,15 +50,6 @@ from nomad_measurements.ppms.schema import (
     PPMSResistivityMeasurement,
 )
 from nomad_measurements.utils import create_archive
-
-configuration = config.get_plugin_entry_point('nomad_measurements.ppms:eto_parser')
-configuration = config.get_plugin_entry_point('nomad_measurements.ppms:act_parser')
-configuration = config.get_plugin_entry_point('nomad_measurements.ppms:acms_parser')
-configuration = config.get_plugin_entry_point('nomad_measurements.ppms:sequence_parser')
-configuration = config.get_plugin_entry_point('nomad_measurements.ppms:mpms_parser')
-configuration = config.get_plugin_entry_point(
-    'nomad_measurements.ppms:resistivity_parser'
-)
 
 
 def find_matching_sequence_file(archive, entry, logger):

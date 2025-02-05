@@ -67,16 +67,7 @@ if TYPE_CHECKING:
         BoundLogger,
     )
 
-from nomad.config import config
 from nomad.metainfo import SchemaPackage
-
-configuration = config.get_plugin_entry_point('nomad_measurements.ppms:eto_schema')
-configuration = config.get_plugin_entry_point('nomad_measurements.ppms:act_schema')
-configuration = config.get_plugin_entry_point('nomad_measurements.ppms:acms_schema')
-configuration = config.get_plugin_entry_point('nomad_measurements.ppms:mpms_schema')
-configuration = config.get_plugin_entry_point(
-    'nomad_measurements.ppms:resistivity_schema'
-)
 
 
 class Sample(CompositeSystem):
