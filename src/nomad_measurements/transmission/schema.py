@@ -1108,8 +1108,8 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
         serial_number = data_dict['instrument_serial_number']
         if serial_number is None:
             logger.warning(
-                'Instrument serial number is not provided. Creating an entry for the '
-                'instrument.'
+                'Unable to connect to an existing instrument entry as serial number is '
+                'missing in the data file. Creating a new instrument entry.'
             )
             return self.create_instrument_entry(data_dict, archive, logger)
 
