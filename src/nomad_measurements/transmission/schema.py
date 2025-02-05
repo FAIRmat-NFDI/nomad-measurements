@@ -46,6 +46,7 @@ from nomad.datamodel.data import (
     EntryData,
 )
 from nomad.datamodel.metainfo.annotations import (
+    BrowserAnnotation,
     ELNAnnotation,
     ELNComponentEnum,
     Filter,
@@ -1027,6 +1028,7 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.FileEditQuantity,
         ),
+        a_browser=BrowserAnnotation(adaptor='RawFileAdaptor'),
     )
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
