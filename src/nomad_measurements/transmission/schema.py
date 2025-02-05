@@ -1182,15 +1182,6 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
         if data_dict['start_datetime'] is not None:
             transmission.datetime = data_dict['start_datetime']
 
-        # add instrument
-        instruments = []
-        instrument_reference = self.get_instrument_reference(data_dict, archive, logger)
-        if instrument_reference:
-            if isinstance(instrument_reference.reference, MProxy):
-                instrument_reference.reference.m_proxy_context = archive.m_context
-            instruments = [instrument_reference]
-        transmission.instruments = instruments
-
         # add results
         transmission.m_setdefault('results/0')
         transmission.results[0].wavelength = data_dict['measured_wavelength']
@@ -1223,7 +1214,7 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
             lamps.append('Tungsten')
         try:
             i = 0
-            for light_source in instrument_reference.reference.light_sources:
+            for light_source in self.instruments[0].reference.light_sources:
                 if light_source.type in lamps:
                     transmission.m_setdefault(
                         f'transmission_settings/light_sources/{i}'
@@ -1279,7 +1270,7 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
             detector_list = ['PMT', 'InGaAs']
         try:
             i = 0
-            for detector in instrument_reference.reference.detectors:
+            for detector in self.instruments[0].reference.detectors:
                 if detector.type in detector_list:
                     transmission.m_setdefault(f'transmission_settings/detectors/{i}')
                     transmission.transmission_settings.detectors[i].detector = detector
@@ -1307,7 +1298,7 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
         # add settings: monochromators
         try:
             i = 0
-            for monochromator in instrument_reference.reference.monochromators:
+            for monochromator in self.instruments[0].reference.monochromators:
                 transmission.m_setdefault(f'transmission_settings/monochromators/{i}')
                 transmission.transmission_settings.monochromators[
                     i
@@ -1437,6 +1428,25 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
 
         transmission.transmission_settings.normalize(archive, logger)
 
+    def connect_instrument(
+        self, data_dict, archive: 'EntryArchive', logger: 'BoundLogger'
+    ):
+        """
+        Method for automatically connecting the instrument based on
+        the extracted raw data. Only works if no instrument is already connected.
+        """
+        if self.instruments:
+            return
+        # add instrument
+        instrument_reference = self.get_instrument_reference(data_dict, archive, logger)
+        if instrument_reference is None:
+            return
+        # resolve the reference
+        if isinstance(instrument_reference.reference, MProxy):
+            instrument_reference.reference.m_proxy_context = archive.m_context
+        self.instruments = [instrument_reference]
+        self.instruments[0].normalize(archive, logger)
+
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
         The normalize function of the `ELNUVVisNirTransmission` section.
@@ -1455,6 +1465,7 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
             else:
                 with archive.m_context.raw_file(self.data_file) as file:
                     data_dict = read_function(file.name, logger)
+                self.connect_instrument(data_dict, archive, logger)
                 transmission = self.m_def.section_cls()
                 write_function(transmission, data_dict, archive, logger)
                 merge_sections(self, transmission, logger)
