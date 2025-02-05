@@ -254,7 +254,27 @@ class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 figure1 = make_subplots(rows=2, cols=1, shared_xaxes=True)
                 figure1.add_trace(resistivity_ch1.data[0], row=1, col=1)
                 figure1.add_trace(resistivity_ch2.data[0], row=2, col=1)
-                figure1.update_layout(height=400, width=716, title_text=data.name)
+                # figure1.update_layout(height=400, width=716, title_text=data.name)
+                figure1.update_layout(
+                    title_text=data.name,
+                    template='plotly_white',
+                    dragmode='zoom',
+                    xaxis=dict(
+                        fixedrange=False,
+                        autorange=True,
+                        # title='',
+                        mirror='all',
+                        showline=True,
+                        gridcolor='#EAEDFC',
+                    ),
+                    yaxis=dict(
+                        fixedrange=False,
+                        # title='',
+                        tickfont=dict(color='#2A4CDF'),
+                        gridcolor='#EAEDFC',
+                    ),
+                    showlegend=True,
+                )
                 self.figures.append(
                     PlotlyFigure(label=data.name, figure=figure1.to_plotly_json())
                 )
@@ -319,7 +339,27 @@ class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 figure1 = make_subplots(rows=2, cols=1, shared_xaxes=True)
                 figure1.add_trace(resistivity_ch1.data[0], row=1, col=1)
                 figure1.add_trace(resistivity_ch2.data[0], row=2, col=1)
-                figure1.update_layout(height=400, width=716, title_text=data.name)
+                # figure1.update_layout(height=400, width=716, title_text=data.name)
+                figure1.update_layout(
+                    title_text=data.name,
+                    template='plotly_white',
+                    dragmode='zoom',
+                    xaxis=dict(
+                        fixedrange=False,
+                        autorange=True,
+                        # title='',
+                        mirror='all',
+                        showline=True,
+                        gridcolor='#EAEDFC',
+                    ),
+                    yaxis=dict(
+                        fixedrange=False,
+                        # title='',
+                        tickfont=dict(color='#2A4CDF'),
+                        gridcolor='#EAEDFC',
+                    ),
+                    showlegend=True,
+                )
                 self.figures.append(
                     PlotlyFigure(label=data.name, figure=figure1.to_plotly_json())
                 )
@@ -393,7 +433,27 @@ class PPMSACMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 figure1.add_trace(moment.data[0], row=1, col=1)
                 figure1.add_trace(moment_derivative.data[0], row=2, col=1)
                 figure1.add_trace(moment_second_derivative.data[0], row=3, col=1)
-                figure1.update_layout(height=400, width=716, title_text=data.name)
+                # figure1.update_layout(height=400, width=716, title_text=data.name)
+                figure1.update_layout(
+                    title_text=data.name,
+                    template='plotly_white',
+                    dragmode='zoom',
+                    xaxis=dict(
+                        fixedrange=False,
+                        autorange=True,
+                        # title='',
+                        mirror='all',
+                        showline=True,
+                        gridcolor='#EAEDFC',
+                    ),
+                    yaxis=dict(
+                        fixedrange=False,
+                        # title='',
+                        tickfont=dict(color='#2A4CDF'),
+                        gridcolor='#EAEDFC',
+                    ),
+                    showlegend=True,
+                )
                 self.figures.append(
                     PlotlyFigure(label=data.name, figure=figure1.to_plotly_json())
                 )
@@ -447,7 +507,27 @@ class PPMSMPMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 magnetization = px.scatter(x=data.temperature, y=data.moment)
             figure1 = make_subplots(rows=1, cols=1, shared_xaxes=True)
             figure1.add_trace(magnetization.data[0], row=1, col=1)
-            figure1.update_layout(height=400, width=716, title_text=data.name)
+            # figure1.update_layout(height=400, width=716, title_text=data.name)
+            figure1.update_layout(
+                title_text=data.name,
+                template='plotly_white',
+                dragmode='zoom',
+                xaxis=dict(
+                    fixedrange=False,
+                    autorange=True,
+                    # title='',
+                    mirror='all',
+                    showline=True,
+                    gridcolor='#EAEDFC',
+                ),
+                yaxis=dict(
+                    fixedrange=False,
+                    # title='',
+                    tickfont=dict(color='#2A4CDF'),
+                    gridcolor='#EAEDFC',
+                ),
+                showlegend=True,
+            )
             self.figures.append(
                 PlotlyFigure(label=data.name, figure=figure1.to_plotly_json())
             )
@@ -512,7 +592,27 @@ class PPMSResistivityMeasurement(PPMSMeasurement, PlotSection, EntryData):
             figure1 = make_subplots(rows=2, cols=1, shared_xaxes=True)
             figure1.add_trace(resistivity_ch1.data[0], row=1, col=1)
             figure1.add_trace(resistivity_ch2.data[0], row=2, col=1)
-            figure1.update_layout(height=400, width=716, title_text=data.name)
+            # figure1.update_layout(height=400, width=716, title_text=data.name)
+            figure1.update_layout(
+                title_text=data.name,
+                template='plotly_white',
+                dragmode='zoom',
+                xaxis=dict(
+                    fixedrange=False,
+                    autorange=True,
+                    # title='',
+                    mirror='all',
+                    showline=True,
+                    gridcolor='#EAEDFC',
+                ),
+                yaxis=dict(
+                    fixedrange=False,
+                    # title='',
+                    tickfont=dict(color='#2A4CDF'),
+                    gridcolor='#EAEDFC',
+                ),
+                showlegend=True,
+            )
             self.figures.append(
                 PlotlyFigure(label=data.name, figure=figure1.to_plotly_json())
             )
