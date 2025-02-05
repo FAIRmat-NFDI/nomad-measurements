@@ -230,7 +230,7 @@ class HDF5Handler:
         if not filename.endswith(('.nxs', '.h5')):
             raise ValueError('Only .h5 or .nxs files are supported.')
 
-        self.data_file = filename
+        self.filename = filename
         self.archive = archive
         self.logger = logger
 
@@ -425,22 +425,22 @@ class HDF5Handler:
                         template['optional'][f'{nx_path}/@{attr_k}'] = attr_v
 
         nx_full_file_path = os.path.join(
-            self.archive.m_context.raw_path(), self.data_file
+            self.archive.m_context.raw_path(), self.filename
         )
 
         pynxtools_writer(
             data=template, nxdl_f_path=nxdl_f_path, output_path=nx_full_file_path
         ).write()
         self.archive.m_context.process_updated_raw_file(
-            self.data_file, allow_modify=True
+            self.filename, allow_modify=True
         )
 
     def _write_hdf5_file(self):  # noqa: PLR0912
         """
         Method for creating an HDF5 file.
         """
-        if self.data_file.endswith('.nxs'):
-            self.data_file = self.data_file.replace('.nxs', '.h5')
+        if self.filename.endswith('.nxs'):
+            self.filename = self.filename.replace('.nxs', '.h5')
         if not self._hdf5_datasets and not self._hdf5_attributes:
             return
         # remove the nexus annotations from the dataset paths if any
@@ -455,10 +455,8 @@ class HDF5Handler:
         self._hdf5_attributes = tmp_dict
 
         # create the HDF5 file
-        mode = 'r+b' if self.archive.m_context.raw_path_exists(self.data_file) else 'wb'
-        with h5py.File(
-            self.archive.m_context.raw_file(self.data_file, mode), 'a'
-        ) as h5:
+        mode = 'r+b' if self.archive.m_context.raw_path_exists(self.filename) else 'wb'
+        with h5py.File(self.archive.m_context.raw_file(self.filename, mode), 'a') as h5:
             for key, value in self._hdf5_datasets.items():
                 data = value.data
                 if value.internal_reference:
@@ -504,7 +502,7 @@ class HDF5Handler:
                     self.archive,
                     value.archive_path,
                     f'/uploads/{self.archive.m_context.upload_id}/raw'
-                    f'/{self.data_file}#{reference}',
+                    f'/{self.filename}#{reference}',
                 )
 
     def populate_nx_dataset_and_attribute(self, attr_dict: dict, dataset_dict: dict):
