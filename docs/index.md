@@ -19,7 +19,7 @@ file formats (read more [here](explanation/schemas.md#transmission-spectrophotom
  
 - **Physical Properies Measurement System (PPMS)**: Supports automatic parsing of
 measurement files and sequence files from the Quantum Design PPMS. For now, ETO, ACT, ACMS, MPMS, and 
-Resisitivity modes are supported. Supported file formats:
+Resistivity modes are supported. Supported file formats:
   - QuantumDesign PPMS: `*.dat` and `*.seq`
 
 Additional measurement techniques are actively being developed and will be included soon, including:

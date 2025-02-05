@@ -32,6 +32,7 @@ from nomad_measurements.ppms.ppmsdatastruct import (
     ETOData,
     ETOPPMSData,
     MPMSData,
+    MPMSDCData,
     MPMSPPMSData,
     ResistivityPPMSData,
 )
@@ -676,6 +677,23 @@ def read_map_data(  # noqa: PLR0913
             data.m_add_sub_section(data_class.maps, map_object)
 
 
+def read_specific_data(  # noqa: PLR0913
+    data, block, data_class, map_class, maps_label
+):
+    map_object = map_class()
+    for key in block.keys():
+        clean_key = (
+            key.split('(')[0].strip().replace(' ', '_').lower()
+        )  # .replace('time stamp','timestamp')
+        if hasattr(map_object, clean_key):
+            setattr(
+                map_object,
+                clean_key,
+                block[key],  # * ureg(data_template[f'{key}/@units'])
+            )
+    data.m_add_sub_section(eval(f'{data_class.__name__}.{maps_label}'), map_object)
+
+
 def split_ppms_data_act(data_full, runs):  # noqa: PLR0912
     all_data = []
     for i in range(len(runs)):
@@ -683,9 +701,9 @@ def split_ppms_data_act(data_full, runs):  # noqa: PLR0912
         data = ACTPPMSData()
         data.measurement_type = runs[i][0]
         if data.measurement_type == 'field':
-            data.name = 'Field sweep at ' + str(runs[i][1]) + ' K.'
-        if data.measurement_type == 'temperature':
-            data.name = 'Temperature sweep at ' + str(runs[i][1]) + ' Oe.'
+            data.name = f'Field sweep at {str(runs[i][1])} K.'
+        elif data.measurement_type == 'temperature':
+            data.name = f'Temperature sweep at {str(runs[i][1])} Oe.'
         data.title = data.name
         read_other_data(data, block)
         read_channel_data(data, block, ACTPPMSData, ACTChannelData)
@@ -703,9 +721,9 @@ def split_ppms_data_eto(data_full, runs):  # noqa: PLR0912
         data = ETOPPMSData()
         data.measurement_type = runs[i][0]
         if data.measurement_type == 'field':
-            data.name = 'Field sweep at ' + str(runs[i][1]) + ' K.'
-        if data.measurement_type == 'temperature':
-            data.name = 'Temperature sweep at ' + str(runs[i][1]) + ' Oe.'
+            data.name = f'Field sweep at {str(runs[i][1])} K.'
+        elif data.measurement_type == 'temperature':
+            data.name = f'Temperature sweep at {str(runs[i][1])} Oe.'
         data.title = data.name
         read_other_data(data, block)
         read_channel_data(data, block, ETOPPMSData, ETOChannelData)
@@ -723,12 +741,13 @@ def split_ppms_data_mpms(data_full, runs):
         data = MPMSPPMSData()
         data.measurement_type = runs[i][0]
         if data.measurement_type == 'field':
-            data.name = 'Field sweep at ' + str(runs[i][1]) + ' K.'
-        if data.measurement_type == 'temperature':
-            data.name = 'Temperature sweep at ' + str(runs[i][1]) + ' Oe.'
+            data.name = f'Field sweep at {str(runs[i][1])} K.'
+        elif data.measurement_type == 'temperature':
+            data.name = f'Temperature sweep at {str(runs[i][1])} Oe.'
         data.title = data.name
         read_other_data(data, block)
         read_map_data(data, block, MPMSPPMSData, MPMSData)
+        read_specific_data(data, block, MPMSPPMSData, MPMSDCData, 'dc_data')
 
         all_data.append(data)
 
@@ -742,9 +761,9 @@ def split_ppms_data_resistivity(data_full, runs):
         data = ResistivityPPMSData()
         data.measurement_type = runs[i][0]
         if data.measurement_type == 'field':
-            data.name = 'Field sweep at ' + str(runs[i][1]) + ' K.'
-        if data.measurement_type == 'temperature':
-            data.name = 'Temperature sweep at ' + str(runs[i][1]) + ' Oe.'
+            data.name = f'Field sweep at {str(runs[i][1])} K.'
+        elif data.measurement_type == 'temperature':
+            data.name = f'Temperature sweep at {str(runs[i][1])} Oe.'
         data.title = data.name
         read_other_data(data, block)
 
@@ -760,53 +779,17 @@ def split_ppms_data_acms(data_full, runs):
         data = ACMSPPMSData()
         data.measurement_type = runs[i][0]
         if data.measurement_type == 'temperature':
-            data.name = (
-                'Temperature sweep at Field'
-                + runs[i][1][1]
-                + ' Oe, \
-                        Frequency '
-                + runs[i][1][2]
-                + 'Hz, \
-                        and Amplitude '
-                + runs[i][1][3]
-                + ' Oe.'
-            )
-        if data.measurement_type == 'field':
-            data.name = (
-                'Field sweep at Temperature'
-                + runs[i][1][0]
-                + ' K, \
-                        Frequency '
-                + runs[i][1][2]
-                + 'Hz, \
-                        and Amplitude '
-                + runs[i][1][3]
-                + ' Oe.'
-            )
-        if data.measurement_type == 'frequency':
-            data.name = (
-                'Frequency sweep at Temperature'
-                + runs[i][1][0]
-                + ' K, \
-                        Field'
-                + runs[i][1][1]
-                + ' Oe, \
-                        and Amplitude '
-                + runs[i][1][3]
-                + ' Oe.'
-            )
-        if data.measurement_type == 'amplitude':
-            data.name = (
-                'Amplitude sweep at Temperature'
-                + runs[i][1][0]
-                + ' K, \
-                        Field'
-                + runs[i][1][1]
-                + ' Oe, \
-                        and Frequency '
-                + runs[i][1][2]
-                + 'Hz.'
-            )
+            data.name = f'Temperature sweep at Field {runs[i][1][1]} Oe, Frequency \
+                     {runs[i][1][2]} Hz, and Amplitude {runs[i][1][3]} Oe.'
+        elif data.measurement_type == 'field':
+            data.name = f'Field sweep at Temperature {runs[i][1][0]} K, Frequency \
+                {runs[i][1][2]} Hz, and Amplitude {runs[i][1][3]} Oe.'
+        elif data.measurement_type == 'frequency':
+            data.name = f'Frequency sweep at Temperature {runs[i][1][0]} K, Field \
+                {runs[i][1][1]} Oe, and Amplitude {runs[i][1][3]} Oe.'
+        elif data.measurement_type == 'amplitude':
+            data.name = f'Amplitude sweep at Temperature {runs[i][1][0]} K, Field \
+                {runs[i][1][1]} Oe, and Frequency {runs[i][1][2]} Hz.'
         data.title = data.name
         read_other_data(data, block)
         read_map_data(data, block, ACMSPPMSData, ACMSData)

@@ -138,6 +138,7 @@ def test_normalize_mpms(parsed_measurement_archive, caplog):
     #  assert len(parsed_measurement_archive.data.steps) == 70 #Noqa: PLR2004
     assert len(parsed_measurement_archive.data.data) == 3  # Noqa: PLR2004
     assert len(parsed_measurement_archive.data.data[0].time_stamp) == 374  # Noqa: PLR2004
+    assert len(parsed_measurement_archive.data.data[0].dc_data.dc_scan_time) == 374  # Noqa: PLR2004
     assert len(parsed_measurement_archive.data.figures) == 3  # Noqa: PLR2004
 
 

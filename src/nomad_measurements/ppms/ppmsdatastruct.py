@@ -475,6 +475,55 @@ class MPMSData(ArchiveSection):
     map = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
 
 
+class MPMSDCData(ArchiveSection):
+    """MPMS data about the DC parameters"""
+
+    m_def = Section(
+        label_quantity='name',
+    )
+    dc_moment_fixed_ctr = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    dc_moment_err_fixed_ctr = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    dc_moment_free_ctr = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    dc_moment_err_free_ctr = Quantity(
+        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
+    )
+    dc_fixed_fit = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    dc_free_fit = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
+    dc_calculated_center = Quantity(
+        type=np.dtype(np.float64), unit='mm', shape=['*'], description='FILL'
+    )
+    dc_calculated_center_err = Quantity(
+        type=np.dtype(np.float64), unit='mm', shape=['*'], description='FILL'
+    )
+    dc_scan_length = Quantity(
+        type=np.dtype(np.float64), unit='mm', shape=['*'], description='FILL'
+    )
+    dc_scan_time = Quantity(
+        type=np.dtype(np.float64), unit='second', shape=['*'], description='FILL'
+    )
+    dc_number_of_points = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    dc_squid_drift = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+    dc_min_v = Quantity(
+        type=np.dtype(np.float64), unit='V', shape=['*'], description='FILL'
+    )
+    dc_max_v = Quantity(
+        type=np.dtype(np.float64), unit='V', shape=['*'], description='FILL'
+    )
+    dc_scans_per_measure = Quantity(
+        type=np.dtype(np.float64), shape=['*'], description='FILL'
+    )
+
+
 class MPMSPPMSData(PPMSData):
     """Data section in MPMS"""
 
@@ -578,47 +627,6 @@ class MPMSPPMSData(PPMSData):
         type=np.dtype(np.float64), unit='deg', shape=['*'], description='FILL'
     )
     rotator_state = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
-    dc_moment_fixed_ctr = Quantity(
-        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
-    )
-    dc_moment_err_fixed_ctr = Quantity(
-        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
-    )
-    dc_moment_free_ctr = Quantity(
-        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
-    )
-    dc_moment_err_free_ctr = Quantity(
-        type=np.dtype(np.float64), unit='lux', shape=['*'], description='FILL'
-    )
-    dc_fixed_fit = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
-    dc_free_fit = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
-    dc_calculated_center = Quantity(
-        type=np.dtype(np.float64), unit='mm', shape=['*'], description='FILL'
-    )
-    dc_calculated_center_err = Quantity(
-        type=np.dtype(np.float64), unit='mm', shape=['*'], description='FILL'
-    )
-    dc_scan_length = Quantity(
-        type=np.dtype(np.float64), unit='mm', shape=['*'], description='FILL'
-    )
-    dc_scan_time = Quantity(
-        type=np.dtype(np.float64), unit='second', shape=['*'], description='FILL'
-    )
-    dc_number_of_points = Quantity(
-        type=np.dtype(np.float64), shape=['*'], description='FILL'
-    )
-    dc_squid_drift = Quantity(
-        type=np.dtype(np.float64), shape=['*'], description='FILL'
-    )
-    dc_min_v = Quantity(
-        type=np.dtype(np.float64), unit='V', shape=['*'], description='FILL'
-    )
-    dc_max_v = Quantity(
-        type=np.dtype(np.float64), unit='V', shape=['*'], description='FILL'
-    )
-    dc_scans_per_measure = Quantity(
-        type=np.dtype(np.float64), shape=['*'], description='FILL'
-    )
     sample_position = Quantity(
         type=np.dtype(np.float64), unit='deg', shape=['*'], description='FILL'
     )
@@ -628,17 +636,11 @@ class MPMSPPMSData(PPMSData):
     eto_measurement_mode = Quantity(
         type=np.dtype(np.float64), shape=['*'], description='FILL'
     )
-    temperature_status = Quantity(
-        type=np.dtype(np.float64), shape=['*'], description='FILL'
-    )
-    field_status = Quantity(type=np.dtype(np.float64), shape=['*'], description='FILL')
-    chamber_status = Quantity(
-        type=np.dtype(np.float64), shape=['*'], description='FILL'
-    )
     eto_status_code = Quantity(
         type=np.dtype(np.float64), shape=['*'], description='FILL'
     )
     maps = SubSection(section_def=MPMSData, repeats=True)
+    dc_data = SubSection(section_def=MPMSDCData)
 
 
 class ResistivityPPMSData(PPMSData):
@@ -691,10 +693,10 @@ class ResistivityPPMSData(PPMSData):
         type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
     )
     bridge_3_resistivity = Quantity(
-        type=np.dtype(np.float64), unit='ohm*m', shape=['*'], description='FILL'
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
     )
     bridge_3_std_dev = Quantity(
-        type=np.dtype(np.float64), unit='ohm*m', shape=['*'], description='FILL'
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
     )
     bridge_3_excitation = Quantity(
         type=np.dtype(np.float64), unit='uA', shape=['*'], description='FILL'
@@ -703,10 +705,10 @@ class ResistivityPPMSData(PPMSData):
         type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
     )
     bridge_4_resistivity = Quantity(
-        type=np.dtype(np.float64), unit='ohm*m', shape=['*'], description='FILL'
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
     )
     bridge_4_std_dev = Quantity(
-        type=np.dtype(np.float64), unit='ohm*m', shape=['*'], description='FILL'
+        type=np.dtype(np.float64), unit='ohm', shape=['*'], description='FILL'
     )
     bridge_4_excitation = Quantity(
         type=np.dtype(np.float64), unit='uA', shape=['*'], description='FILL'
