@@ -73,6 +73,7 @@ from nomad_measurements.general import (
     NOMADMeasurementsCategory,
 )
 from nomad_measurements.utils import (
+    Dataset,
     HDF5Handler,
     get_bounding_range_2d,
     get_entry_id_from_file_name,
@@ -316,7 +317,7 @@ class IntensityPlot(ArchiveSection):
 
         hdf5_handler.add_dataset(
             path=f'{prefix}/plot_intensity/two_theta',
-            params=dict(
+            dataset=Dataset(
                 data=f'{prefix}/two_theta',
                 archive_path='data.results[0].plot_intensity.two_theta',
                 internal_reference=True,
@@ -325,7 +326,7 @@ class IntensityPlot(ArchiveSection):
         )
         hdf5_handler.add_dataset(
             path=f'{prefix}/plot_intensity/intensity',
-            params=dict(
+            dataset=Dataset(
                 data=f'{prefix}/intensity',
                 archive_path='data.results[0].plot_intensity.intensity',
                 internal_reference=True,
@@ -351,7 +352,7 @@ class IntensityPlot(ArchiveSection):
             if var_axis_data is not None:
                 hdf5_handler.add_dataset(
                     path=f'{prefix}/plot_intensity/{var_axis}',
-                    params=dict(
+                    dataset=Dataset(
                         data=f'{prefix}/{var_axis}',
                         archive_path=f'data.results[0].plot_intensity.{var_axis}',
                         internal_reference=True,
@@ -430,7 +431,7 @@ class IntensityScatteringVectorPlot(ArchiveSection):
         if q_norm is not None:
             hdf5_handler.add_dataset(
                 path=f'{prefix}/plot_intensity_scattering_vector/intensity',
-                params=dict(
+                dataset=Dataset(
                     data=f'{prefix}/intensity',
                     archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
                     internal_reference=True,
@@ -439,7 +440,7 @@ class IntensityScatteringVectorPlot(ArchiveSection):
             )
             hdf5_handler.add_dataset(
                 path=f'{prefix}/plot_intensity_scattering_vector/q_norm',
-                params=dict(
+                dataset=Dataset(
                     data=f'{prefix}/q_norm',
                     archive_path='data.results[0].plot_intensity_scattering_vector.q_norm',
                     internal_reference=True,
@@ -471,7 +472,7 @@ class IntensityScatteringVectorPlot(ArchiveSection):
             )
             hdf5_handler.add_dataset(
                 path=f'{prefix}/plot_intensity_scattering_vector/q_parallel',
-                params=dict(
+                dataset=Dataset(
                     data=x_regular,
                     archive_path='data.results[0].plot_intensity_scattering_vector.q_parallel',
                 ),
@@ -479,7 +480,7 @@ class IntensityScatteringVectorPlot(ArchiveSection):
             )
             hdf5_handler.add_dataset(
                 path=f'{prefix}/plot_intensity_scattering_vector/q_perpendicular',
-                params=dict(
+                dataset=Dataset(
                     data=y_regular,
                     archive_path='data.results[0].plot_intensity_scattering_vector.q_perpendicular',
                 ),
@@ -487,7 +488,7 @@ class IntensityScatteringVectorPlot(ArchiveSection):
             )
             hdf5_handler.add_dataset(
                 path=f'{prefix}/plot_intensity_scattering_vector/intensity',
-                params=dict(
+                dataset=Dataset(
                     data=z_interpolated,
                     archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
                 ),
@@ -1264,14 +1265,14 @@ class XRDResult1DHDF5(XRDResult):
             )
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/q_norm',
-                params=dict(
+                dataset=Dataset(
                     data=q_norm,
                     archive_path='data.results[0].q_norm',
                 ),
             )
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/two_theta',
-                params=dict(
+                dataset=Dataset(
                     data=two_theta,
                     archive_path='data.results[0].two_theta',
                 ),
@@ -1586,14 +1587,14 @@ class XRDResultRSMHDF5(XRDResult):
             )
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/q_parallel',
-                params=dict(
+                dataset=Dataset(
                     data=q_parallel,
                     archive_path='data.results[0].q_parallel',
                 ),
             )
             hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/q_perpendicular',
-                params=dict(
+                dataset=Dataset(
                     data=q_perpendicular,
                     archive_path='data.results[0].q_perpendicular',
                 ),
@@ -1814,42 +1815,42 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             result.scan_axis = metadata_dict.get('scan_axis')
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/intensity',
-                params=dict(
+                dataset=Dataset(
                     data=xrd_dict.get('intensity'),
                     archive_path='data.results[0].intensity',
                 ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/two_theta',
-                params=dict(
+                dataset=Dataset(
                     data=xrd_dict.get('2Theta'),
                     archive_path='data.results[0].two_theta',
                 ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/omega',
-                params=dict(
+                dataset=Dataset(
                     data=xrd_dict.get('Omega'),
                     archive_path='data.results[0].omega',
                 ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/chi',
-                params=dict(
+                dataset=Dataset(
                     data=xrd_dict.get('Chi'),
                     archive_path='data.results[0].chi',
                 ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/phi',
-                params=dict(
+                dataset=Dataset(
                     data=xrd_dict.get('Phi'),
                     archive_path='data.results[0].phi',
                 ),
             )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_config/count_time',
-                params=dict(
+                dataset=Dataset(
                     data=xrd_dict.get('countTime'),
                     archive_path='data.results[0].integration_time',
                 ),

@@ -188,19 +188,26 @@ def get_bounding_range_2d(ax1, ax2):
     return ax1_range, ax2_range
 
 
-class DatasetModel(BaseModel):
+class Dataset(BaseModel):
     """
     Pydantic model for the dataset to be stored in the HDF5 file.
     """
 
-    data: Any = Field(description='The data to be stored in the HDF5 file.')
+    data: Any = Field(
+        description='The data to be stored in the HDF5 file. If `internal_reference` '
+        'is True, this should be the path to the existing dataset.'
+    )
     archive_path: Optional[str] = Field(
-        None, description='The path of the quantity in the NOMAD archive.'
+        None,
+        description='If the provided dataset is to be referenced by a `HDF5Reference` '
+        'quantity in a NOMAD entry archive, `archive_path` is the path to this '
+        'quantity in the archive. '
+        'For example, "data.results[0].plot_intensity.intensity".',
     )
     internal_reference: Optional[bool] = Field(
         False,
         description='If True, an internal reference is set to an existing HDF5 '
-        'dataset.',
+        'dataset. The path to the referenced dataset should be provided in the data.',
     )
 
 
@@ -247,34 +254,25 @@ class HDF5Handler:
     def add_dataset(
         self,
         path: str,
-        params: dict,
+        dataset: Dataset,
         validate_path: bool = True,
     ):
         """
-        Add a dataset to the HDF5 file. The dataset is written lazily to the file
-        when `write_file` method is called. The `path` is validated against the
+        Add a dataset to the HDF5 file. The dataset is written to the file when
+        `write_file` method is called. The `path` is validated against the
         `valid_dataset_paths` if provided before adding the data.
 
-        `params` should be a dictionary containing `data`. Optionally,
-        it can also contain `archive_path` and `internal_reference`:
-        {
-            'data': Any,
-            'archive_path': str,
-            'internal_reference': bool,
-        }
+        `dataset` should be an instance of the basemodel `Dataset`.
 
         Args:
             path (str): The dataset path to be used in the HDF5 file.
             params (dict): The dataset parameters.
             validate_path (bool): If True, the dataset path is validated.
         """
-        if not params:
+        if not dataset:
             self.logger.warning(f'No params provided for path "{path}". Skipping.')
             return
 
-        dataset = DatasetModel(
-            **params,
-        )
         if dataset.data is None:
             self.logger.warning(f'No data provided for the path "{path}". Skipping.')
             return
@@ -521,7 +519,7 @@ class HDF5Handler:
             else:
                 data = arch_path  # default value
 
-            dataset = DatasetModel(data=data)
+            dataset = Dataset(data=data)
 
             if (
                 isinstance(data, pint.Quantity)
