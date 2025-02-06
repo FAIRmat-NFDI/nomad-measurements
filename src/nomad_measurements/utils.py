@@ -213,8 +213,8 @@ class Dataset(BaseModel):
 
 class HDF5Handler:
     """
-    Class for handling the creation of auxiliary files to store big data arrays outside
-    the main archive file (e.g. HDF5, NeXus).
+    Class for handling the creation of auxiliary files (e.g. NeXus, HDF5) to store big
+    data arrays outside the main archive file.
     """
 
     def __init__(
@@ -225,7 +225,10 @@ class HDF5Handler:
         nexus_dataset_map: dict = None,
     ):
         """
-        Initialize the handler.
+        Initialize the handler with at least the filename, NOMAD archive, and a logger.
+        If the optional `nexus_dataset_map` is provided, the auxialiary file is created
+        as a NeXus file. Otherwise, it is created as an HDF5 file. Additionally, the
+        path of the added datasets is validated against the `nexus_dataset_map`.
 
         Args:
             filename (str): The name of the auxiliary file.
@@ -235,7 +238,7 @@ class HDF5Handler:
                 dataset paths and the corresponding archive paths.
         """
         if not filename.endswith(('.nxs', '.h5')):
-            raise ValueError('Only .h5 or .nxs files are supported.')
+            raise ValueError('Only .nxs and .h5 files are supported.')
 
         self.filename = filename
         self.archive = archive
@@ -243,9 +246,6 @@ class HDF5Handler:
 
         self.nexus = bool(nexus_dataset_map)
         self.nexus_dataset_map = nexus_dataset_map
-        self.valid_dataset_paths = (
-            list(nexus_dataset_map.keys()) if nexus_dataset_map else []
-        )
 
         self._hdf5_datasets = collections.OrderedDict()
         self._hdf5_attributes = collections.OrderedDict()
@@ -260,14 +260,15 @@ class HDF5Handler:
         """
         Add a dataset to the HDF5 file. The dataset is written to the file when
         `write_file` method is called. The `path` is validated against the
-        `valid_dataset_paths` if provided before adding the data.
+        `nexus_dataset_map` if provided before adding the data.
 
         `dataset` should be an instance of the basemodel `Dataset`.
 
         Args:
             path (str): The dataset path to be used in the HDF5 file.
             params (dict): The dataset parameters.
-            validate_path (bool): If True, the dataset path is validated.
+            validate_path (bool): If `nexus_dataset_map` is provided to the handler,
+                the dataset path is validated against it.
         """
         if not dataset:
             self.logger.warning(f'No params provided for path "{path}". Skipping.')
@@ -278,8 +279,8 @@ class HDF5Handler:
             return
         if (
             validate_path
-            and self.valid_dataset_paths
-            and path not in self.valid_dataset_paths
+            and self.nexus_dataset_map
+            and path not in self.nexus_dataset_map
         ):
             self.logger.warning(f'Invalid dataset path "{path}". Skipping.')
             return
