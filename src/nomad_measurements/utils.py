@@ -392,7 +392,7 @@ class HDF5Handler:
         view of the data in addition to storing array data.
         """
 
-        app_def = 'NXxrd_pan'
+        app_def = self.nexus_dataset_map.get('/ENTRY[entry]/definition')
         nxdl_root, nxdl_f_path = get_nxdl_root_and_path(app_def)
         template = Template()
         generate_template_from_nxdl(nxdl_root, template)
@@ -506,7 +506,12 @@ class HDF5Handler:
                 )
 
     def populate_nx_dataset_and_attribute(self, attr_dict: dict, dataset_dict: dict):
-        """Construct datasets and attributes for nexus and populate."""
+        """Construct datasets and attributes for nexus and populate.
+
+        The common hdf5 datasets and attributes will be extended with
+        nexus specific concepts which are not part of the common hdf5 file
+        such as `signal` attrubute of NXdata.
+        """
 
         for nx_path, arch_path in self.nexus_dataset_map.items():
             if nx_path in self._hdf5_datasets or nx_path in self._hdf5_attributes:
@@ -527,7 +532,7 @@ class HDF5Handler:
                 attr_dict |= attr_tmp
                 dataset.data = data.magnitude
 
-            l_part, r_part = nx_path.split('/', 1)
+            l_part, r_part = nx_path.rsplit('/', 1)
             if r_part.startswith('@'):
                 attr_dict[l_part] = {r_part.replace('@', ''): data}
             else:
