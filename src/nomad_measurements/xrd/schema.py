@@ -272,7 +272,7 @@ class XRDSettings(ArchiveSection):
     source = SubSection(section_def=XRayTubeSource)
 
 
-class PlotIntensity(ArchiveSection):
+class IntensityPlot(ArchiveSection):
     """
     Section for plotting the intensity over 2-theta. A separate sub-section allows to
     create a separate group in `.h5` file. Attributes are added to the group to generate
@@ -369,7 +369,7 @@ class PlotIntensity(ArchiveSection):
                 break
 
 
-class PlotIntensityScatteringVector(ArchiveSection):
+class IntensityScatteringVectorPlot(ArchiveSection):
     """
     Section for plotting the intensity over scattering vector. A separate sub-section
     allows to create a separate group in `.h5` file. Attributes are added to the group
@@ -1041,9 +1041,9 @@ class XRDResult1DHDF5(XRDResult):
         description='Integration time per channel',
         shape=[],
     )
-    plot_intensity = SubSection(section_def=PlotIntensity)
+    plot_intensity = SubSection(section_def=IntensityPlot)
     plot_intensity_scattering_vector = SubSection(
-        section_def=PlotIntensityScatteringVector
+        section_def=IntensityScatteringVectorPlot
     )
 
     def generate_plots(self):
@@ -1340,9 +1340,9 @@ class XRDResultRSMHDF5(XRDResult):
         type=HDF5Reference,
         description='The scattering vector *Q_perpendicular* of the diffractogram',
     )
-    plot_intensity = SubSection(section_def=PlotIntensity)
+    plot_intensity = SubSection(section_def=IntensityPlot)
     plot_intensity_scattering_vector = SubSection(
-        section_def=PlotIntensityScatteringVector
+        section_def=IntensityScatteringVectorPlot
     )
 
     def generate_plots(self):
