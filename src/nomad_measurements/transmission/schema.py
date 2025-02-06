@@ -1102,43 +1102,63 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
         if isinstance(archive.m_context, ClientContext):
             return None
 
+        from nomad.app.v1.models.models import Or
         from nomad.search import search
 
         serial_number = data_dict['instrument_serial_number']
-        api_query = {
-            'entry_type:any': [
-                'Spectrophotometer',
-                'PerkinElmersLambdaSpectrophotometer',
-            ]
-        }
-        search_result = search(
-            owner='visible',
-            query=api_query,
-            user_id=archive.metadata.main_author.user_id,
-        )
-
-        valid_instruments = [
-            entry
-            for entry in search_result.data
-            if entry['data']['serial_number'] == serial_number
-        ]
-
-        if not valid_instruments:
+        if serial_number is None:
             logger.warning(
-                f'No "Spectrophotometer" instrument found with the serial '
-                f'number "{serial_number}". Creating an entry for the instrument.'
+                'Unable to connect to an existing instrument entry as serial number is '
+                'missing in the data file. Creating a new instrument entry.'
             )
             return self.create_instrument_entry(data_dict, archive, logger)
 
-        if len(valid_instruments) > 1:
+        search_result = search(
+            owner='visible',
+            query=Or(
+                **{
+                    'or': [
+                        {
+                            'search_quantities': {
+                                'id': (
+                                    'data.serial_number#nomad_measurements.transmission'
+                                    '.schema.Spectrophotometer'
+                                ),
+                                'str_value': f'{serial_number}',
+                            }
+                        },
+                        {
+                            'search_quantities': {
+                                'id': (
+                                    'data.serial_number#nomad_measurements.transmission'
+                                    '.schema.PerkinElmersLambdaSpectrophotometer'
+                                ),
+                                'str_value': f'{serial_number}',
+                            }
+                        },
+                    ]
+                }
+            ),
+            user_id=archive.metadata.main_author.user_id,
+        ).data
+
+        if not search_result:
             logger.warning(
-                f'Multiple "Spectrophotometer" instruments found with the '
+                'No "Spectrophotometer" or "PerkinElmersLambdaSpectrophotometer" '
+                'instrument found with the serial number '
+                f'"{serial_number}". Creating an entry for the instrument.'
+            )
+            return self.create_instrument_entry(data_dict, archive, logger)
+
+        if len(search_result) > 1:
+            logger.warning(
+                f'Multiple instruments found with the '
                 f'serial number "{serial_number}". Please select it manually.'
             )
             return None
 
-        upload_id = valid_instruments[0]['upload_id']
-        entry_id = valid_instruments[0]['entry_id']
+        upload_id = search_result[0]['upload_id']
+        entry_id = search_result[0]['entry_id']
         m_proxy_value = f'../uploads/{upload_id}/archive/{entry_id}#/data'
 
         return InstrumentReference(reference=m_proxy_value)
@@ -1161,15 +1181,6 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
         transmission.user = data_dict['analyst_name']
         if data_dict['start_datetime'] is not None:
             transmission.datetime = data_dict['start_datetime']
-
-        # add instrument
-        instruments = []
-        instrument_reference = self.get_instrument_reference(data_dict, archive, logger)
-        if instrument_reference:
-            if isinstance(instrument_reference.reference, MProxy):
-                instrument_reference.reference.m_proxy_context = archive.m_context
-            instruments = [instrument_reference]
-        transmission.instruments = instruments
 
         # add results
         transmission.m_setdefault('results/0')
@@ -1203,7 +1214,7 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
             lamps.append('Tungsten')
         try:
             i = 0
-            for light_source in instrument_reference.reference.light_sources:
+            for light_source in self.instruments[0].reference.light_sources:
                 if light_source.type in lamps:
                     transmission.m_setdefault(
                         f'transmission_settings/light_sources/{i}'
@@ -1259,7 +1270,7 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
             detector_list = ['PMT', 'InGaAs']
         try:
             i = 0
-            for detector in instrument_reference.reference.detectors:
+            for detector in self.instruments[0].reference.detectors:
                 if detector.type in detector_list:
                     transmission.m_setdefault(f'transmission_settings/detectors/{i}')
                     transmission.transmission_settings.detectors[i].detector = detector
@@ -1287,7 +1298,7 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
         # add settings: monochromators
         try:
             i = 0
-            for monochromator in instrument_reference.reference.monochromators:
+            for monochromator in self.instruments[0].reference.monochromators:
                 transmission.m_setdefault(f'transmission_settings/monochromators/{i}')
                 transmission.transmission_settings.monochromators[
                     i
@@ -1417,6 +1428,25 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
 
         transmission.transmission_settings.normalize(archive, logger)
 
+    def connect_instrument(
+        self, data_dict, archive: 'EntryArchive', logger: 'BoundLogger'
+    ):
+        """
+        Method for automatically connecting the instrument based on
+        the extracted raw data. Only works if no instrument is already connected.
+        """
+        if self.instruments:
+            return
+        # add instrument
+        instrument_reference = self.get_instrument_reference(data_dict, archive, logger)
+        if instrument_reference is None:
+            return
+        # resolve the reference
+        if isinstance(instrument_reference.reference, MProxy):
+            instrument_reference.reference.m_proxy_context = archive.m_context
+        self.instruments = [instrument_reference]
+        self.instruments[0].normalize(archive, logger)
+
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
         The normalize function of the `ELNUVVisNirTransmission` section.
@@ -1435,6 +1465,7 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
             else:
                 with archive.m_context.raw_file(self.data_file) as file:
                     data_dict = read_function(file.name, logger)
+                self.connect_instrument(data_dict, archive, logger)
                 transmission = self.m_def.section_cls()
                 write_function(transmission, data_dict, archive, logger)
                 merge_sections(self, transmission, logger)
