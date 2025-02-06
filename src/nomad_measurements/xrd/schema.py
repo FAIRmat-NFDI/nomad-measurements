@@ -1935,8 +1935,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             self.auxiliary_file
         ):
             self.hdf5_handler.write_file()
-            if self.hdf5_handler.data_file != self.auxiliary_file:
-                self.auxiliary_file = self.hdf5_handler.data_file
+            if self.hdf5_handler.filename != self.auxiliary_file:
+                self.auxiliary_file = self.hdf5_handler.filename
             # TODO (ka-sarthak): update the flag through the normalizer once it works.
             # self.overwrite_auxiliary_file = False
         else:
