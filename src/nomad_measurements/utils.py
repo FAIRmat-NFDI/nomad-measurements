@@ -443,15 +443,14 @@ class HDF5Handler:
         if not self._hdf5_datasets and not self._hdf5_attributes:
             return
         # remove the nexus annotations from the dataset paths if any
-        tmp_dict = {}
-        for key, value in self._hdf5_datasets.items():
-            new_key = self._remove_nexus_annotations(key)
-            tmp_dict[new_key] = value
-        self._hdf5_datasets = tmp_dict
-        tmp_dict = {}
-        for key, value in self._hdf5_attributes.items():
-            tmp_dict[self._remove_nexus_annotations(key)] = value
-        self._hdf5_attributes = tmp_dict
+        self._hdf5_datasets = collections.OrderedDict(
+            (self._remove_nexus_annotations(key), value)
+            for key, value in self._hdf5_datasets.items()
+        )
+        self._hdf5_attributes = collections.OrderedDict(
+            (self._remove_nexus_annotations(key), value)
+            for key, value in self._hdf5_attributes.items()
+        )
 
         # create the HDF5 file
         mode = 'r+b' if self.archive.m_context.raw_path_exists(self.filename) else 'wb'
