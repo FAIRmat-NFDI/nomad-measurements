@@ -243,10 +243,9 @@ class HDF5Handler:
         self.filename = filename
         self.archive = archive
         self.logger = logger
-
-        self.nexus = bool(nexus_dataset_map)
         self.nexus_dataset_map = nexus_dataset_map
 
+        self._nexus_generation_error = False
         self._hdf5_datasets = collections.OrderedDict()
         self._hdf5_attributes = collections.OrderedDict()
         self._hdf5_path_map = collections.OrderedDict()
@@ -371,11 +370,11 @@ class HDF5Handler:
         a NeXus file is created. Otherwise, an HDF5 file is created. If an error is
         encountered while creating the NeXus file, an HDF5 file is created instead.
         """
-        if self.nexus:
+        if self.nexus_dataset_map and not self._nexus_generation_error:
             try:
                 self._write_nx_file()
             except Exception as e:
-                self.nexus = False
+                self._nexus_generation_error = True
                 self.logger.warning(
                     f"""NeXusFileGenerationError: Encountered '{e}' error while creating
                     nexus file. Creating h5 file instead."""
