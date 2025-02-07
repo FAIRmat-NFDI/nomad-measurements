@@ -17,6 +17,7 @@
 #
 from typing import TYPE_CHECKING
 
+from nomad.datamodel.context import ServerContext
 from nomad.parsing import MatchingParser
 
 from nomad_measurements.transmission.schema import (
@@ -40,7 +41,9 @@ class TransmissionParser(MatchingParser):
     def parse(
         self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None
     ) -> None:
-        data_file = mainfile.split('/raw/', 1)[1]
+        data_file = mainfile.split('/')[-1]
+        if isinstance(archive.m_context, ServerContext):
+            data_file = mainfile.split('/raw/', 1)[1]
         entry = ELNUVVisNirTransmission.m_from_dict(
             ELNUVVisNirTransmission.m_def.a_template
         )
