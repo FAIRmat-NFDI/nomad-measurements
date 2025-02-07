@@ -316,25 +316,25 @@ class IntensityPlot(ArchiveSection):
             return
 
         hdf5_handler.add_dataset(
-            path=f'{prefix}/plot_intensity/two_theta',
+            path=f'{prefix}/intensity_plot/two_theta',
             dataset=Dataset(
                 data=f'{prefix}/two_theta',
-                archive_path='data.results[0].plot_intensity.two_theta',
+                archive_path='data.results[0].intensity_plot.two_theta',
                 internal_reference=True,
             ),
             validate_path=False,
         )
         hdf5_handler.add_dataset(
-            path=f'{prefix}/plot_intensity/intensity',
+            path=f'{prefix}/intensity_plot/intensity',
             dataset=Dataset(
                 data=f'{prefix}/intensity',
-                archive_path='data.results[0].plot_intensity.intensity',
+                archive_path='data.results[0].intensity_plot.intensity',
                 internal_reference=True,
             ),
             validate_path=False,
         )
         hdf5_handler.add_attribute(
-            path=f'{prefix}/plot_intensity',
+            path=f'{prefix}/intensity_plot',
             params=dict(
                 axes='two_theta',
                 signal='intensity',
@@ -351,16 +351,16 @@ class IntensityPlot(ArchiveSection):
             )
             if var_axis_data is not None:
                 hdf5_handler.add_dataset(
-                    path=f'{prefix}/plot_intensity/{var_axis}',
+                    path=f'{prefix}/intensity_plot/{var_axis}',
                     dataset=Dataset(
                         data=f'{prefix}/{var_axis}',
-                        archive_path=f'data.results[0].plot_intensity.{var_axis}',
+                        archive_path=f'data.results[0].intensity_plot.{var_axis}',
                         internal_reference=True,
                     ),
                     validate_path=False,
                 )
                 hdf5_handler.add_attribute(
-                    path=f'{prefix}/plot_intensity',
+                    path=f'{prefix}/intensity_plot',
                     params=dict(
                         axes=[var_axis, 'two_theta'],
                         signal='intensity',
@@ -430,25 +430,25 @@ class IntensityScatteringVectorPlot(ArchiveSection):
 
         if q_norm is not None:
             hdf5_handler.add_dataset(
-                path=f'{prefix}/plot_intensity_scattering_vector/intensity',
+                path=f'{prefix}/intensity_scattering_vector_plot/intensity',
                 dataset=Dataset(
                     data=f'{prefix}/intensity',
-                    archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
+                    archive_path='data.results[0].intensity_scattering_vector_plot.intensity',
                     internal_reference=True,
                 ),
                 validate_path=False,
             )
             hdf5_handler.add_dataset(
-                path=f'{prefix}/plot_intensity_scattering_vector/q_norm',
+                path=f'{prefix}/intensity_scattering_vector_plot/q_norm',
                 dataset=Dataset(
                     data=f'{prefix}/q_norm',
-                    archive_path='data.results[0].plot_intensity_scattering_vector.q_norm',
+                    archive_path='data.results[0].intensity_scattering_vector_plot.q_norm',
                     internal_reference=True,
                 ),
                 validate_path=False,
             )
             hdf5_handler.add_attribute(
-                path=f'{prefix}/plot_intensity_scattering_vector',
+                path=f'{prefix}/intensity_scattering_vector_plot',
                 params=dict(
                     axes='q_norm',
                     signal='intensity',
@@ -471,31 +471,31 @@ class IntensityScatteringVectorPlot(ArchiveSection):
                 fill_value=intensity.min(),
             )
             hdf5_handler.add_dataset(
-                path=f'{prefix}/plot_intensity_scattering_vector/q_parallel',
+                path=f'{prefix}/intensity_scattering_vector_plot/q_parallel',
                 dataset=Dataset(
                     data=x_regular,
-                    archive_path='data.results[0].plot_intensity_scattering_vector.q_parallel',
+                    archive_path='data.results[0].intensity_scattering_vector_plot.q_parallel',
                 ),
                 validate_path=False,
             )
             hdf5_handler.add_dataset(
-                path=f'{prefix}/plot_intensity_scattering_vector/q_perpendicular',
+                path=f'{prefix}/intensity_scattering_vector_plot/q_perpendicular',
                 dataset=Dataset(
                     data=y_regular,
-                    archive_path='data.results[0].plot_intensity_scattering_vector.q_perpendicular',
+                    archive_path='data.results[0].intensity_scattering_vector_plot.q_perpendicular',
                 ),
                 validate_path=False,
             )
             hdf5_handler.add_dataset(
-                path=f'{prefix}/plot_intensity_scattering_vector/intensity',
+                path=f'{prefix}/intensity_scattering_vector_plot/intensity',
                 dataset=Dataset(
                     data=z_interpolated,
-                    archive_path='data.results[0].plot_intensity_scattering_vector.intensity',
+                    archive_path='data.results[0].intensity_scattering_vector_plot.intensity',
                 ),
                 validate_path=False,
             )
             hdf5_handler.add_attribute(
-                path=f'{prefix}/plot_intensity_scattering_vector',
+                path=f'{prefix}/intensity_scattering_vector_plot',
                 params=dict(
                     axes=['q_perpendicular', 'q_parallel'],
                     signal='intensity',
@@ -1042,8 +1042,8 @@ class XRDResult1DHDF5(XRDResult):
         description='Integration time per channel',
         shape=[],
     )
-    plot_intensity = SubSection(section_def=IntensityPlot)
-    plot_intensity_scattering_vector = SubSection(
+    intensity_plot = SubSection(section_def=IntensityPlot)
+    intensity_scattering_vector_plot = SubSection(
         section_def=IntensityScatteringVectorPlot
     )
 
@@ -1277,11 +1277,11 @@ class XRDResult1DHDF5(XRDResult):
                     archive_path='data.results[0].two_theta',
                 ),
             )
-            self.m_setdefault('plot_intensity_scattering_vector')
-            self.plot_intensity_scattering_vector.normalize(archive, logger)
+            self.m_setdefault('intensity_scattering_vector_plot')
+            self.intensity_scattering_vector_plot.normalize(archive, logger)
 
-        self.m_setdefault('plot_intensity')
-        self.plot_intensity.normalize(archive, logger)
+        self.m_setdefault('intensity_plot')
+        self.intensity_plot.normalize(archive, logger)
 
 
 class XRDResultRSMHDF5(XRDResult):
@@ -1341,8 +1341,8 @@ class XRDResultRSMHDF5(XRDResult):
         type=HDF5Reference,
         description='The scattering vector *Q_perpendicular* of the diffractogram',
     )
-    plot_intensity = SubSection(section_def=IntensityPlot)
-    plot_intensity_scattering_vector = SubSection(
+    intensity_plot = SubSection(section_def=IntensityPlot)
+    intensity_scattering_vector_plot = SubSection(
         section_def=IntensityScatteringVectorPlot
     )
 
@@ -1599,11 +1599,11 @@ class XRDResultRSMHDF5(XRDResult):
                     archive_path='data.results[0].q_perpendicular',
                 ),
             )
-            self.m_setdefault('plot_intensity_scattering_vector')
-            self.plot_intensity_scattering_vector.normalize(archive, logger)
+            self.m_setdefault('intensity_scattering_vector_plot')
+            self.intensity_scattering_vector_plot.normalize(archive, logger)
 
-        self.m_setdefault('plot_intensity')
-        self.plot_intensity.normalize(archive, logger)
+        self.m_setdefault('intensity_plot')
+        self.intensity_plot.normalize(archive, logger)
 
 
 class XRayDiffraction(Measurement):
@@ -1726,8 +1726,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         },
         a_h5web=H5WebAnnotation(
             paths=[
-                'results/0/plot_intensity',
-                'results/0/plot_intensity_scattering_vector',
+                'results/0/intensity_plot',
+                'results/0/intensity_scattering_vector_plot',
             ]
         ),
     )
