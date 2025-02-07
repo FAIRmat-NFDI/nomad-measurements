@@ -306,7 +306,7 @@ class HDF5Handler:
     ):
         """
         Add an attribute to the dataset or group at the given path. The attribute is
-        written lazily to the file when `write_file` method is called.
+        written to the file when `write_file` method is called.
 
         Args:
             path (str): The dataset or group path in the HDF5 file.
@@ -367,7 +367,9 @@ class HDF5Handler:
     def write_file(self):
         """
         Method for creating an auxiliary file to store big data arrays outside the
-        main archive file (e.g. HDF5, NeXus).
+        main archive file (e.g. NeXus, HDF5). If the `nexus_dataset_map` is provided,
+        a NeXus file is created. Otherwise, an HDF5 file is created. If an error is
+        encountered while creating the NeXus file, an HDF5 file is created instead.
         """
         if self.nexus:
             try:
@@ -386,9 +388,11 @@ class HDF5Handler:
 
     def _write_nx_file(self):
         """
-        Method for creating a NeXus file. Additional data from the archive is added
-        to the `hdf5_data_dict` before creating the nexus file. This provides a NeXus
-        view of the data in addition to storing array data.
+        Method for creating a NeXus file. The `nexus_dataset_map` is used to create the
+        NeXus file. The data is extracted from the archive and added to the NeXus file
+        based on the `nexus_dataset_map`. Additionally, the datasets and attributes
+        added to the handler are written to the file. If the dataset is an internal
+        reference, a link is created to the existing dataset in the NeXus file.
         """
 
         app_def = self.nexus_dataset_map.get('/ENTRY[entry]/definition')
@@ -434,9 +438,12 @@ class HDF5Handler:
             self.filename, allow_modify=True
         )
 
-    def _write_hdf5_file(self):  # noqa: PLR0912
+    def _write_hdf5_file(self):
         """
-        Method for creating an HDF5 file.
+        Method for creating an HDF5 file. Datasets and attributes added to the handler
+        are written to the file. If the dataset is an internal reference, a hard link is
+        created to the existing dataset in `.h5` file. The nexus annotations are removed
+        from the dataset paths before writing to the file.
         """
         if self.filename.endswith('.nxs'):
             self.filename = self.filename.replace('.nxs', '.h5')
@@ -595,6 +602,8 @@ class HDF5Handler:
 def resolve_path(section: 'ArchiveSection', path: str, logger: 'BoundLogger' = None):
     """
     Resolves the attribute path within the given NOMAD section.
+    For example, if the path is `data.results[0].intensity`, the method returns the
+    value of the `intensity` quantity in the `results` subsection of the `data` section.
 
     Args:
         section (ArchiveSection): The NOMAD section.
