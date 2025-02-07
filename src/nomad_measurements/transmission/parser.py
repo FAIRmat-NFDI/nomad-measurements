@@ -40,7 +40,7 @@ class TransmissionParser(MatchingParser):
     def parse(
         self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None
     ) -> None:
-        data_file = mainfile.split('/')[-1]
+        data_file = mainfile.split('/raw/', 1)[1]
         entry = ELNUVVisNirTransmission.m_from_dict(
             ELNUVVisNirTransmission.m_def.a_template
         )

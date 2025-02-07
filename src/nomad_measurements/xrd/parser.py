@@ -39,7 +39,7 @@ class XRDParser(MatchingParser):
     def parse(
         self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None
     ) -> None:
-        data_file = mainfile.split('/')[-1]
+        data_file = mainfile.split('/raw/', 1)[1]
         entry = ELNXRayDiffraction.m_from_dict(ELNXRayDiffraction.m_def.a_template)
         entry.data_file = data_file
         file_name = f'{"".join(data_file.split(".")[:-1])}.archive.json'
