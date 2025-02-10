@@ -1683,6 +1683,7 @@ class XRayDiffraction(Measurement):
     )
     results = Measurement.results.m_copy()
     results.section_def = XRDResult
+    hdf5_handler: HDF5Handler = None
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
@@ -1801,7 +1802,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
     )
-    hdf5_handler = None
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
         """
