@@ -306,13 +306,25 @@ class IntensityPlot(ArchiveSection):
         description='The chi range of the diffractogram',
     )
 
-    def normalize(self, archive, logger):
-        super().normalize(archive, logger)
+    def generate_hdf5_plots(self, hdf5_handler: HDF5Handler):
+        """
+        Add datasets and attributes to the HDF5 file for plotting the intensity over
+        available positions.
+
+        Args:
+            hdf5_handler (HDF5Handler): The handler for the HDF5 file.
+        """
         prefix = '/ENTRY[entry]/experiment_result'
-        try:
-            hdf5_handler = self.m_parent.m_parent.hdf5_handler
-            assert isinstance(hdf5_handler, HDF5Handler)
-        except (AttributeError, AssertionError):
+
+        intensity = hdf5_handler.read_dataset(
+            path='data.results[0].intensity',
+            is_archive_path=True,
+        )
+        two_theta = hdf5_handler.read_dataset(
+            path='data.results[0].two_theta',
+            is_archive_path=True,
+        )
+        if intensity is None or two_theta is None:
             return
 
         hdf5_handler.add_dataset(
@@ -402,14 +414,15 @@ class IntensityScatteringVectorPlot(ArchiveSection):
         description='The regularized grid of `q_perpendicular` range for plotting.',
     )
 
-    def normalize(self, archive, logger):
-        super().normalize(archive, logger)
+    def generate_hdf5_plots(self, hdf5_handler: HDF5Handler):
+        """
+        Add datasets and attributes to the HDF5 file for plotting the intensity over
+        scattering vector.
+
+        Args:
+            hdf5_handler (HDF5Handler): The handler for the HDF5 file.
+        """
         prefix = '/ENTRY[entry]/experiment_result'
-        try:
-            hdf5_handler = self.m_parent.m_parent.hdf5_handler
-            assert isinstance(hdf5_handler, HDF5Handler)
-        except (AttributeError, AssertionError):
-            return
 
         intensity = hdf5_handler.read_dataset(
             path='data.results[0].intensity',
@@ -427,6 +440,9 @@ class IntensityScatteringVectorPlot(ArchiveSection):
             path='data.results[0].q_perpendicular',
             is_archive_path=True,
         )
+
+        if intensity is None:
+            return
 
         if q_norm is not None:
             hdf5_handler.add_dataset(
@@ -1042,8 +1058,8 @@ class XRDResult1DHDF5(XRDResult):
         description='Integration time per channel',
         shape=[],
     )
-    intensity_plot = SubSection(section_def=IntensityPlot)
-    intensity_scattering_vector_plot = SubSection(
+    intensity_plot: IntensityPlot = SubSection(section_def=IntensityPlot)
+    intensity_scattering_vector_plot: IntensityScatteringVectorPlot = SubSection(
         section_def=IntensityScatteringVectorPlot
     )
 
@@ -1236,12 +1252,13 @@ class XRDResult1DHDF5(XRDResult):
             else:
                 self.name = 'XRD Scan Result'
 
-        try:
-            hdf5_handler = self.m_parent.hdf5_handler
-            assert isinstance(hdf5_handler, HDF5Handler)
-        except (AttributeError, AssertionError):
-            return
+    def calculate_scattering_vectors(self, hdf5_handler: HDF5Handler):
+        """
+        Calculate the scattering vector norm and add to the HDF5 handler.
 
+        Args:
+            hdf5_handler (HDF5Handler): A handler for the HDF5 file.
+        """
         intensity = hdf5_handler.read_dataset(
             path='data.results[0].intensity',
             is_archive_path=True,
@@ -1277,11 +1294,21 @@ class XRDResult1DHDF5(XRDResult):
                     archive_path='data.results[0].two_theta',
                 ),
             )
-            self.m_setdefault('intensity_scattering_vector_plot')
-            self.intensity_scattering_vector_plot.normalize(archive, logger)
 
+    def generate_hdf5_plots(self, hdf5_handler: HDF5Handler):
+        """
+        Initializes sections to generate the plots for intensity over position and
+        scattering vectors.
+
+        Args:
+            hdf5_handler (HDF5Handler): The handler for the HDF5 file.
+        """
         self.m_setdefault('intensity_plot')
-        self.intensity_plot.normalize(archive, logger)
+        self.intensity_plot.generate_hdf5_plots(hdf5_handler)
+
+        if self.source_peak_wavelength is not None:
+            self.m_setdefault('intensity_scattering_vector_plot')
+            self.intensity_scattering_vector_plot.generate_hdf5_plots(hdf5_handler)
 
 
 class XRDResultRSMHDF5(XRDResult):
@@ -1341,8 +1368,8 @@ class XRDResultRSMHDF5(XRDResult):
         type=HDF5Reference,
         description='The scattering vector *Q_perpendicular* of the diffractogram',
     )
-    intensity_plot = SubSection(section_def=IntensityPlot)
-    intensity_scattering_vector_plot = SubSection(
+    intensity_plot: IntensityPlot = SubSection(section_def=IntensityPlot)
+    intensity_scattering_vector_plot: IntensityScatteringVectorPlot = SubSection(
         section_def=IntensityScatteringVectorPlot
     )
 
@@ -1550,12 +1577,13 @@ class XRDResultRSMHDF5(XRDResult):
         if self.name is None:
             self.name = 'RSM Scan Result'
 
-        try:
-            hdf5_handler = self.m_parent.hdf5_handler
-            assert isinstance(hdf5_handler, HDF5Handler)
-        except (AttributeError, AssertionError):
-            return
+    def calculate_scattering_vectors(self, hdf5_handler: HDF5Handler):
+        """
+        Calculate the scattering vectors for the RSM scan and add to the HDF5Handler.
 
+        Args:
+            hdf5_handler (HDF5Handler): The handler for the HDF5 file.
+        """
         intensity = hdf5_handler.read_dataset(
             path='data.results[0].intensity',
             is_archive_path=True,
@@ -1599,11 +1627,20 @@ class XRDResultRSMHDF5(XRDResult):
                     archive_path='data.results[0].q_perpendicular',
                 ),
             )
-            self.m_setdefault('intensity_scattering_vector_plot')
-            self.intensity_scattering_vector_plot.normalize(archive, logger)
 
+    def generate_hdf5_plots(self, hdf5_handler: HDF5Handler):
+        """
+        Initializes sections to generate the plots for intensity over position and
+        scattering vectors.
+
+        Args:
+            hdf5_handler (HDF5Handler): The handler for the HDF5 file.
+        """
         self.m_setdefault('intensity_plot')
-        self.intensity_plot.normalize(archive, logger)
+        self.intensity_plot.generate_hdf5_plots(hdf5_handler)
+        if self.source_peak_wavelength is not None:
+            self.m_setdefault('intensity_scattering_vector_plot')
+            self.intensity_scattering_vector_plot.generate_hdf5_plots(hdf5_handler)
 
 
 class XRayDiffraction(Measurement):
