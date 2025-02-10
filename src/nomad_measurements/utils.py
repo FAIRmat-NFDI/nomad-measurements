@@ -510,11 +510,14 @@ class HDF5Handler:
                 )
 
     def populate_nx_dataset_and_attribute(self, attr_dict: dict, dataset_dict: dict):
-        """Construct datasets and attributes for nexus and populate.
+        """
+        Extracts the data from the entry archive, according to the given map in
+        `nexus_dataset_map`and populates the given datasets and attributes dictionaries.
+        Skips the datasets and attributes that have been added to the handler.
 
-        The common hdf5 datasets and attributes will be extended with
-        nexus specific concepts which are not part of the common hdf5 file
-        such as `signal` attrubute of NXdata.
+        Args:
+            attr_dict (dict): The dictionary to store the attributes.
+            dataset_dict (dict): The dictionary to store the datasets.
         """
 
         for nx_path, arch_path in self.nexus_dataset_map.items():
