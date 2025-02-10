@@ -1716,24 +1716,30 @@ class XRayDiffraction(Measurement):
                 ),
             )
 
-        try:
-            hdf5_handler = self.hdf5_handler
-            assert isinstance(hdf5_handler, HDF5Handler)
-        except (AttributeError, AssertionError):
-            return
+        if self.hdf5_handler:
+            for result in self.results:
+                result.calculate_scattering_vectors(self.hdf5_handler)
+                result.generate_hdf5_plots(self.hdf5_handler)
+
         if not archive.results.properties.structural:
             diffraction_patterns = []
             for result in self.results:
-                intensity = hdf5_handler.read_dataset(
-                    'data.results[0].intensity', is_archive_path=True
-                )
-                if len(intensity.shape) == 1:
-                    two_theta = hdf5_handler.read_dataset(
+                if self.hdf5_handler:
+                    intensity = self.hdf5_handler.read_dataset(
+                        'data.results[0].intensity', is_archive_path=True
+                    )
+                    two_theta = self.hdf5_handler.read_dataset(
                         'data.results[0].two_theta', is_archive_path=True
                     )
-                    q_norm = hdf5_handler.read_dataset(
+                    q_norm = self.hdf5_handler.read_dataset(
                         'data.results[0].q_norm', is_archive_path=True
                     )
+                else:
+                    intensity = result.intensity
+                    two_theta = result.two_theta
+                    q_norm = result.q_norm
+
+                if intensity is not None and len(intensity.shape) == 1:
                     diffraction_patterns.append(
                         DiffractionPattern(
                             incident_beam_wavelength=result.source_peak_wavelength,
