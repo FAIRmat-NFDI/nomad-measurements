@@ -1685,7 +1685,7 @@ class XRayDiffraction(Measurement):
     results.section_def = XRDResult
     hdf5_handler: HDF5Handler = None
 
-    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):  # noqa: PLR0912
         """
         The normalize function of the `XRayDiffraction` section.
 

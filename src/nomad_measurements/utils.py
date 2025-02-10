@@ -15,10 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import collections
 import copy
 import os.path
 import re
+from collections import OrderedDict
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -246,9 +246,9 @@ class HDF5Handler:
         self.nexus_dataset_map = nexus_dataset_map
 
         self._nexus_generation_error = False
-        self._hdf5_datasets = collections.OrderedDict()
-        self._hdf5_attributes = collections.OrderedDict()
-        self._hdf5_path_map = collections.OrderedDict()
+        self._hdf5_datasets: OrderedDict[str, Dataset] = OrderedDict()
+        self._hdf5_attributes: OrderedDict[str, dict] = OrderedDict()
+        self._hdf5_path_map: OrderedDict[str, str] = OrderedDict()
 
     def add_dataset(
         self,
@@ -324,7 +324,12 @@ class HDF5Handler:
 
         Args:
             path (str): The dataset path in the HDF5 file.
-            is_archive_path (bool): If True, the path is resolved from the archive path.
+            is_archive_path (bool): If True, the given path is assumed to be the archive
+                path of quantity in the entry archive. It returns the dataset that was
+                added to the handler with the same archive path. For example, if a
+                dataset with the archive path `data.results[0].intensity` was added
+                previously and the same path is queried in this method, the HDF5
+                path will be resolved automatically and the dataset will be returned.
         """
         if path is None:
             return
@@ -449,11 +454,11 @@ class HDF5Handler:
         if not self._hdf5_datasets and not self._hdf5_attributes:
             return
         # remove the nexus annotations from the dataset paths if any
-        self._hdf5_datasets = collections.OrderedDict(
+        self._hdf5_datasets = OrderedDict(
             (self._remove_nexus_annotations(key), value)
             for key, value in self._hdf5_datasets.items()
         )
-        self._hdf5_attributes = collections.OrderedDict(
+        self._hdf5_attributes = OrderedDict(
             (self._remove_nexus_annotations(key), value)
             for key, value in self._hdf5_attributes.items()
         )
