@@ -17,6 +17,7 @@
 #
 from typing import TYPE_CHECKING
 
+from nomad.datamodel.context import ServerContext
 from nomad.parsing import MatchingParser
 
 from nomad_measurements.utils import create_archive
@@ -40,6 +41,8 @@ class XRDParser(MatchingParser):
         self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None
     ) -> None:
         data_file = mainfile.split('/')[-1]
+        if isinstance(archive.m_context, ServerContext):
+            data_file = mainfile.split('/raw/', 1)[1]
         entry = ELNXRayDiffraction.m_from_dict(ELNXRayDiffraction.m_def.a_template)
         entry.data_file = data_file
         file_name = f'{"".join(data_file.split(".")[:-1])}.archive.json'
