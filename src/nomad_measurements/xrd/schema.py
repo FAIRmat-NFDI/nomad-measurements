@@ -1221,22 +1221,6 @@ class XRDResult1DHDF5(XRDResult):
 
         return plots
 
-    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-        """
-        The normalize function of the `XRDResult` section.
-
-        Args:
-            archive (EntryArchive): The archive containing the section that is being
-            normalized.
-            logger (BoundLogger): A structlog logger.
-        """
-        super().normalize(archive, logger)
-        if self.name is None:
-            if self.scan_axis:
-                self.name = f'{self.scan_axis} Scan Result'
-            else:
-                self.name = 'XRD Scan Result'
-
     def calculate_scattering_vectors(self, hdf5_handler: HDF5Handler):
         """
         Calculate the scattering vector norm and add to the HDF5 handler.
@@ -1294,6 +1278,22 @@ class XRDResult1DHDF5(XRDResult):
         if self.source_peak_wavelength is not None:
             self.m_setdefault('intensity_scattering_vector_plot')
             self.intensity_scattering_vector_plot.generate_hdf5_plots(hdf5_handler)
+
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+        """
+        The normalize function of the `XRDResult` section.
+
+        Args:
+            archive (EntryArchive): The archive containing the section that is being
+            normalized.
+            logger (BoundLogger): A structlog logger.
+        """
+        super().normalize(archive, logger)
+        if self.name is None:
+            if self.scan_axis:
+                self.name = f'{self.scan_axis} Scan Result'
+            else:
+                self.name = 'XRD Scan Result'
 
 
 class XRDResultRSMHDF5(XRDResult):
@@ -1539,12 +1539,6 @@ class XRDResultRSMHDF5(XRDResult):
 
         return plots
 
-    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
-        super().normalize(archive, logger)
-
-        if self.name is None:
-            self.name = 'RSM Scan Result'
-
     def calculate_scattering_vectors(self, hdf5_handler: HDF5Handler):
         """
         Calculate the scattering vectors for the RSM scan and add to the HDF5Handler.
@@ -1609,6 +1603,12 @@ class XRDResultRSMHDF5(XRDResult):
         if self.source_peak_wavelength is not None:
             self.m_setdefault('intensity_scattering_vector_plot')
             self.intensity_scattering_vector_plot.generate_hdf5_plots(hdf5_handler)
+
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+        super().normalize(archive, logger)
+
+        if self.name is None:
+            self.name = 'RSM Scan Result'
 
 
 class XRayDiffraction(Measurement):
