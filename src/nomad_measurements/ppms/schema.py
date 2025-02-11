@@ -80,12 +80,16 @@ configuration = config.get_plugin_entry_point(
 
 
 class Sample(CompositeSystem):
-    name = Quantity(type=str, description='FILL')
-    type = Quantity(type=str, description='FILL')
-    material = Quantity(type=str, description='FILL')
-    comment = Quantity(type=str, description='FILL')
-    lead_separation = Quantity(type=str, description='FILL')
-    cross_section = Quantity(type=str, description='FILL')
+    name = Quantity(type=str, description='Name/ID of the sample')
+    type = Quantity(
+        type=str, description='Type of the sample, e.g. single crystal, device,...'
+    )
+    material = Quantity(type=str, description='Sample material/ chemical formula')
+    comment = Quantity(type=str, description='Any additional comments')
+    lead_separation = Quantity(type=str, description='Distance of the contact leads')
+    cross_section = Quantity(
+        type=str, description='Cross section through which the current flows'
+    )
 
 
 class PPMSMeasurement(Measurement):
@@ -111,8 +115,12 @@ class PPMSMeasurement(Measurement):
         a_eln=dict(component='FileEditQuantity'),
         a_browser=dict(adaptor='RawFileAdaptor'),
     )
-    file_open_time = Quantity(type=str, description='FILL')
-    software = Quantity(type=str, description='FILL')
+    file_open_time = Quantity(
+        type=str, description='Time, where the PPMS file was created'
+    )
+    software = Quantity(
+        type=str, description='PPMS software package used for the measurement'
+    )
 
     steps = SubSection(
         section_def=PPMSMeasurementStep,
