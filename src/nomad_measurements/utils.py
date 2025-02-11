@@ -352,17 +352,18 @@ class HDF5Handler:
             return value
 
         # find path in the HDF5 file
-        with h5py.File(self.archive.m_context.raw_file(self.filename, 'rb')) as h5:
-            if dataset_path not in h5:
-                self.logger.warning(f'Dataset "{dataset_path}" not found.')
-            else:
-                value = h5[dataset_path][...]
-                try:
-                    units = h5[dataset_path].attrs['units']
-                    value *= ureg(units)
-                except KeyError:
-                    pass
-            return value
+        if self.archive.m_context.raw_path_exists(self.filename):
+            with h5py.File(self.archive.m_context.raw_file(self.filename, 'rb')) as h5:
+                if dataset_path not in h5:
+                    self.logger.warning(f'Dataset "{dataset_path}" not found.')
+                else:
+                    value = h5[dataset_path][...]
+                    try:
+                        units = h5[dataset_path].attrs['units']
+                        value *= ureg(units)
+                    except KeyError:
+                        pass
+                return value
 
         return None
 
