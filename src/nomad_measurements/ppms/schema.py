@@ -30,9 +30,6 @@ from nomad.datamodel.metainfo.annotations import (
     SectionProperties,
 )
 from nomad.datamodel.metainfo.basesections import Measurement
-from nomad.datamodel.metainfo.eln import (
-    CompositeSystem,
-)
 from nomad.datamodel.metainfo.plot import PlotlyFigure, PlotSection
 from nomad.metainfo import (
     Quantity,
@@ -70,19 +67,6 @@ if TYPE_CHECKING:
 from nomad.metainfo import SchemaPackage
 
 m_package = SchemaPackage()
-
-
-class Sample(CompositeSystem):
-    name = Quantity(type=str, description='Name/ID of the sample')
-    type = Quantity(
-        type=str, description='Type of the sample, e.g. single crystal, device,...'
-    )
-    material = Quantity(type=str, description='Sample material/ chemical formula')
-    comment = Quantity(type=str, description='Any additional comments')
-    lead_separation = Quantity(type=str, description='Distance of the contact leads')
-    cross_section = Quantity(
-        type=str, description='Cross section through which the current flows'
-    )
 
 
 class PPMSMeasurement(Measurement):
