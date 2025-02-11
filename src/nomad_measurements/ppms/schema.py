@@ -236,6 +236,7 @@ class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
                     resistivity_ch2 = px.scatter(
                         x=data.magnetic_field, y=data.channels[1].resistance
                     )
+                    x_title = 'Magnetic field H (Oe)'
                 if data.measurement_type == 'temperature':
                     resistivity_ch1 = px.scatter(
                         x=data.temperature, y=data.channels[0].resistance
@@ -243,6 +244,7 @@ class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
                     resistivity_ch2 = px.scatter(
                         x=data.temperature, y=data.channels[1].resistance
                     )
+                    x_title = 'Temperature T (K)'
                 figure1 = make_subplots(rows=2, cols=1, shared_xaxes=True)
                 figure1.add_trace(resistivity_ch1.data[0], row=1, col=1)
                 figure1.add_trace(resistivity_ch2.data[0], row=2, col=1)
@@ -251,17 +253,23 @@ class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
                     title_text=data.name,
                     template='plotly_white',
                     dragmode='zoom',
-                    xaxis=dict(
+                    xaxis2=dict(
                         fixedrange=False,
                         autorange=True,
-                        # title='',
+                        title=x_title,
                         mirror='all',
                         showline=True,
                         gridcolor='#EAEDFC',
                     ),
                     yaxis=dict(
                         fixedrange=False,
-                        # title='',
+                        title='Resistance (Ohm)',
+                        tickfont=dict(color='#2A4CDF'),
+                        gridcolor='#EAEDFC',
+                    ),
+                    yaxis2=dict(
+                        fixedrange=False,
+                        title='Resistance (Ohm)',
                         tickfont=dict(color='#2A4CDF'),
                         gridcolor='#EAEDFC',
                     ),
@@ -321,6 +329,7 @@ class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
                     resistivity_ch2 = px.scatter(
                         x=data.magnetic_field, y=data.channels[1].resistivity
                     )
+                    x_title = 'Magnetic field H (Oe)'
                 if data.measurement_type == 'temperature':
                     resistivity_ch1 = px.scatter(
                         x=data.temperature, y=data.channels[0].resistivity
@@ -328,6 +337,7 @@ class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
                     resistivity_ch2 = px.scatter(
                         x=data.temperature, y=data.channels[1].resistivity
                     )
+                    x_title = 'Temperature T (K)'
                 figure1 = make_subplots(rows=2, cols=1, shared_xaxes=True)
                 figure1.add_trace(resistivity_ch1.data[0], row=1, col=1)
                 figure1.add_trace(resistivity_ch2.data[0], row=2, col=1)
@@ -336,17 +346,23 @@ class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
                     title_text=data.name,
                     template='plotly_white',
                     dragmode='zoom',
-                    xaxis=dict(
+                    xaxis2=dict(
                         fixedrange=False,
                         autorange=True,
-                        # title='',
+                        title=x_title,
                         mirror='all',
                         showline=True,
                         gridcolor='#EAEDFC',
                     ),
                     yaxis=dict(
                         fixedrange=False,
-                        # title='',
+                        title='Resistivity (Ohm/cm)',
+                        tickfont=dict(color='#2A4CDF'),
+                        gridcolor='#EAEDFC',
+                    ),
+                    yaxis2=dict(
+                        fixedrange=False,
+                        title='Resistivity (Ohm/cm)',
                         tickfont=dict(color='#2A4CDF'),
                         gridcolor='#EAEDFC',
                     ),
@@ -430,17 +446,29 @@ class PPMSACMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
                     title_text=data.name,
                     template='plotly_white',
                     dragmode='zoom',
-                    xaxis=dict(
+                    xaxis3=dict(
                         fixedrange=False,
                         autorange=True,
-                        # title='',
+                        title='Frequency (Hz)',
                         mirror='all',
                         showline=True,
                         gridcolor='#EAEDFC',
                     ),
                     yaxis=dict(
                         fixedrange=False,
-                        # title='',
+                        title='Moment (emu)',
+                        tickfont=dict(color='#2A4CDF'),
+                        gridcolor='#EAEDFC',
+                    ),
+                    yaxis2=dict(
+                        fixedrange=False,
+                        title=' Derivative of moment (emu)',
+                        tickfont=dict(color='#2A4CDF'),
+                        gridcolor='#EAEDFC',
+                    ),
+                    yaxis3=dict(
+                        fixedrange=False,
+                        title='Second derivative of moment (emu)',
                         tickfont=dict(color='#2A4CDF'),
                         gridcolor='#EAEDFC',
                     ),
@@ -495,8 +523,10 @@ class PPMSMPMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
         for data in self.data:
             if data.measurement_type == 'field':
                 magnetization = px.scatter(x=data.magnetic_field, y=data.moment)
+                x_title = 'Magnetic field H (Oe)'
             if data.measurement_type == 'temperature':
                 magnetization = px.scatter(x=data.temperature, y=data.moment)
+                x_title = 'Temperature T (K)'
             figure1 = make_subplots(rows=1, cols=1, shared_xaxes=True)
             figure1.add_trace(magnetization.data[0], row=1, col=1)
             # figure1.update_layout(height=400, width=716, title_text=data.name)
@@ -507,14 +537,14 @@ class PPMSMPMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 xaxis=dict(
                     fixedrange=False,
                     autorange=True,
-                    # title='',
+                    title=x_title,
                     mirror='all',
                     showline=True,
                     gridcolor='#EAEDFC',
                 ),
                 yaxis=dict(
                     fixedrange=False,
-                    # title='',
+                    title='Magnetic moment (emu)',
                     tickfont=dict(color='#2A4CDF'),
                     gridcolor='#EAEDFC',
                 ),
@@ -574,6 +604,7 @@ class PPMSResistivityMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 resistivity_ch2 = px.scatter(
                     x=data.magnetic_field, y=data.bridge_2_resistivity
                 )
+                x_title = 'Magnetic field H (Oe)'
             if data.measurement_type == 'temperature':
                 resistivity_ch1 = px.scatter(
                     x=data.temperature, y=data.bridge_1_resistivity
@@ -581,6 +612,7 @@ class PPMSResistivityMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 resistivity_ch2 = px.scatter(
                     x=data.temperature, y=data.bridge_2_resistivity
                 )
+                x_title = 'Temperature T (K)'
             figure1 = make_subplots(rows=2, cols=1, shared_xaxes=True)
             figure1.add_trace(resistivity_ch1.data[0], row=1, col=1)
             figure1.add_trace(resistivity_ch2.data[0], row=2, col=1)
@@ -589,17 +621,23 @@ class PPMSResistivityMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 title_text=data.name,
                 template='plotly_white',
                 dragmode='zoom',
-                xaxis=dict(
+                xaxis2=dict(
                     fixedrange=False,
                     autorange=True,
-                    # title='',
+                    title=x_title,
                     mirror='all',
                     showline=True,
                     gridcolor='#EAEDFC',
                 ),
                 yaxis=dict(
                     fixedrange=False,
-                    # title='',
+                    title='Resistivity (Ohm/cm)',
+                    tickfont=dict(color='#2A4CDF'),
+                    gridcolor='#EAEDFC',
+                ),
+                yaxis2=dict(
+                    fixedrange=False,
+                    title='Resistivity (Ohm/cm)',
                     tickfont=dict(color='#2A4CDF'),
                     gridcolor='#EAEDFC',
                 ),
