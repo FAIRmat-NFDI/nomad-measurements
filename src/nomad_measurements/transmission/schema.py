@@ -80,9 +80,6 @@ if TYPE_CHECKING:
     from nomad.datamodel.datamodel import EntryArchive
     from structlog.stdlib import BoundLogger
 
-from nomad.config import config
-
-configuration = config.get_plugin_entry_point('nomad_measurements.transmission:schema')
 
 m_package = SchemaPackage()
 
