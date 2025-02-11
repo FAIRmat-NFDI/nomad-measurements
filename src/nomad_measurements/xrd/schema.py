@@ -1063,7 +1063,7 @@ class XRDResult1DHDF5(XRDResult):
         section_def=IntensityScatteringVectorPlot
     )
 
-    def generate_plots(self):
+    def generate_plots(self, hdf5_handler: HDF5Handler):
         """
         Plot the 1D diffractogram.
 
@@ -1077,20 +1077,8 @@ class XRDResult1DHDF5(XRDResult):
         """
         plots = []
 
-        try:
-            hdf5_handler = self.m_parent.hdf5_handler
-            assert isinstance(hdf5_handler, HDF5Handler)
-        except (AttributeError, AssertionError):
-            return plots
-
-        two_theta = hdf5_handler.read_dataset(
-            path='data.results[0].two_theta',
-            is_archive_path=True,
-        )
-        intensity = hdf5_handler.read_dataset(
-            path='data.results[0].intensity',
-            is_archive_path=True,
-        )
+        two_theta = hdf5_handler.read_dataset(path='entry/experiment_result/two_theta')
+        intensity = hdf5_handler.read_dataset(path='entry/experiment_result/intensity')
         if two_theta is None or intensity is None:
             return plots
 
@@ -1181,10 +1169,7 @@ class XRDResult1DHDF5(XRDResult):
             )
         )
 
-        q_norm = hdf5_handler.read_dataset(
-            path='data.results[0].q_norm',
-            is_archive_path=True,
-        )
+        q_norm = hdf5_handler.read_dataset(path='entry/experiment_result/q_norm')
         if q_norm is None:
             return plots
 
@@ -1373,7 +1358,7 @@ class XRDResultRSMHDF5(XRDResult):
         section_def=IntensityScatteringVectorPlot
     )
 
-    def generate_plots(self):
+    def generate_plots(self, hdf5_handler: HDF5Handler):
         """
         Plot the 2D RSM diffractogram.
 
@@ -1387,24 +1372,9 @@ class XRDResultRSMHDF5(XRDResult):
         """
         plots = []
 
-        try:
-            hdf5_handler = self.m_parent.hdf5_handler
-            assert isinstance(hdf5_handler, HDF5Handler)
-        except (AttributeError, AssertionError):
-            return plots
-
-        two_theta = hdf5_handler.read_dataset(
-            path='data.results[0].two_theta',
-            is_archive_path=True,
-        )
-        intensity = hdf5_handler.read_dataset(
-            path='data.results[0].intensity',
-            is_archive_path=True,
-        )
-        omega = hdf5_handler.read_dataset(
-            path='data.results[0].omega',
-            is_archive_path=True,
-        )
+        two_theta = hdf5_handler.read_dataset(path='entry/experiment_result/two_theta')
+        intensity = hdf5_handler.read_dataset(path='entry/experiment_result/intensity')
+        omega = hdf5_handler.read_dataset(path='entry/experiment_result/omega')
         if two_theta is None or intensity is None or omega is None:
             return plots
 
@@ -1481,12 +1451,10 @@ class XRDResultRSMHDF5(XRDResult):
 
         # Plot for RSM in Q-vectors
         q_parallel = hdf5_handler.read_dataset(
-            path='data.results[0].q_parallel',
-            is_archive_path=True,
+            path='entry/experiment_result/q_parallel',
         )
         q_perpendicular = hdf5_handler.read_dataset(
-            path='data.results[0].q_perpendicular',
-            is_archive_path=True,
+            path='entry/experiment_result/q_perpendicular',
         )
         if q_parallel is not None and q_perpendicular is not None:
             x = q_parallel.to('1/angstrom').magnitude.flatten()
