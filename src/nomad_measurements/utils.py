@@ -390,7 +390,16 @@ class HDF5Handler:
         else:
             self._write_hdf5_file()
 
-        self.set_hdf5_references()
+        # set the HDF5 references in the archive
+        for key, value in self._hdf5_datasets.items():
+            if value.archive_path:
+                reference = self._remove_nexus_annotations(key)
+                self._set_hdf5_reference(
+                    self.archive,
+                    value.archive_path,
+                    f'/uploads/{self.archive.m_context.upload_id}/raw'
+                    f'/{self.filename}#{reference}',
+                )
 
     def _write_nx_file(self):
         """
@@ -501,20 +510,6 @@ class HDF5Handler:
                     h5[key].attrs.update(value)
                 else:
                     self.logger.warning(f'Path "{key}" not found to add attribute.')
-
-    def set_hdf5_references(self):
-        """
-        Method for adding the HDF5 references to the archive quantities.
-        """
-        for key, value in self._hdf5_datasets.items():
-            if value.archive_path:
-                reference = self._remove_nexus_annotations(key)
-                self._set_hdf5_reference(
-                    self.archive,
-                    value.archive_path,
-                    f'/uploads/{self.archive.m_context.upload_id}/raw'
-                    f'/{self.filename}#{reference}',
-                )
 
     def populate_nx_dataset_and_attribute(self, attr_dict: dict, dataset_dict: dict):
         """
