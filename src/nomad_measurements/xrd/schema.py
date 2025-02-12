@@ -1701,6 +1701,20 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         label='X-Ray Diffraction (XRD)',
         a_eln=ELNAnnotation(
             lane_width='800px',
+            properties=SectionProperties(
+                order=[
+                    'name',
+                    'datetime',
+                    'data_file',
+                    'diffraction_method_name',
+                    'lab_id',
+                    'location',
+                    'auxiliary_file',
+                    'nexus_results',
+                    'overwrite_auxiliary_file',
+                    'description',
+                ]
+            ),
         ),
         a_template={
             'measurement_identifiers': {},
@@ -1719,6 +1733,13 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             component=ELNComponentEnum.FileEditQuantity,
         ),
     )
+    measurement_identifiers = SubSection(
+        section_def=ReadableIdentifiers,
+    )
+    diffraction_method_name = XRayDiffraction.diffraction_method_name.m_copy()
+    diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
+        component=ELNComponentEnum.EnumEditQuantity,
+    )
     auxiliary_file = Quantity(
         type=str,
         description='Auxiliary file (like .h5 or .nxs) containing the entry data.',
@@ -1726,24 +1747,17 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             component=ELNComponentEnum.FileEditQuantity,
         ),
     )
+    nexus_results = Quantity(
+        type=ArchiveSection,
+        description='Reference to the NeXus entry.',
+        a_eln=ELNAnnotation(component=ELNComponentEnum.ReferenceEditQuantity),
+    )
     overwrite_auxiliary_file = Quantity(
         type=bool,
         description='Overwrite the auxiliary file with the current data.',
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.BoolEditQuantity,
         ),
-    )
-    nexus_results = Quantity(
-        type=ArchiveSection,
-        description='Reference to the NeXus entry.',
-        a_eln=ELNAnnotation(component=ELNComponentEnum.ReferenceEditQuantity),
-    )
-    measurement_identifiers = SubSection(
-        section_def=ReadableIdentifiers,
-    )
-    diffraction_method_name = XRayDiffraction.diffraction_method_name.m_copy()
-    diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
-        component=ELNComponentEnum.EnumEditQuantity,
     )
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
