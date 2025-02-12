@@ -344,12 +344,16 @@ class HDF5Handler:
         # find path in the HDF5 file
         if self.archive.m_context.raw_path_exists(self.filename):
             with h5py.File(self.archive.m_context.raw_file(self.filename, 'rb')) as h5:
-                if dataset_path not in h5:
-                    self.logger.warning(f'Dataset "{dataset_path}" not found.')
+                dataset_path_normalized = self._remove_nexus_annotations(dataset_path)
+                if dataset_path_normalized not in h5:
+                    self.logger.warning(
+                        f'Dataset "{dataset_path_normalized}" not found in '
+                        f'"{self.filename}".'
+                    )
                 else:
-                    value = h5[dataset_path][...]
+                    value = h5[dataset_path_normalized][...]
                     try:
-                        units = h5[dataset_path].attrs['units']
+                        units = h5[dataset_path_normalized].attrs['units']
                         value *= ureg(units)
                     except KeyError:
                         pass
@@ -452,11 +456,11 @@ class HDF5Handler:
         if not self._hdf5_datasets and not self._hdf5_attributes:
             return
         # remove the nexus annotations from the dataset paths if any
-        self._hdf5_datasets = OrderedDict(
+        hdf5_datasets_normalized = OrderedDict(
             (self._remove_nexus_annotations(key), value)
             for key, value in self._hdf5_datasets.items()
         )
-        self._hdf5_attributes = OrderedDict(
+        hdf5_attributes_normalized = OrderedDict(
             (self._remove_nexus_annotations(key), value)
             for key, value in self._hdf5_attributes.items()
         )
@@ -464,7 +468,7 @@ class HDF5Handler:
         # create the HDF5 file
         mode = 'r+b' if self.archive.m_context.raw_path_exists(self.filename) else 'wb'
         with h5py.File(self.archive.m_context.raw_file(self.filename, mode), 'a') as h5:
-            for key, value in self._hdf5_datasets.items():
+            for key, value in hdf5_datasets_normalized.items():
                 data = value.data
                 if value.internal_reference:
                     # resolve the internal reference
@@ -492,7 +496,7 @@ class HDF5Handler:
                         name=dataset_name,
                         data=data,
                     )
-            for key, value in self._hdf5_attributes.items():
+            for key, value in hdf5_attributes_normalized.items():
                 if key in h5:
                     h5[key].attrs.update(value)
                 else:
