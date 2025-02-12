@@ -1902,8 +1902,10 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         """
         Method for backward compatibility.
         """
-        # Migration to using HFD5References: removing exisiting results
-        if self.get('results'):
+        # Migration to using `HFD5Reference`: remove non-HDF5 results and plotly figures
+        if self.get('results') and isinstance(
+            self.results[0], (XRDResult1D, XRDResultRSM)
+        ):
             self.results = []
         if self.get('figures'):
             self.figures = []
