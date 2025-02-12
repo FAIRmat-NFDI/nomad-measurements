@@ -416,7 +416,7 @@ class HDF5Handler:
         generate_template_from_nxdl(nxdl_root, template)
         attr_dict = {}
         dataset_dict = {}
-        self.populate_nx_dataset_and_attribute(
+        self._populate_nx_dataset_and_attribute(
             attr_dict=attr_dict, dataset_dict=dataset_dict
         )
         for nx_path, dset_original in list(self._hdf5_datasets.items()) + list(
@@ -511,7 +511,7 @@ class HDF5Handler:
                 else:
                     self.logger.warning(f'Path "{key}" not found to add attribute.')
 
-    def populate_nx_dataset_and_attribute(self, attr_dict: dict, dataset_dict: dict):
+    def _populate_nx_dataset_and_attribute(self, attr_dict: dict, dataset_dict: dict):
         """
         Extracts the data from the entry archive, according to the given map in
         `nexus_dataset_map`and populates the given datasets and attributes dictionaries.
