@@ -250,7 +250,6 @@ class HDF5Handler:
         self._nexus_generation_error = False
         self._hdf5_datasets: OrderedDict[str, Dataset] = OrderedDict()
         self._hdf5_attributes: OrderedDict[str, dict] = OrderedDict()
-        self._hdf5_path_map: OrderedDict[str, str] = OrderedDict()
 
     def add_dataset(
         self,
@@ -297,8 +296,6 @@ class HDF5Handler:
             dataset.data = dataset.data.magnitude
 
         self._hdf5_datasets[path] = dataset
-        if dataset.archive_path:
-            self._hdf5_path_map[dataset.archive_path] = path
 
     def add_attribute(
         self,
@@ -318,7 +315,7 @@ class HDF5Handler:
             return
         self._hdf5_attributes[path] = params
 
-    def read_dataset(self, path: str, is_archive_path: bool = False):
+    def read_dataset(self, path: str):
         """
         Returns the dataset at the given path. If the quantity has `units` as an
         attribute, the method tries to returns a `pint.Quantity`.
@@ -327,19 +324,9 @@ class HDF5Handler:
 
         Args:
             path (str): The dataset path in the HDF5 file.
-            is_archive_path (bool): If True, the given path is assumed to be the archive
-                path of quantity in the entry archive. It returns the dataset that was
-                added to the handler with the same archive path. For example, if a
-                dataset with the archive path `data.results[0].intensity` was added
-                previously and the same path is queried in this method, the HDF5
-                path will be resolved automatically and the dataset will be returned.
         """
         if path is None:
             return
-        if is_archive_path and path in self._hdf5_path_map:
-            path = self._hdf5_path_map[path]
-            if path is None:
-                return
         if '#' not in path:
             dataset_path = path
         else:
