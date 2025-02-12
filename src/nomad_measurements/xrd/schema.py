@@ -316,14 +316,8 @@ class IntensityPlot(ArchiveSection):
         """
         prefix = '/ENTRY[entry]/experiment_result'
 
-        intensity = hdf5_handler.read_dataset(
-            path='data.results[0].intensity',
-            is_archive_path=True,
-        )
-        two_theta = hdf5_handler.read_dataset(
-            path='data.results[0].two_theta',
-            is_archive_path=True,
-        )
+        intensity = hdf5_handler.read_dataset(path=f'{prefix}/intensity')
+        two_theta = hdf5_handler.read_dataset(path=f'{prefix}/two_theta')
         if intensity is None or two_theta is None:
             return
 
@@ -358,8 +352,7 @@ class IntensityPlot(ArchiveSection):
 
         for var_axis in ['omega', 'phi', 'chi']:
             var_axis_data = hdf5_handler.read_dataset(
-                path=f'data.results[0].{var_axis}',
-                is_archive_path=True,
+                path=f'/ENTRY[entry]/experiment_result/{var_axis}'
             )
             if var_axis_data is not None:
                 hdf5_handler.add_dataset(
@@ -424,22 +417,10 @@ class IntensityScatteringVectorPlot(ArchiveSection):
         """
         prefix = '/ENTRY[entry]/experiment_result'
 
-        intensity = hdf5_handler.read_dataset(
-            path='data.results[0].intensity',
-            is_archive_path=True,
-        )
-        q_norm = hdf5_handler.read_dataset(
-            path='data.results[0].q_norm',
-            is_archive_path=True,
-        )
-        q_parallel = hdf5_handler.read_dataset(
-            path='data.results[0].q_parallel',
-            is_archive_path=True,
-        )
-        q_perpendicular = hdf5_handler.read_dataset(
-            path='data.results[0].q_perpendicular',
-            is_archive_path=True,
-        )
+        intensity = hdf5_handler.read_dataset(path=f'{prefix}/intensity')
+        q_norm = hdf5_handler.read_dataset(path=f'{prefix}/q_norm')
+        q_parallel = hdf5_handler.read_dataset(path=f'{prefix}/q_parallel')
+        q_perpendicular = hdf5_handler.read_dataset(path=f'{prefix}/q_perpendicular')
 
         if intensity is None:
             return
@@ -1229,20 +1210,17 @@ class XRDResult1DHDF5(XRDResult):
             hdf5_handler (HDF5Handler): A handler for the HDF5 file.
         """
         intensity = hdf5_handler.read_dataset(
-            path='data.results[0].intensity',
-            is_archive_path=True,
+            path='/ENTRY[entry]/experiment_result/intensity'
         )
         two_theta = hdf5_handler.read_dataset(
-            path='data.results[0].two_theta',
-            is_archive_path=True,
+            path='/ENTRY[entry]/experiment_result/two_theta'
         )
         if intensity is None or two_theta is None:
             return
 
         if self.source_peak_wavelength is not None:
             q_norm = hdf5_handler.read_dataset(
-                path='data.results[0].q_norm',
-                is_archive_path=True,
+                path='/ENTRY[entry]/experiment_result/q_norm'
             )
             q_norm, two_theta = calculate_two_theta_or_q(
                 wavelength=self.source_peak_wavelength,
@@ -1547,18 +1525,15 @@ class XRDResultRSMHDF5(XRDResult):
             hdf5_handler (HDF5Handler): The handler for the HDF5 file.
         """
         intensity = hdf5_handler.read_dataset(
-            path='data.results[0].intensity',
-            is_archive_path=True,
+            path='/ENTRY[entry]/experiment_result/intensity'
         )
         two_theta = hdf5_handler.read_dataset(
-            path='data.results[0].two_theta',
-            is_archive_path=True,
+            path='/ENTRY[entry]/experiment_result/two_theta'
         )
         var_axis = None
         for axis in ['omega', 'chi', 'phi']:
             axis_value = hdf5_handler.read_dataset(
-                path=f'data.results[0].{axis}',
-                is_archive_path=True,
+                path=f'/ENTRY[entry]/experiment_result/{axis}'
             )
             if axis_value is not None and len(np.unique(axis_value.magnitude)) > 1:
                 var_axis = axis
@@ -1571,8 +1546,7 @@ class XRDResultRSMHDF5(XRDResult):
                 wavelength=self.source_peak_wavelength,
                 two_theta=two_theta * np.ones_like(intensity),
                 omega=hdf5_handler.read_dataset(
-                    path=f'data.results[0].{var_axis}',
-                    is_archive_path=True,
+                    path=f'/ENTRY[entry]/experiment_result/{var_axis}'
                 ),
             )
             hdf5_handler.add_dataset(
@@ -1694,13 +1668,13 @@ class XRayDiffraction(Measurement):
             for result in self.results:
                 if self.hdf5_handler:
                     intensity = self.hdf5_handler.read_dataset(
-                        'data.results[0].intensity', is_archive_path=True
+                        '/ENTRY[entry]/experiment_result/intensity'
                     )
                     two_theta = self.hdf5_handler.read_dataset(
-                        'data.results[0].two_theta', is_archive_path=True
+                        '/ENTRY[entry]/experiment_result/two_theta'
                     )
                     q_norm = self.hdf5_handler.read_dataset(
-                        'data.results[0].q_norm', is_archive_path=True
+                        '/ENTRY[entry]/experiment_result/q_norm'
                     )
                 else:
                     intensity = result.intensity
