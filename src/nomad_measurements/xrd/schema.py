@@ -1658,11 +1658,6 @@ class XRayDiffraction(Measurement):
                 ),
             )
 
-        if self.hdf5_handler:
-            for result in self.results:
-                result.calculate_scattering_vectors(self.hdf5_handler)
-                result.generate_hdf5_plots(self.hdf5_handler)
-
         if not archive.results.properties.structural:
             diffraction_patterns = []
             for result in self.results:
@@ -1795,51 +1790,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             result = XRDResult1DHDF5()
         elif scan_type == 'rsm':
             result = XRDResultRSMHDF5()
-
         if result is not None:
             result.scan_axis = metadata_dict.get('scan_axis')
-            self.hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/intensity',
-                dataset=Dataset(
-                    data=xrd_dict.get('intensity'),
-                    archive_path='data.results[0].intensity',
-                ),
-            )
-            self.hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/two_theta',
-                dataset=Dataset(
-                    data=xrd_dict.get('2Theta'),
-                    archive_path='data.results[0].two_theta',
-                ),
-            )
-            self.hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/omega',
-                dataset=Dataset(
-                    data=xrd_dict.get('Omega'),
-                    archive_path='data.results[0].omega',
-                ),
-            )
-            self.hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/chi',
-                dataset=Dataset(
-                    data=xrd_dict.get('Chi'),
-                    archive_path='data.results[0].chi',
-                ),
-            )
-            self.hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/phi',
-                dataset=Dataset(
-                    data=xrd_dict.get('Phi'),
-                    archive_path='data.results[0].phi',
-                ),
-            )
-            self.hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_config/count_time',
-                dataset=Dataset(
-                    data=xrd_dict.get('countTime'),
-                    archive_path='data.results[0].integration_time',
-                ),
-            )
             result.normalize(archive, logger)
             results.append(result)
 
@@ -1919,16 +1871,62 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
 
         super().normalize(archive, logger)
 
-        if self.overwrite_auxiliary_file or not archive.m_context.raw_path_exists(
-            self.auxiliary_file
+        if (
+            not archive.m_context.raw_path_exists(self.auxiliary_file)
+            or not self.results[0].intensity
+            or self.overwrite_auxiliary_file
         ):
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/intensity',
+                dataset=Dataset(
+                    data=xrd_dict.get('intensity'),
+                    archive_path='data.results[0].intensity',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/two_theta',
+                dataset=Dataset(
+                    data=xrd_dict.get('2Theta'),
+                    archive_path='data.results[0].two_theta',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/omega',
+                dataset=Dataset(
+                    data=xrd_dict.get('Omega'),
+                    archive_path='data.results[0].omega',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/chi',
+                dataset=Dataset(
+                    data=xrd_dict.get('Chi'),
+                    archive_path='data.results[0].chi',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/phi',
+                dataset=Dataset(
+                    data=xrd_dict.get('Phi'),
+                    archive_path='data.results[0].phi',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_config/count_time',
+                dataset=Dataset(
+                    data=xrd_dict.get('countTime'),
+                    archive_path='data.results[0].integration_time',
+                ),
+            )
+            for result in self.results:
+                result.calculate_scattering_vectors(self.hdf5_handler)
+                result.generate_hdf5_plots(self.hdf5_handler)
+
             self.hdf5_handler.write_file()
             if self.hdf5_handler.filename != self.auxiliary_file:
                 self.auxiliary_file = self.hdf5_handler.filename
             # TODO (ka-sarthak): update the flag through the normalizer once it works.
             # self.overwrite_auxiliary_file = False
-        else:
-            self.hdf5_handler.set_hdf5_references()
 
         self.nexus_results = None
         if self.auxiliary_file.endswith('.nxs'):
