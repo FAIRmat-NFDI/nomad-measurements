@@ -18,6 +18,8 @@
 import pytest
 from nomad.client import normalize_all
 
+from nomad_measurements.xrd.schema import XRDResult1DHDF5
+
 test_files = [
     'tests/data/xrd/XRD-918-16_10.xrdml',
     'tests/data/xrd/m54313_om2th_10.xrdml',
@@ -29,11 +31,19 @@ test_files = [
     'tests/data/xrd/TwoTheta_scan_powder.rasx',
 ]
 log_levels = ['error', 'critical']
+clean_up_extensions = ['.archive.json', '.nxs', '.h5']
 
 
 @pytest.mark.parametrize(
     'parsed_measurement_archive, caplog',
-    [(file, log_level) for file in test_files for log_level in log_levels],
+    [
+        (
+            (file, clean_up_extensions),
+            log_level,
+        )
+        for file in test_files
+        for log_level in log_levels
+    ],
     indirect=True,
 )
 def test_normalize_all(parsed_measurement_archive, caplog):
@@ -52,7 +62,7 @@ def test_normalize_all(parsed_measurement_archive, caplog):
     assert parsed_measurement_archive.data.results[
         0
     ].source_peak_wavelength.magnitude == pytest.approx(1.540598, 1e-2)
-    if len(parsed_measurement_archive.data.results[0].intensity.shape) == 1:
+    if isinstance(parsed_measurement_archive.data.results[0], XRDResult1DHDF5):
         assert (
             parsed_measurement_archive.results.properties.structural.diffraction_pattern[
                 0
