@@ -195,14 +195,14 @@ class Dataset(BaseModel):
 
     data: Any = Field(
         description='The data to be stored in the HDF5 file. If `internal_reference` '
-        'is True, this should be the path to the existing dataset.'
+        'is True, this should be the path to a dataset already existing in the file.'
     )
     archive_path: Optional[str] = Field(
         None,
         description='If the provided dataset is to be referenced by a `HDF5Reference` '
         'quantity in a NOMAD entry archive, `archive_path` is the path to this '
         'quantity in the archive. '
-        'For example, "data.results[0].plot_intensity.intensity".',
+        'For example, "data.results[0].intensity".',
     )
     internal_reference: Optional[bool] = Field(
         False,
@@ -214,7 +214,9 @@ class Dataset(BaseModel):
 class HDF5Handler:
     """
     Class for handling the creation of auxiliary files (e.g. NeXus, HDF5) to store big
-    data arrays outside the main archive file.
+    data arrays outside the entry archive; only saving references to the datasets in
+    the entry archive. The handler can also be used to read the datasets from an
+    existing NeXus/HDF5 file.
     """
 
     def __init__(
@@ -234,8 +236,8 @@ class HDF5Handler:
             filename (str): The name of the auxiliary file.
             archive (EntryArchive): The NOMAD archive.
             logger (BoundLogger): A structlog logger.
-            nexus_dataset_map (dict): The NeXus dataset map containing the nexus file
-                dataset paths and the corresponding archive paths.
+            nexus_dataset_map (dict, optional): The NeXus dataset map containing the
+                nexus file dataset paths and the corresponding archive paths.
         """
         if not filename.endswith(('.nxs', '.h5')):
             raise ValueError('Only .nxs and .h5 files are supported.')
@@ -261,13 +263,13 @@ class HDF5Handler:
         `write_file` method is called. The `path` is validated against the
         `nexus_dataset_map` if provided before adding the data.
 
-        `dataset` should be an instance of the basemodel `Dataset`.
+        `dataset` should be an instance of the `nomad_measurements.utils.Dataset` class.
 
         Args:
             path (str): The dataset path to be used in the HDF5 file.
-            params (dict): The dataset parameters.
-            validate_path (bool): If `nexus_dataset_map` is provided to the handler,
-                the dataset path is validated against it.
+            dataset (Dataset): The dataset to be added.
+            validate_path (bool, optional): True by default. The dataset path is
+                validated against `nexus_dataset_map`, if provided.
         """
         if not dataset:
             self.logger.warning(f'No params provided for path "{path}". Skipping.')
@@ -319,8 +321,9 @@ class HDF5Handler:
     def read_dataset(self, path: str, is_archive_path: bool = False):
         """
         Returns the dataset at the given path. If the quantity has `units` as an
-        attribute, tries to returns a `pint.Quantity`.
-        If the dataset available in the `self._hdf5_datasets`, it is returned directly.
+        attribute, the method tries to returns a `pint.Quantity`.
+        If the dataset was added to the handler instance, it is returned from the
+        memory. Otherwise, it is read from the HDF5 file.
 
         Args:
             path (str): The dataset path in the HDF5 file.
@@ -370,7 +373,7 @@ class HDF5Handler:
     def write_file(self):
         """
         Method for creating an auxiliary file to store big data arrays outside the
-        main archive file (e.g. NeXus, HDF5). If the `nexus_dataset_map` is provided,
+        entry archive (e.g. NeXus, HDF5). If the `nexus_dataset_map` is provided,
         a NeXus file is created. Otherwise, an HDF5 file is created. If an error is
         encountered while creating the NeXus file, an HDF5 file is created instead.
         """
@@ -380,8 +383,8 @@ class HDF5Handler:
             except Exception as e:
                 self._nexus_generation_error = True
                 self.logger.warning(
-                    f"""NeXusFileGenerationError: Encountered '{e}' error while creating
-                    nexus file. Creating h5 file instead."""
+                    f'NeXusFileGenerationError: Encountered "{e}" error while creating '
+                    '.nxs file. Creating .h5 file instead.'
                 )
                 self._write_hdf5_file()
         else:
