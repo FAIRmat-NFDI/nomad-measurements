@@ -1209,6 +1209,8 @@ class XRDResult1DHDF5(XRDResult):
         Args:
             hdf5_handler (HDF5Handler): A handler for the HDF5 file.
         """
+        if hdf5_handler is None:
+            return
         intensity = hdf5_handler.read_dataset(
             path='/ENTRY[entry]/experiment_result/intensity'
         )
@@ -1250,6 +1252,8 @@ class XRDResult1DHDF5(XRDResult):
         Args:
             hdf5_handler (HDF5Handler): The handler for the HDF5 file.
         """
+        if hdf5_handler is None:
+            return
         self.m_setdefault('intensity_plot')
         self.intensity_plot.generate_hdf5_plots(hdf5_handler)
 
@@ -1524,6 +1528,8 @@ class XRDResultRSMHDF5(XRDResult):
         Args:
             hdf5_handler (HDF5Handler): The handler for the HDF5 file.
         """
+        if hdf5_handler is None:
+            return
         intensity = hdf5_handler.read_dataset(
             path='/ENTRY[entry]/experiment_result/intensity'
         )
@@ -1572,6 +1578,8 @@ class XRDResultRSMHDF5(XRDResult):
         Args:
             hdf5_handler (HDF5Handler): The handler for the HDF5 file.
         """
+        if hdf5_handler is None:
+            return
         self.m_setdefault('intensity_plot')
         self.intensity_plot.generate_hdf5_plots(hdf5_handler)
         if self.source_peak_wavelength is not None:
