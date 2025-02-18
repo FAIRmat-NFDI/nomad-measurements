@@ -1876,14 +1876,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             # normalizer works.
             # self.auxiliary_file = f'{self.data_file.rsplit(".", 1)[0]}.nxs'
             self.auxiliary_file = f'{self.data_file.rsplit(".", 1)[0]}.h5'
-            self.hdf5_handler = HDF5Handler(
-                filename=self.auxiliary_file,
-                archive=archive,
-                logger=logger,
-                # TODO (ka-sarthak): use nexus dataset map once updating the flag
-                # through the normalizer works.
-                # nexus_dataset_map=NEXUS_DATASET_MAP,
-            )
             read_function, write_function = self.get_read_write_functions()
             if read_function is None or write_function is None:
                 logger.warn(
@@ -1894,13 +1886,19 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                     xrd_dict = read_function(file.name, logger)
                 write_function(xrd_dict, archive, logger)
 
-        super().normalize(archive, logger)
-
-        if (
+        if self.auxiliary_file and (
             not archive.m_context.raw_path_exists(self.auxiliary_file)
             or not self.results[0].intensity
             or self.overwrite_auxiliary_file
         ):
+            self.hdf5_handler = HDF5Handler(
+                filename=self.auxiliary_file,
+                archive=archive,
+                logger=logger,
+                # TODO (ka-sarthak): use nexus dataset map once updating the flag
+                # through the normalizer works.
+                # nexus_dataset_map=NEXUS_DATASET_MAP,
+            )
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/intensity',
                 dataset=Dataset(
@@ -1952,15 +1950,17 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             # TODO (ka-sarthak): update the flag through the normalizer once it works.
             # self.overwrite_auxiliary_file = False
 
-        self.nexus_results = None
-        if self.auxiliary_file.endswith('.nxs'):
-            nx_entry_id = get_entry_id_from_file_name(
-                archive=archive, file_name=self.auxiliary_file
-            )
-            ref_to_nx_entry_data = get_reference(
-                archive.metadata.upload_id, nx_entry_id
-            )
-            self.nexus_results = f'{ref_to_nx_entry_data}'
+            self.nexus_results = None
+            if self.auxiliary_file.endswith('.nxs'):
+                nx_entry_id = get_entry_id_from_file_name(
+                    archive=archive, file_name=self.auxiliary_file
+                )
+                ref_to_nx_entry_data = get_reference(
+                    archive.metadata.upload_id, nx_entry_id
+                )
+                self.nexus_results = f'{ref_to_nx_entry_data}'
+        else:
+            super().normalize(archive, logger)
 
 
 class RawFileXRDData(EntryData):
