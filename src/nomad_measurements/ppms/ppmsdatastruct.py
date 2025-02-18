@@ -24,8 +24,8 @@ from nomad.datamodel.data import (
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
 )
-from nomad.datamodel.metainfo.eln import (
-    CompositeSystem,
+from nomad.datamodel.metainfo.basesections import (
+    CompositeSystemReference,
 )
 from nomad.metainfo import (
     MEnum,
@@ -35,7 +35,7 @@ from nomad.metainfo import (
 )
 
 
-class PPMSSample(CompositeSystem):
+class PPMSSample(ArchiveSection):
     name = Quantity(type=str, description='Name/ID of the sample')
     type = Quantity(
         type=str, description='Type of the sample, e.g. single crystal, device,...'
@@ -45,6 +45,10 @@ class PPMSSample(CompositeSystem):
     lead_separation = Quantity(type=str, description='Distance of the contact leads')
     cross_section = Quantity(
         type=str, description='Cross section through which the current flows'
+    )
+    sample = SubSection(
+        section_def=CompositeSystemReference,
+        description='Reference to the sample measured',
     )
 
 
