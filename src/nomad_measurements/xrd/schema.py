@@ -39,6 +39,7 @@ from nomad.datamodel.hdf5 import (
     HDF5Reference,
 )
 from nomad.datamodel.metainfo.annotations import (
+    BrowserAnnotation,
     ELNAnnotation,
     ELNComponentEnum,
     Filter,
@@ -1768,6 +1769,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.FileEditQuantity,
         ),
+        a_browser=BrowserAnnotation(adaptor='RawFileAdaptor'),
     )
     nexus_view = Quantity(
         type=ArchiveSection,
