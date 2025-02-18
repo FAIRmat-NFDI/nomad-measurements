@@ -1646,6 +1646,13 @@ class XRayDiffraction(Measurement):
                 if result.source_peak_wavelength is None:
                     result.source_peak_wavelength = self.xrd_settings.source.kalpha_one
                     result.normalize(archive, logger)
+
+        # calculate scattering vectors and add plots
+        for result in self.results:
+            if isinstance(result, (XRDResult1DHDF5, XRDResultRSMHDF5)):
+                result.calculate_scattering_vectors(self.hdf5_handler)
+                result.generate_hdf5_plots(self.hdf5_handler)
+
         if not archive.results:
             archive.results = Results()
         if not archive.results.properties:
@@ -1661,7 +1668,9 @@ class XRayDiffraction(Measurement):
         if not archive.results.properties.structural:
             diffraction_patterns = []
             for result in self.results:
-                if self.hdf5_handler:
+                if self.hdf5_handler and isinstance(
+                    result, (XRDResult1DHDF5, XRDResultRSMHDF5)
+                ):
                     intensity = self.hdf5_handler.read_dataset(
                         '/ENTRY[entry]/experiment_result/intensity'
                     )
@@ -1671,10 +1680,12 @@ class XRayDiffraction(Measurement):
                     q_norm = self.hdf5_handler.read_dataset(
                         '/ENTRY[entry]/experiment_result/q_norm'
                     )
-                else:
+                elif isinstance(result, (XRDResult1D, XRDResultRSM)):
                     intensity = result.intensity
                     two_theta = result.two_theta
                     q_norm = result.q_norm
+                else:
+                    intensity = two_theta = q_norm = None
 
                 if intensity is not None and len(intensity.shape) == 1:
                     diffraction_patterns.append(
@@ -1932,9 +1943,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                     archive_path='data.results[0].integration_time',
                 ),
             )
-            for result in self.results:
-                result.calculate_scattering_vectors(self.hdf5_handler)
-                result.generate_hdf5_plots(self.hdf5_handler)
+
+            super().normalize(archive, logger)
 
             self.hdf5_handler.write_file()
             if self.hdf5_handler.filename != self.auxiliary_file:
