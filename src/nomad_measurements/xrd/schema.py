@@ -1729,7 +1729,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                     'lab_id',
                     'location',
                     'auxiliary_file',
-                    'nexus_results',
+                    'nexus_view',
                     'overwrite_auxiliary_file',
                     'description',
                 ]
@@ -1766,7 +1766,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             component=ELNComponentEnum.FileEditQuantity,
         ),
     )
-    nexus_results = Quantity(
+    nexus_view = Quantity(
         type=ArchiveSection,
         description='Reference to the NeXus entry.',
         a_eln=ELNAnnotation(component=ELNComponentEnum.ReferenceEditQuantity),
@@ -1958,7 +1958,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             # TODO (ka-sarthak): update the flag through the normalizer once it works.
             # self.overwrite_auxiliary_file = False
 
-            self.nexus_results = None
+            self.nexus_view = None
             if self.auxiliary_file.endswith('.nxs'):
                 nx_entry_id = get_entry_id_from_file_name(
                     archive=archive, file_name=self.auxiliary_file
@@ -1966,7 +1966,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                 ref_to_nx_entry_data = get_reference(
                     archive.metadata.upload_id, nx_entry_id
                 )
-                self.nexus_results = f'{ref_to_nx_entry_data}'
+                self.nexus_view = f'{ref_to_nx_entry_data}'
         else:
             super().normalize(archive, logger)
 
