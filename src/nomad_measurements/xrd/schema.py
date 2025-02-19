@@ -22,7 +22,6 @@ from typing import (
 )
 
 import numpy as np
-import pint
 import plotly.express as px
 from fairmat_readers_xrd import (
     read_bruker_brml,
@@ -85,6 +84,7 @@ from nomad_measurements.utils import (
 # from nomad_measurements.xrd.nx import NEXUS_DATASET_MAP
 
 if TYPE_CHECKING:
+    import pint
     from nomad.datamodel.datamodel import (
         EntryArchive,
     )
@@ -97,10 +97,10 @@ m_package = SchemaPackage(aliases=['nomad_measurements.xrd.parser.parser'])
 
 
 def calculate_two_theta_or_q(
-    wavelength: pint.Quantity,
-    q: pint.Quantity = None,
-    two_theta: pint.Quantity = None,
-) -> tuple[pint.Quantity, pint.Quantity]:
+    wavelength: 'pint.Quantity',
+    q: 'pint.Quantity' = None,
+    two_theta: 'pint.Quantity' = None,
+) -> tuple['pint.Quantity', 'pint.Quantity']:
     """
     Calculate the two-theta array from the scattering vector (q) or vice-versa,
     given the wavelength of the X-ray source.
@@ -123,9 +123,9 @@ def calculate_two_theta_or_q(
 
 
 def calculate_q_vectors_rsm(
-    wavelength: pint.Quantity,
-    two_theta: pint.Quantity,
-    omega: pint.Quantity,
+    wavelength: 'pint.Quantity',
+    two_theta: 'pint.Quantity',
+    omega: 'pint.Quantity',
 ):
     """
     Calculate the q-vectors for RSM scans in coplanar configuration.
