@@ -29,6 +29,7 @@ from typing import (
 import h5py
 import numpy as np
 import pint
+from nomad.datamodel.context import ClientContext
 from nomad.datamodel.hdf5 import HDF5Reference
 from nomad.units import ureg
 from pydantic import BaseModel, Field
@@ -433,6 +434,11 @@ class HDF5Handler:
         nx_full_file_path = os.path.join(
             self.archive.m_context.raw_path(), self.filename
         )
+
+        if isinstance(self.archive.m_context, ClientContext):
+            nx_full_file_path = os.path.join(
+                self.archive.m_context.local_dir, self.filename
+            )
 
         pynxtools_writer(
             data=template, nxdl_f_path=nxdl_f_path, output_path=nx_full_file_path
