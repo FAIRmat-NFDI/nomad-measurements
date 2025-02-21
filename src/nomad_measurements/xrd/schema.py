@@ -80,7 +80,6 @@ from nomad_measurements.utils import (
     get_reference,
     merge_sections,
 )
-
 from nomad_measurements.xrd.nx import NEXUS_DATASET_MAP
 
 if TYPE_CHECKING:
