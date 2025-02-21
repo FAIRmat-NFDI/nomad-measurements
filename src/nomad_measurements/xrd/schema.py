@@ -81,7 +81,7 @@ from nomad_measurements.utils import (
     merge_sections,
 )
 
-# from nomad_measurements.xrd.nx import NEXUS_DATASET_MAP
+from nomad_measurements.xrd.nx import NEXUS_DATASET_MAP
 
 if TYPE_CHECKING:
     import pint
@@ -1881,22 +1881,26 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             logger (BoundLogger): A structlog logger.
         """
         self.backward_compatibility()
-        if self.data_file is not None:
-            # TODO (ka-sarthak): use .nxs file once updating the flag through the
-            # normalizer works.
-            # self.auxiliary_file = f'{self.data_file.rsplit(".", 1)[0]}.nxs'
-            self.auxiliary_file = f'{self.data_file.rsplit(".", 1)[0]}.h5'
-            read_function, write_function = self.get_read_write_functions()
-            if read_function is None or write_function is None:
-                logger.warn(
-                    f'No compatible reader found for the file: "{self.data_file}".'
-                )
-            else:
-                with archive.m_context.raw_file(self.data_file) as file:
-                    xrd_dict = read_function(file.name, logger)
-                write_function(xrd_dict, archive, logger)
+        if self.data_file is None:
+            super().normalize(archive, logger)
+            return
 
-        if self.auxiliary_file and (
+        read_function, write_function = self.get_read_write_functions()
+        if read_function is None or write_function is None:
+            logger.warn(f'No compatible reader found for the file: "{self.data_file}".')
+            super().normalize(archive, logger)
+            return
+        with archive.m_context.raw_file(self.data_file) as file:
+            xrd_dict = read_function(file.name, logger)
+        write_function(xrd_dict, archive, logger)
+
+        filename = self.data_file.rsplit('.', 1)[0]
+        self.auxiliary_file = (
+            f'{filename}.h5'
+            if archive.m_context.raw_path_exists(f'{filename}.h5')
+            else f'{filename}.nxs'
+        )
+        if (
             not archive.m_context.raw_path_exists(self.auxiliary_file)
             or not self.results[0].intensity
             or self.overwrite_auxiliary_file
@@ -1905,10 +1909,10 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                 filename=self.auxiliary_file,
                 archive=archive,
                 logger=logger,
-                # TODO (ka-sarthak): use nexus dataset map once updating the flag
-                # through the normalizer works.
-                # nexus_dataset_map=NEXUS_DATASET_MAP,
             )
+            if self.auxiliary_file.endswith('.nxs'):
+                self.hdf5_handler.nexus_dataset_map = NEXUS_DATASET_MAP
+
             self.hdf5_handler.add_dataset(
                 path='/ENTRY[entry]/experiment_result/intensity',
                 dataset=Dataset(
@@ -1951,24 +1955,21 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                     archive_path='data.results[0].integration_time',
                 ),
             )
-
             super().normalize(archive, logger)
 
             self.hdf5_handler.write_file()
             if self.hdf5_handler.filename != self.auxiliary_file:
                 self.auxiliary_file = self.hdf5_handler.filename
-            # TODO (ka-sarthak): update the flag through the normalizer once it works.
-            # self.overwrite_auxiliary_file = False
 
             self.nexus_view = None
             if self.auxiliary_file.endswith('.nxs'):
                 nx_entry_id = get_entry_id_from_file_name(
                     archive=archive, file_name=self.auxiliary_file
                 )
-                ref_to_nx_entry_data = get_reference(
-                    archive.metadata.upload_id, nx_entry_id
-                )
-                self.nexus_view = f'{ref_to_nx_entry_data}'
+                self.nexus_view = get_reference(archive.metadata.upload_id, nx_entry_id)
+
+            # TODO (ka-sarthak): update the flag through the normalizer once it works.
+            # self.overwrite_auxiliary_file = False
         else:
             super().normalize(archive, logger)
 
