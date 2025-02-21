@@ -23,6 +23,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Optional,
+    Union,
 )
 
 import h5py
@@ -315,7 +316,7 @@ class HDF5Handler:
             return
         self._hdf5_attributes[path] = params
 
-    def read_dataset(self, path: str):
+    def read_dataset(self, path: str) -> Union[np.ndarray, pint.Quantity, None]:
         """
         Returns the dataset at the given path. If the quantity has `units` as an
         attribute, the method tries to returns a `pint.Quantity`.
@@ -324,6 +325,9 @@ class HDF5Handler:
 
         Args:
             path (str): The dataset path in the HDF5 file.
+
+        Returns:
+            Union[np.ndarray, pint.Quantity, None]: The dataset or None if not found.
         """
         if path is None:
             return
@@ -332,34 +336,27 @@ class HDF5Handler:
         else:
             dataset_path = path.rsplit('#', 1)
 
-        # find path in the instance variables
         value = None
+
         if dataset_path in self._hdf5_datasets:
+            # find path in the instance variables
             value = self._hdf5_datasets[dataset_path].data
             if dataset_path in self._hdf5_attributes:
                 if units := self._hdf5_attributes[dataset_path].get('units'):
                     value *= ureg(units)
-            return value
-
-        # find path in the HDF5 file
-        if self.archive.m_context.raw_path_exists(self.filename):
+        elif self.archive.m_context.raw_path_exists(self.filename):
+            # find path in the HDF5 file
             with h5py.File(self.archive.m_context.raw_file(self.filename, 'rb')) as h5:
                 dataset_path_normalized = self._remove_nexus_annotations(dataset_path)
-                if dataset_path_normalized not in h5:
-                    self.logger.warning(
-                        f'Dataset "{dataset_path_normalized}" not found in '
-                        f'"{self.filename}".'
-                    )
-                else:
+                if dataset_path_normalized in h5:
                     value = h5[dataset_path_normalized][...]
                     try:
                         units = h5[dataset_path_normalized].attrs['units']
                         value *= ureg(units)
                     except KeyError:
                         pass
-                return value
 
-        return None
+        return value
 
     def write_file(self):
         """
