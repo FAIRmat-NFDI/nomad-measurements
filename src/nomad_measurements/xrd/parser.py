@@ -34,21 +34,43 @@ if TYPE_CHECKING:
 
 class XRDParser(MatchingParser):
     """
-    Parser for matching XRD files and creating instances of ELNXRayDiffraction
+    Parser for matching XRD files and creating instances of `ELNXRayDiffraction`.
+    An entry of type `RawFileXRDData` is created with the XRD file as the `mainfile`.
+    Additionally, an entry with type `ELNXRayDiffraction` is created that contains
+    the data extracted from the XRD file.
+
+    Extending this class:
+        Create a child class `SpecializedXRDParser(XRDParser)`.
+
+        To use a different measurement schema, override the `measurement_schema`
+        attribute:
+        ```
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.measurement_schema = SpecializedMeasurementSchema
+        ```
+
+        To add additional functionality, override the `parse` method:
+        ```
+        def parse(
+            self, mainfile, archive, logger=None, child_archives=None
+        ) -> None:
+            super().parse(mainfile, archive, logger, child_archives)
+            # Add additional functionality here
     """
 
-    def set_entrydata_definition(self):
-        self.entrydata_definition = ELNXRayDiffraction
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.measurement_schema = ELNXRayDiffraction
 
     def parse(
         self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None
     ) -> None:
-        self.set_entrydata_definition()
         data_file = mainfile.split('/')[-1]
         if isinstance(archive.m_context, ServerContext):
             data_file = mainfile.split('/raw/', 1)[1]
-        entry = self.entrydata_definition.m_from_dict(
-            self.entrydata_definition.m_def.a_template
+        entry = self.measurement_schema.m_from_dict(
+            self.measurement_schema.m_def.a_template
         )
         entry.data_file = data_file
         file_name = f'{"".join(data_file.split(".")[:-1])}.archive.json'
