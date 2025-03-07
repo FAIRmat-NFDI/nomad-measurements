@@ -41,14 +41,21 @@ from structlog.stdlib import (
 )
 
 from nomad_measurements.ppms.ppmsdatastruct import (
+    ACMSResult,
+    ACTResult,
+    ETOResult,
+    MPMSResult,
     PPMSData,
+    PPMSResult,
     PPMSSample,
+    ResistivityResult,
 )
 from nomad_measurements.ppms.ppmsfunctions import (
     find_ppms_steps_from_sequence,
     get_acms_ppms_steps_from_data,
     get_fileopentime,
     get_ppms_steps_from_data,
+    make_results,
     split_ppms_data_acms,
     split_ppms_data_act,
     split_ppms_data_eto,
@@ -110,6 +117,12 @@ class PPMSMeasurement(Measurement):
         type=str,
         a_eln=dict(component='FileEditQuantity'),
         a_browser=dict(adaptor='RawFileAdaptor'),
+    )
+
+    results = SubSection(
+        section_def=PPMSResult,
+        description='The result of the PPMS measurement.',
+        repeats=True,
     )
 
     # Additional parameters for separating the measurements
@@ -224,26 +237,30 @@ class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
 
             self.data = split_ppms_data_eto(data_df, runs_list)
 
+            result_dict = {
+                'temperature': 'temperature',
+                'magnetic_field': 'magnetic_field',
+                'channels[0].resistance': 'resistance0',
+                'channels[1].resistance': 'resistance1',
+            }
+            self.results = make_results(ETOResult, result_dict, self.data)
+
             # Now create the according plots
             import plotly.express as px
             from plotly.subplots import make_subplots
 
-            for data in self.data:
+            for data in self.results:
                 if data.measurement_type == 'field':
                     resistivity_ch1 = px.scatter(
-                        x=data.magnetic_field, y=data.channels[0].resistance
+                        x=data.magnetic_field, y=data.resistance0
                     )
                     resistivity_ch2 = px.scatter(
-                        x=data.magnetic_field, y=data.channels[1].resistance
+                        x=data.magnetic_field, y=data.resistance1
                     )
                     x_title = 'Magnetic field H (Oe)'
                 if data.measurement_type == 'temperature':
-                    resistivity_ch1 = px.scatter(
-                        x=data.temperature, y=data.channels[0].resistance
-                    )
-                    resistivity_ch2 = px.scatter(
-                        x=data.temperature, y=data.channels[1].resistance
-                    )
+                    resistivity_ch1 = px.scatter(x=data.temperature, y=data.resistance0)
+                    resistivity_ch2 = px.scatter(x=data.temperature, y=data.resistance1)
                     x_title = 'Temperature T (K)'
                 figure1 = make_subplots(rows=2, cols=1, shared_xaxes=True)
                 figure1.add_trace(resistivity_ch1.data[0], row=1, col=1)
@@ -317,25 +334,34 @@ class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
 
             self.data = split_ppms_data_act(data_df, runs_list)
 
+            result_dict = {
+                'temperature': 'temperature',
+                'magnetic_field': 'magnetic_field',
+                'channels[0].resistivity': 'resistivity0',
+                'channels[1].resistivity': 'resistivity1',
+            }
+
+            self.results = make_results(ACTResult, result_dict, self.data)
+
             # Now create the according plots
             import plotly.express as px
             from plotly.subplots import make_subplots
 
-            for data in self.data:
+            for data in self.results:
                 if data.measurement_type == 'field':
                     resistivity_ch1 = px.scatter(
-                        x=data.magnetic_field, y=data.channels[0].resistivity
+                        x=data.magnetic_field, y=data.resistivity0
                     )
                     resistivity_ch2 = px.scatter(
-                        x=data.magnetic_field, y=data.channels[1].resistivity
+                        x=data.magnetic_field, y=data.resistivity1
                     )
                     x_title = 'Magnetic field H (Oe)'
                 if data.measurement_type == 'temperature':
                     resistivity_ch1 = px.scatter(
-                        x=data.temperature, y=data.channels[0].resistivity
+                        x=data.temperature, y=data.resistivity0
                     )
                     resistivity_ch2 = px.scatter(
-                        x=data.temperature, y=data.channels[1].resistivity
+                        x=data.temperature, y=data.resistivity1
                     )
                     x_title = 'Temperature T (K)'
                 figure1 = make_subplots(rows=2, cols=1, shared_xaxes=True)
@@ -424,11 +450,23 @@ class PPMSACMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
             logger.info('Parsing ACMS measurement.')
             self.data = split_ppms_data_acms(data_df, runs_list)
 
+            result_dict = {
+                'temperature': 'temperature',
+                'magnetic_field': 'magnetic_field',
+                'excitation': 'excitation',
+                'frequency': 'frequency',
+                'moment': 'moment',
+                'moment_derivative': 'moment_derivative',
+                'moment_second_derivative': 'moment_second_derivative',
+            }
+
+            self.results = make_results(ACMSResult, result_dict, self.data)
+
             # Now create the according plots
             import plotly.express as px
             from plotly.subplots import make_subplots
 
-            for data in self.data:
+            for data in self.results:
                 if data.measurement_type == 'frequency':
                     moment = px.scatter(x=data.frequency, y=data.moment)
                     moment_derivative = px.scatter(
@@ -516,11 +554,19 @@ class PPMSMPMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
 
             self.data = split_ppms_data_mpms(data_df, runs_list)
 
+            result_dict = {
+                'temperature': 'temperature',
+                'magnetic_field': 'magnetic_field',
+                'moment': 'moment',
+            }
+
+            self.results = make_results(MPMSResult, result_dict, self.data)
+
         # Now create the according plots
         import plotly.express as px
         from plotly.subplots import make_subplots
 
-        for data in self.data:
+        for data in self.results:
             if data.measurement_type == 'field':
                 magnetization = px.scatter(x=data.magnetic_field, y=data.moment)
                 x_title = 'Magnetic field H (Oe)'
@@ -592,11 +638,20 @@ class PPMSResistivityMeasurement(PPMSMeasurement, PlotSection, EntryData):
 
             self.data = split_ppms_data_resistivity(data_df, runs_list)
 
+            result_dict = {
+                'temperature': 'temperature',
+                'magnetic_field': 'magnetic_field',
+                'bridge_1_resistivity': 'bridge_1_resistivity',
+                'bridge_2_resistivity': 'bridge_2_resistivity',
+            }
+
+            self.results = make_results(ResistivityResult, result_dict, self.data)
+
         # Now create the according plots
         import plotly.express as px
         from plotly.subplots import make_subplots
 
-        for data in self.data:
+        for data in self.results:
             if data.measurement_type == 'field':
                 resistivity_ch1 = px.scatter(
                     x=data.magnetic_field, y=data.bridge_1_resistivity

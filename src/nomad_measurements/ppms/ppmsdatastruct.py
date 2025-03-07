@@ -26,6 +26,7 @@ from nomad.datamodel.metainfo.annotations import (
 )
 from nomad.datamodel.metainfo.basesections import (
     CompositeSystemReference,
+    MeasurementResult,
 )
 from nomad.metainfo import (
     MEnum,
@@ -49,6 +50,138 @@ class PPMSSample(ArchiveSection):
     sample = SubSection(
         section_def=CompositeSystemReference,
         description='Reference to the sample measured',
+    )
+
+
+class PPMSResult(MeasurementResult):
+    """
+    Section for the results of a generic PPMS measurement
+    """
+
+    temperature = Quantity(
+        type=np.dtype(np.float64),
+        unit='kelvin',
+        shape=['*'],
+        description='Temperature of the sample',
+    )
+    magnetic_field = Quantity(
+        type=np.dtype(np.float64),
+        unit='gauss',
+        shape=['*'],
+        description='Applied magnetic field',
+    )
+    measurement_type = Quantity(
+        type=str,
+        description='Type of the measurement',
+    )
+
+
+class ETOResult(PPMSResult):
+    """
+    Section for the results of an ETO PPMS measurement
+    """
+
+    resistance0 = Quantity(
+        type=np.dtype(np.float64),
+        unit='ohm',
+        shape=['*'],
+        description='Measured resistance of the sample',
+    )
+    resistance1 = Quantity(
+        type=np.dtype(np.float64),
+        unit='ohm',
+        shape=['*'],
+        description='Measured resistance of the sample',
+    )
+
+
+class ACTResult(PPMSResult):
+    """
+    Section for the results of an ACT PPMS measurement
+    """
+
+    resistivity0 = Quantity(
+        type=np.dtype(np.float64),
+        unit='ohm/centimeter',
+        shape=['*'],
+        description='Channel 1 sample resistivity.',
+    )
+    resistivity1 = Quantity(
+        type=np.dtype(np.float64),
+        unit='ohm/centimeter',
+        shape=['*'],
+        description='Channel 1 sample resistivity.',
+    )
+
+
+class ACMSResult(PPMSResult):
+    """
+    Section for the results of an ACMS PPMS measurement
+    """
+
+    excitation = Quantity(
+        type=np.dtype(np.float64),
+        unit='mA',
+        shape=['*'],
+        description='Peak amplitude of the requested excitation current.',
+    )
+    frequency = Quantity(
+        type=np.dtype(np.float64),
+        unit='Hz',
+        shape=['*'],
+        description='Applied frequency of the excitation',
+    )
+    moment = Quantity(
+        type=np.dtype(np.float64),
+        unit='lux',
+        shape=['*'],
+        description='(AC only) total magnitude of the a.c. moment',
+    )
+    moment_derivative = Quantity(
+        type=np.dtype(np.float64),
+        unit='lux',
+        shape=['*'],
+        description='(AC only) real, “in-phase” component of the magnetic\
+              susceptibility χ’ multiplied by the a.c. excitation.',
+    )
+    moment_second_derivative = Quantity(
+        type=np.dtype(np.float64),
+        unit='lux',
+        shape=['*'],
+        description='(AC only) imaginary, “out-of-phase” component of the magnetic\
+            susceptibility χ’’ multiplied by the a.c. excitation.',
+    )
+
+
+class MPMSResult(PPMSResult):
+    """
+    Section for the results of an ACT PPMS measurement
+    """
+
+    moment = Quantity(
+        type=np.dtype(np.float64),
+        unit='lux',
+        shape=['*'],
+        description='average magnetic moment of the sample during measurement.',
+    )
+
+
+class ResistivityResult(PPMSResult):
+    """
+    Section for the results of an ACT PPMS measurement
+    """
+
+    bridge_1_resistivity = Quantity(
+        type=np.dtype(np.float64),
+        unit='ohm',
+        shape=['*'],
+        description='Resistivity of user bridge channel 1.',
+    )
+    bridge_2_resistivity = Quantity(
+        type=np.dtype(np.float64),
+        unit='ohm',
+        shape=['*'],
+        description='Resistivity of user bridge channel 1.',
     )
 
 
