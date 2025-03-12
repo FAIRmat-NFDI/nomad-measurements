@@ -31,6 +31,10 @@ from nomad_measurements.ppms.ppmsdatastruct import (
     ETOChannelData,
     ETOData,
     ETOPPMSData,
+    MPMSData,
+    MPMSDCData,
+    MPMSPPMSData,
+    ResistivityPPMSData,
 )
 from nomad_measurements.ppms.ppmssteps import (
     PPMSMeasurementACTResistanceStep,
@@ -460,158 +464,6 @@ def get_acms_ppms_steps_from_data(data):  # noqa: PLR0912
     return all_steps, runs_list
 
 
-# def get_acms_ppms_steps_from_data_wip(  # noqa: PLR0912, PLR0915
-#     data,
-#     temperature_tolerance,
-#     field_tolerance,
-#     frequency_tolerance,
-#     amplitude_tolerance,
-# ):
-#     all_steps = []
-#     runs_list = []
-
-#     startval = 0
-#     measurement_type = 'undefined'
-#     block_found = False
-#     for i in range(len(data)):
-#         if i == len(data) - 1:
-#             block_found = True
-#         elif measurement_type == 'undefined':
-#             for k in [2, 5, 10, 20, 40]:
-#                 if i + k - 1 > len(data):
-#                     continue
-
-#                 t_diff = (
-#                     abs(
-#                         float(data['Temperature (K)'].iloc[i])
-#                         - float(data['Temperature (K)'].iloc[i + k])
-#                     )
-#                     * temperature_tolerance.units
-#                     < temperature_tolerance
-#                 )
-#                 h_diff = (
-#                     abs(
-#                         float(data['Magnetic Field (Oe)'].iloc[i])
-#                         - float(data['Magnetic Field (Oe)'].iloc[i + k])
-#                     )
-#                     * field_tolerance.units
-#                     < field_tolerance
-#                 )
-#                 f_diff = (
-#                     abs(
-#                         float(data['Frequency (Hz)'].iloc[i])
-#                         - float(data['Frequency (Hz)'].iloc[i + k])
-#                     )
-#                     * frequency_tolerance.units
-#                     < frequency_tolerance
-#                 )
-#                 a_diff = (
-#                     abs(
-#                         float(data['Amplitude (Oe)'].iloc[i])
-#                         - float(data['Amplitude (Oe)'].iloc[i + k])
-#                     )
-#                     * amplitude_tolerance.units
-#                     < amplitude_tolerance
-#                 )
-#                 diff_list = [t_diff, h_diff, f_diff, a_diff]
-#                 if diff_list.count(False) != 1:
-#                     # error because two parameters are switching
-#                     continue
-#                 elif not diff_list[0]:
-#                     measurement_type = 'temperature'
-#                 elif not diff_list[1]:
-#                     measurement_type = 'field'
-#                 elif not diff_list[2]:
-#                     measurement_type = 'frequency'
-#                 elif not diff_list[3]:
-#                     measurement_type = 'amplitude'
-#                 break
-
-#         elif measurement_type == 'field':
-#             h_diff = (
-#                 abs(
-#                     float(data['Temperature (K)'].iloc[i - 1])
-#                     - float(data['Temperature (K)'].iloc[i])
-#                 )
-#                 * temperature_tolerance.units
-#                 < temperature_tolerance
-#             )
-#             if h_diff:
-#                 block_found = True
-#         elif measurement_type == 'temperature':
-#             t_diff = (
-#                 abs(
-#                     float(data['Magnetic Field (Oe)'].iloc[i - 1])
-#                     - float(data['Magnetic Field (Oe)'].iloc[i])
-#                 )
-#                 * temperature_tolerance.units
-#                 < temperature_tolerance
-#             )
-#             if t_diff:
-#                 block_found = True
-#         elif measurement_type == 'frequency':
-#             f_diff = (
-#                 abs(
-#                     float(data['Frequency (Hz)'].iloc[i - 1])
-#                     - float(data['Frequency (Hz)'].iloc[i])
-#                 )
-#                 * temperature_tolerance.units
-#                 < temperature_tolerance
-#             )
-#             if f_diff:
-#                 block_found = True
-#         elif measurement_type == 'amplitude':
-#             a_diff = (
-#                 abs(
-#                     float(data['Amplitude (Oe)'].iloc[i - 1])
-#                     - float(data['Amplitude (Oe)'].iloc[i])
-#                 )
-#                 * temperature_tolerance.units
-#                 < temperature_tolerance
-#             )
-#             if a_diff:
-#                 block_found = True
-#         if block_found:
-#             block_found = False
-#             t_value = str(np.round(float(data['Magnetic Field (Oe)'].iloc[i - 1]), 1))
-#             h_value = str(np.round(float(data['Temperature (K)'].iloc[i - 1]), -1))
-#             f_value = str(np.round(float(data['Frequency (Hz)'].iloc[i - 1]), -1))
-#             a_value = str(np.round(float(data['Amplitude (Oe)'].iloc[i - 1]), 1))
-#             if measurement_type == 'temperature':
-#                 all_steps.append(
-#                     PPMSMeasurementStep(
-#                         name=f'Temperature sweep at Field {h_value} Oe, \
-#                             Frequency {f_value} Hz, and Amplitude {a_value} Oe.'
-#                     )
-#                 )
-#             if measurement_type == 'field':
-#                 all_steps.append(
-#                     PPMSMeasurementStep(
-#                         name=f'Field sweep at Temperature {t_value} K, \
-#                             Frequency {f_value} Hz, and Amplitude {a_value} Oe.'
-#                     )
-#                 )
-#             if measurement_type == 'frequency':
-#                 all_steps.append(
-#                     PPMSMeasurementStep(
-#                         name=f'Frequency sweep at Temperature {t_value} K, \
-#                             Field {h_value} Oe, and Amplitude {a_value} Oe.'
-#                 )
-#             if measurement_type == 'amplitude':
-#                 all_steps.append(
-#                     PPMSMeasurementStep(
-#                         name=f'Amplitude sweep at Temperature {t_value} K, \
-#                             Field {h_value} Oe, and Frequency {f_value} Hz.'
-#                     )
-#                 )
-#             value = [t_value, h_value, f_value, a_value]
-#             runs_list.append([measurement_type, value, startval, i])
-#             startval = i
-#             measurement_type = 'undefined'
-
-#     return all_steps, runs_list
-
-
 def read_other_data(data, block):
     other_data = [
         key
@@ -673,6 +525,23 @@ def read_map_data(  # noqa: PLR0913
             data.m_add_sub_section(data_class.maps, map_object)
 
 
+def read_specific_data(  # noqa: PLR0913
+    data, block, data_class, map_class, maps_label
+):
+    map_object = map_class()
+    for key in block.keys():
+        clean_key = (
+            key.split('(')[0].strip().replace(' ', '_').lower()
+        )  # .replace('time stamp','timestamp')
+        if hasattr(map_object, clean_key):
+            setattr(
+                map_object,
+                clean_key,
+                block[key],  # * ureg(data_template[f'{key}/@units'])
+            )
+    data.m_add_sub_section(eval(f'{data_class.__name__}.{maps_label}'), map_object)
+
+
 def split_ppms_data_act(data_full, runs):  # noqa: PLR0912
     all_data = []
     for i in range(len(runs)):
@@ -680,9 +549,9 @@ def split_ppms_data_act(data_full, runs):  # noqa: PLR0912
         data = ACTPPMSData()
         data.measurement_type = runs[i][0]
         if data.measurement_type == 'field':
-            data.name = 'Field sweep at ' + str(runs[i][1]) + ' K.'
-        if data.measurement_type == 'temperature':
-            data.name = 'Temperature sweep at ' + str(runs[i][1]) + ' Oe.'
+            data.name = f'Field sweep at {str(runs[i][1])} K.'
+        elif data.measurement_type == 'temperature':
+            data.name = f'Temperature sweep at {str(runs[i][1])} Oe.'
         data.title = data.name
         read_other_data(data, block)
         read_channel_data(data, block, ACTPPMSData, ACTChannelData)
@@ -700,13 +569,51 @@ def split_ppms_data_eto(data_full, runs):  # noqa: PLR0912
         data = ETOPPMSData()
         data.measurement_type = runs[i][0]
         if data.measurement_type == 'field':
-            data.name = 'Field sweep at ' + str(runs[i][1]) + ' K.'
-        if data.measurement_type == 'temperature':
-            data.name = 'Temperature sweep at ' + str(runs[i][1]) + ' Oe.'
+            data.name = f'Field sweep at {str(runs[i][1])} K.'
+        elif data.measurement_type == 'temperature':
+            data.name = f'Temperature sweep at {str(runs[i][1])} Oe.'
         data.title = data.name
         read_other_data(data, block)
         read_channel_data(data, block, ETOPPMSData, ETOChannelData)
         read_map_data(data, block, ETOPPMSData, ETOData, 'ETO Channel', 'ETO_Channel')
+
+        all_data.append(data)
+
+    return all_data
+
+
+def split_ppms_data_mpms(data_full, runs):
+    all_data = []
+    for i in range(len(runs)):
+        block = data_full.iloc[runs[i][2] : runs[i][3]]
+        data = MPMSPPMSData()
+        data.measurement_type = runs[i][0]
+        if data.measurement_type == 'field':
+            data.name = f'Field sweep at {str(runs[i][1])} K.'
+        elif data.measurement_type == 'temperature':
+            data.name = f'Temperature sweep at {str(runs[i][1])} Oe.'
+        data.title = data.name
+        read_other_data(data, block)
+        read_map_data(data, block, MPMSPPMSData, MPMSData)
+        read_specific_data(data, block, MPMSPPMSData, MPMSDCData, 'dc_data')
+
+        all_data.append(data)
+
+    return all_data
+
+
+def split_ppms_data_resistivity(data_full, runs):
+    all_data = []
+    for i in range(len(runs)):
+        block = data_full.iloc[runs[i][2] : runs[i][3]]
+        data = ResistivityPPMSData()
+        data.measurement_type = runs[i][0]
+        if data.measurement_type == 'field':
+            data.name = f'Field sweep at {str(runs[i][1])} K.'
+        elif data.measurement_type == 'temperature':
+            data.name = f'Temperature sweep at {str(runs[i][1])} Oe.'
+        data.title = data.name
+        read_other_data(data, block)
 
         all_data.append(data)
 
@@ -720,53 +627,17 @@ def split_ppms_data_acms(data_full, runs):
         data = ACMSPPMSData()
         data.measurement_type = runs[i][0]
         if data.measurement_type == 'temperature':
-            data.name = (
-                'Temperature sweep at Field'
-                + runs[i][1][1]
-                + ' Oe, \
-                        Frequency '
-                + runs[i][1][2]
-                + 'Hz, \
-                        and Amplitude '
-                + runs[i][1][3]
-                + ' Oe.'
-            )
-        if data.measurement_type == 'field':
-            data.name = (
-                'Field sweep at Temperature'
-                + runs[i][1][0]
-                + ' K, \
-                        Frequency '
-                + runs[i][1][2]
-                + 'Hz, \
-                        and Amplitude '
-                + runs[i][1][3]
-                + ' Oe.'
-            )
-        if data.measurement_type == 'frequency':
-            data.name = (
-                'Frequency sweep at Temperature'
-                + runs[i][1][0]
-                + ' K, \
-                        Field'
-                + runs[i][1][1]
-                + ' Oe, \
-                        and Amplitude '
-                + runs[i][1][3]
-                + ' Oe.'
-            )
-        if data.measurement_type == 'amplitude':
-            data.name = (
-                'Amplitude sweep at Temperature'
-                + runs[i][1][0]
-                + ' K, \
-                        Field'
-                + runs[i][1][1]
-                + ' Oe, \
-                        and Frequency '
-                + runs[i][1][2]
-                + 'Hz.'
-            )
+            data.name = f'Temperature sweep at Field {runs[i][1][1]} Oe, Frequency \
+                     {runs[i][1][2]} Hz, and Amplitude {runs[i][1][3]} Oe.'
+        elif data.measurement_type == 'field':
+            data.name = f'Field sweep at Temperature {runs[i][1][0]} K, Frequency \
+                {runs[i][1][2]} Hz, and Amplitude {runs[i][1][3]} Oe.'
+        elif data.measurement_type == 'frequency':
+            data.name = f'Frequency sweep at Temperature {runs[i][1][0]} K, Field \
+                {runs[i][1][1]} Oe, and Amplitude {runs[i][1][3]} Oe.'
+        elif data.measurement_type == 'amplitude':
+            data.name = f'Amplitude sweep at Temperature {runs[i][1][0]} K, Field \
+                {runs[i][1][1]} Oe, and Frequency {runs[i][1][2]} Hz.'
         data.title = data.name
         read_other_data(data, block)
         read_map_data(data, block, ACMSPPMSData, ACMSData)
@@ -774,3 +645,25 @@ def split_ppms_data_acms(data_full, runs):
         all_data.append(data)
 
     return all_data
+
+
+def make_results(result_class, result_dict, data):
+    result_dict.update({'name': 'name', 'measurement_type': 'measurement_type'})
+    all_results = []
+    for single in data:
+        res = result_class()
+        for key in result_dict.keys():
+            if '.' in key:
+                if '[' in key:
+                    index = int(key.split('[')[1].split(']')[0])
+                    data_obj = getattr(single, key.split('[')[0])[index]
+                else:
+                    data_obj = getattr(single, key.split('.')[0])
+                mod_key = key.split('.')[1]
+            else:
+                data_obj = single
+                mod_key = key
+            if hasattr(data_obj, mod_key) and hasattr(res, result_dict[key]):
+                setattr(res, result_dict[key], getattr(data_obj, mod_key))
+        all_results.append(res)
+    return all_results
