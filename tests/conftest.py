@@ -76,7 +76,7 @@ def fixture_parsed_measurement_archive(request):
         used as parameters for the fixture.
     """
     clean_up_extensions = ['.archive.json']
-    if isinstance(request.param, (tuple, list)):
+    if isinstance(request.param, tuple | list):
         rel_file_path = request.param[0]
         clean_up_extensions.extend(request.param[1])
     else:

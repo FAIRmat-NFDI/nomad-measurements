@@ -22,8 +22,6 @@ from collections import OrderedDict
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
-    Union,
 )
 
 import h5py
@@ -199,14 +197,14 @@ class Dataset(BaseModel):
         description='The data to be stored in the HDF5 file. If `internal_reference` '
         'is True, this should be the path to a dataset already existing in the file.'
     )
-    archive_path: Optional[str] = Field(
+    archive_path: str | None = Field(
         None,
         description='If the provided dataset is to be referenced by a `HDF5Reference` '
         'quantity in a NOMAD entry archive, `archive_path` is the path to this '
         'quantity in the archive. '
         'For example, "data.results[0].intensity".',
     )
-    internal_reference: Optional[bool] = Field(
+    internal_reference: bool | None = Field(
         False,
         description='If True, an internal reference is set to an existing HDF5 '
         'dataset. The path to the referenced dataset should be provided in the data.',
@@ -317,7 +315,7 @@ class HDF5Handler:
             return
         self._hdf5_attributes[path] = params
 
-    def read_dataset(self, path: str) -> Union[np.ndarray, pint.Quantity, None]:
+    def read_dataset(self, path: str) -> np.ndarray | pint.Quantity | None:
         """
         Returns the dataset at the given path. If the quantity has `units` as an
         attribute, the method tries to returns a `pint.Quantity`.

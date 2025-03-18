@@ -1656,7 +1656,7 @@ class XRayDiffraction(Measurement):
 
         # calculate scattering vectors and add plots
         for result in self.results:
-            if isinstance(result, (XRDResult1DHDF5, XRDResultRSMHDF5)):
+            if isinstance(result, XRDResult1DHDF5 | XRDResultRSMHDF5):
                 result.calculate_scattering_vectors(self.hdf5_handler)
                 result.generate_hdf5_plots(self.hdf5_handler)
 
@@ -1676,7 +1676,7 @@ class XRayDiffraction(Measurement):
             diffraction_patterns = []
             for result in self.results:
                 if self.hdf5_handler and isinstance(
-                    result, (XRDResult1DHDF5, XRDResultRSMHDF5)
+                    result, XRDResult1DHDF5 | XRDResultRSMHDF5
                 ):
                     intensity = self.hdf5_handler.read_dataset(
                         '/ENTRY[entry]/experiment_result/intensity'
@@ -1687,7 +1687,7 @@ class XRayDiffraction(Measurement):
                     q_norm = self.hdf5_handler.read_dataset(
                         '/ENTRY[entry]/experiment_result/q_norm'
                     )
-                elif isinstance(result, (XRDResult1D, XRDResultRSM)):
+                elif isinstance(result, XRDResult1D | XRDResultRSM):
                     intensity = result.intensity
                     two_theta = result.two_theta
                     q_norm = result.q_norm
@@ -1863,7 +1863,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         """
         # Migration to using `HFD5Reference`: remove non-HDF5 results and plotly figures
         if self.get('results') and isinstance(
-            self.results[0], (XRDResult1D, XRDResultRSM)
+            self.results[0], XRDResult1D | XRDResultRSM
         ):
             self.results = []
         if self.get('figures'):
