@@ -28,7 +28,6 @@ from fairmat_readers_xrd import (
     read_panalytical_xrdml,
     read_rigaku_rasx,
 )
-from nomad.config import config
 from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
