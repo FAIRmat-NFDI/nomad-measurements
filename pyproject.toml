@@ -51,7 +51,6 @@ dev = [
     "pytest",
     "ruff",
     "structlog",
-    "pynxtools",
     "python-logstash>=0.4.6",
 ]
 
