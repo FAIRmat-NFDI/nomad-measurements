@@ -66,8 +66,21 @@ def fixture_parsed_measurement_archive(request):
     file created by plugin parsers for the measurement data. Parsing this
     `.archive.json` file returns the `EntryArchive` object for the measurement data,
     which is finally yeilded to the test function.
+
+    Clean-up:
+        By default, the `.archive.json` file is cleaned up after the test. If additional
+        files need to be cleaned up, they can be specified in the request.param as a
+        tuple or list of file extensions. For example, ('file_path', ['.nxs', '.h5'])
+        can be used to clean up '.nxs' and '.h5' files in addition to '.archive.json'.
+        If only the '.archive.json' file needs to be cleaned up, ('file_path',) can be
+        used as parameters for the fixture.
     """
-    rel_file_path = request.param
+    clean_up_extensions = ['.archive.json']
+    if isinstance(request.param, tuple | list):
+        rel_file_path = request.param[0]
+        clean_up_extensions.extend(request.param[1])
+    else:
+        rel_file_path = request.param
     file_archive = parse(rel_file_path)[0]
 
     rel_measurement_archive_path = os.path.join(
@@ -79,5 +92,8 @@ def fixture_parsed_measurement_archive(request):
 
     yield parse(rel_measurement_archive_path)[0]
 
-    if os.path.exists(rel_measurement_archive_path):
-        os.remove(rel_measurement_archive_path)
+    # clean up
+    for ext in clean_up_extensions:
+        path = os.path.join(rel_file_path.rsplit('.', 1)[0] + ext)
+        if os.path.exists(path):
+            os.remove(path)

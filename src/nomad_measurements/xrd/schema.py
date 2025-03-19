@@ -32,9 +32,16 @@ from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
 )
+from nomad.datamodel.hdf5 import (
+    HDF5Reference,
+)
 from nomad.datamodel.metainfo.annotations import (
+    BrowserAnnotation,
     ELNAnnotation,
     ELNComponentEnum,
+    Filter,
+    H5WebAnnotation,
+    SectionProperties,
 )
 from nomad.datamodel.metainfo.basesections import (
     CompositeSystemReference,
@@ -42,10 +49,7 @@ from nomad.datamodel.metainfo.basesections import (
     MeasurementResult,
     ReadableIdentifiers,
 )
-from nomad.datamodel.metainfo.plot import (
-    PlotlyFigure,
-    PlotSection,
-)
+from nomad.datamodel.metainfo.plot import PlotlyFigure
 from nomad.datamodel.results import (
     DiffractionPattern,
     MeasurementMethod,
@@ -67,62 +71,27 @@ from scipy.interpolate import griddata
 from nomad_measurements.general import (
     NOMADMeasurementsCategory,
 )
-from nomad_measurements.utils import get_bounding_range_2d, merge_sections
+from nomad_measurements.utils import (
+    Dataset,
+    HDF5Handler,
+    get_bounding_range_2d,
+    get_entry_id_from_file_name,
+    get_reference,
+    merge_sections,
+)
+from nomad_measurements.xrd.nx import NEXUS_DATASET_MAP
 
 if TYPE_CHECKING:
     import pint
     from nomad.datamodel.datamodel import (
         EntryArchive,
     )
-    from pynxtools.dataconverter.template import Template
     from structlog.stdlib import (
         BoundLogger,
     )
 
 
 m_package = SchemaPackage(aliases=['nomad_measurements.xrd.parser.parser'])
-
-
-def populate_nexus_subsection(**kwargs):
-    raise NotImplementedError
-
-
-def handle_nexus_subsection(
-    xrd_template: 'Template',
-    nexus_out: str,
-    archive: 'EntryArchive',
-    logger: 'BoundLogger',
-):
-    """
-    Function for populating the NeXus section from the xrd_template.
-
-    Args:
-        xrd_template (Template): The xrd data in a NeXus Template.
-        nexus_out (str): The name of the optional NeXus output file.
-        archive (EntryArchive): The archive containing the section.
-        logger (BoundLogger): A structlog logger.
-    """
-    nxdl_name = 'NXxrd_pan'
-    if nexus_out:
-        if not nexus_out.endswith('.nxs'):
-            nexus_out = nexus_out + '.nxs'
-        populate_nexus_subsection(
-            template=xrd_template,
-            app_def=nxdl_name,
-            archive=archive,
-            logger=logger,
-            output_file_path=nexus_out,
-            on_temp_file=False,
-        )
-    else:
-        populate_nexus_subsection(
-            template=xrd_template,
-            app_def=nxdl_name,
-            archive=archive,
-            logger=logger,
-            output_file_path=nexus_out,
-            on_temp_file=True,
-        )
 
 
 def calculate_two_theta_or_q(
@@ -151,7 +120,7 @@ def calculate_two_theta_or_q(
     return q, two_theta
 
 
-def calculate_q_vectors_RSM(
+def calculate_q_vectors_rsm(
     wavelength: 'pint.Quantity',
     two_theta: 'pint.Quantity',
     omega: 'pint.Quantity',
@@ -303,6 +272,234 @@ class XRDSettings(ArchiveSection):
     source = SubSection(section_def=XRayTubeSource)
 
 
+class IntensityPlot(ArchiveSection):
+    """
+    Section for plotting the intensity over 2-theta. A separate sub-section allows to
+    create a separate group in `.h5` file. Attributes are added to the group to generate
+    the plot.
+    """
+
+    m_def = Section(
+        a_h5web=H5WebAnnotation(
+            axes=['two_theta', 'omega', 'phi', 'chi'], signal='intensity'
+        )
+    )
+    intensity = Quantity(
+        type=HDF5Reference,
+        description='The count at each 2-theta value, dimensionless',
+    )
+    two_theta = Quantity(
+        type=HDF5Reference,
+        description='The 2-theta range of the diffractogram',
+    )
+    omega = Quantity(
+        type=HDF5Reference,
+        description='The omega range of the diffractogram',
+    )
+    phi = Quantity(
+        type=HDF5Reference,
+        description='The phi range of the diffractogram',
+    )
+    chi = Quantity(
+        type=HDF5Reference,
+        description='The chi range of the diffractogram',
+    )
+
+    def generate_hdf5_plots(self, hdf5_handler: HDF5Handler):
+        """
+        Add datasets and attributes to the HDF5 file for plotting the intensity over
+        available positions.
+
+        Args:
+            hdf5_handler (HDF5Handler): The handler for the HDF5 file.
+        """
+        prefix = '/ENTRY[entry]/experiment_result'
+
+        intensity = hdf5_handler.read_dataset(path=f'{prefix}/intensity')
+        two_theta = hdf5_handler.read_dataset(path=f'{prefix}/two_theta')
+        if intensity is None or two_theta is None:
+            return
+
+        hdf5_handler.add_dataset(
+            path=f'{prefix}/intensity_plot/two_theta',
+            dataset=Dataset(
+                data=f'{prefix}/two_theta',
+                archive_path='data.results[0].intensity_plot.two_theta',
+                internal_reference=True,
+            ),
+            validate_path=False,
+        )
+        hdf5_handler.add_dataset(
+            path=f'{prefix}/intensity_plot/intensity',
+            dataset=Dataset(
+                data=f'{prefix}/intensity',
+                archive_path='data.results[0].intensity_plot.intensity',
+                internal_reference=True,
+            ),
+            validate_path=False,
+        )
+        hdf5_handler.add_attribute(
+            path=f'{prefix}/intensity_plot',
+            params=dict(
+                axes='two_theta',
+                signal='intensity',
+                NX_class='NXdata',
+            ),
+        )
+        if isinstance(self.m_parent, XRDResult1DHDF5):
+            return
+
+        for var_axis in ['omega', 'phi', 'chi']:
+            var_axis_data = hdf5_handler.read_dataset(
+                path=f'/ENTRY[entry]/experiment_result/{var_axis}'
+            )
+            if var_axis_data is not None:
+                hdf5_handler.add_dataset(
+                    path=f'{prefix}/intensity_plot/{var_axis}',
+                    dataset=Dataset(
+                        data=f'{prefix}/{var_axis}',
+                        archive_path=f'data.results[0].intensity_plot.{var_axis}',
+                        internal_reference=True,
+                    ),
+                    validate_path=False,
+                )
+                hdf5_handler.add_attribute(
+                    path=f'{prefix}/intensity_plot',
+                    params=dict(
+                        axes=[var_axis, 'two_theta'],
+                        signal='intensity',
+                        NX_class='NXdata',
+                    ),
+                )
+                break
+
+
+class IntensityScatteringVectorPlot(ArchiveSection):
+    """
+    Section for plotting the intensity over scattering vector. A separate sub-section
+    allows to create a separate group in `.h5` file. Attributes are added to the group
+    to generate the plot.
+    """
+
+    m_def = Section(
+        a_h5web=H5WebAnnotation(
+            axes=['q_parallel', 'q_perpendicular', 'q_norm'], signal='intensity'
+        )
+    )
+    intensity = Quantity(
+        type=HDF5Reference,
+        description="""
+        The count at each q value. In case of RSM, it contains interpolated values of
+        `intensity` at regularized grid of `q` vectors.
+        """,
+    )
+    q_norm = Quantity(
+        type=HDF5Reference,
+        description='The q range of the diffractogram',
+    )
+    q_parallel = Quantity(
+        type=HDF5Reference,
+        description='The regularized grid of `q_parallel` range for plotting.',
+    )
+    q_perpendicular = Quantity(
+        type=HDF5Reference,
+        description='The regularized grid of `q_perpendicular` range for plotting.',
+    )
+
+    def generate_hdf5_plots(self, hdf5_handler: HDF5Handler):
+        """
+        Add datasets and attributes to the HDF5 file for plotting the intensity over
+        scattering vector.
+
+        Args:
+            hdf5_handler (HDF5Handler): The handler for the HDF5 file.
+        """
+        prefix = '/ENTRY[entry]/experiment_result'
+
+        intensity = hdf5_handler.read_dataset(path=f'{prefix}/intensity')
+        q_norm = hdf5_handler.read_dataset(path=f'{prefix}/q_norm')
+        q_parallel = hdf5_handler.read_dataset(path=f'{prefix}/q_parallel')
+        q_perpendicular = hdf5_handler.read_dataset(path=f'{prefix}/q_perpendicular')
+
+        if intensity is None:
+            return
+
+        if q_norm is not None:
+            hdf5_handler.add_dataset(
+                path=f'{prefix}/intensity_scattering_vector_plot/intensity',
+                dataset=Dataset(
+                    data=f'{prefix}/intensity',
+                    archive_path='data.results[0].intensity_scattering_vector_plot.intensity',
+                    internal_reference=True,
+                ),
+                validate_path=False,
+            )
+            hdf5_handler.add_dataset(
+                path=f'{prefix}/intensity_scattering_vector_plot/q_norm',
+                dataset=Dataset(
+                    data=f'{prefix}/q_norm',
+                    archive_path='data.results[0].intensity_scattering_vector_plot.q_norm',
+                    internal_reference=True,
+                ),
+                validate_path=False,
+            )
+            hdf5_handler.add_attribute(
+                path=f'{prefix}/intensity_scattering_vector_plot',
+                params=dict(
+                    axes='q_norm',
+                    signal='intensity',
+                    NX_class='NXdata',
+                ),
+            )
+        elif q_parallel is not None and q_perpendicular is not None:
+            # q_vectors lead to irregular grid
+            # generate a regular grid using interpolation
+            x = q_parallel.to('1/angstrom').magnitude.flatten()
+            y = q_perpendicular.to('1/angstrom').magnitude.flatten()
+            x_regular = np.linspace(x.min(), x.max(), intensity.shape[0])
+            y_regular = np.linspace(y.min(), y.max(), intensity.shape[1])
+            x_grid, y_grid = np.meshgrid(x_regular, y_regular)
+            z_interpolated = griddata(
+                points=(x, y),
+                values=intensity.flatten(),
+                xi=(x_grid, y_grid),
+                method='linear',
+                fill_value=intensity.min(),
+            )
+            hdf5_handler.add_dataset(
+                path=f'{prefix}/intensity_scattering_vector_plot/q_parallel',
+                dataset=Dataset(
+                    data=x_regular,
+                    archive_path='data.results[0].intensity_scattering_vector_plot.q_parallel',
+                ),
+                validate_path=False,
+            )
+            hdf5_handler.add_dataset(
+                path=f'{prefix}/intensity_scattering_vector_plot/q_perpendicular',
+                dataset=Dataset(
+                    data=y_regular,
+                    archive_path='data.results[0].intensity_scattering_vector_plot.q_perpendicular',
+                ),
+                validate_path=False,
+            )
+            hdf5_handler.add_dataset(
+                path=f'{prefix}/intensity_scattering_vector_plot/intensity',
+                dataset=Dataset(
+                    data=z_interpolated,
+                    archive_path='data.results[0].intensity_scattering_vector_plot.intensity',
+                ),
+                validate_path=False,
+            )
+            hdf5_handler.add_attribute(
+                path=f'{prefix}/intensity_scattering_vector_plot',
+                params=dict(
+                    axes=['q_perpendicular', 'q_parallel'],
+                    signal='intensity',
+                    NX_class='NXdata',
+                ),
+            )
+
+
 class XRDResult(MeasurementResult):
     """
     Section containing the result of an X-ray diffraction scan.
@@ -381,9 +578,17 @@ class XRDResult1D(XRDResult):
     Section containing the result of a 1D X-ray diffraction scan.
     """
 
-    m_def = Section()
+    m_def = Section(
+        a_eln=ELNAnnotation(
+            properties=SectionProperties(
+                visible=Filter(
+                    exclude=['array_index'],
+                ),
+            ),
+        )
+    )
 
-    def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+    def generate_plots(self):
         """
         Plot the 1D diffractogram.
 
@@ -566,7 +771,15 @@ class XRDResultRSM(XRDResult):
     Section containing the result of a Reciprocal Space Map (RSM) scan.
     """
 
-    m_def = Section()
+    m_def = Section(
+        a_eln=ELNAnnotation(
+            properties=SectionProperties(
+                visible=Filter(
+                    exclude=['array_index'],
+                ),
+            ),
+        )
+    )
     q_parallel = Quantity(
         type=np.dtype(np.float64),
         shape=['*', '*'],
@@ -586,7 +799,7 @@ class XRDResultRSM(XRDResult):
         description='The count at each position, dimensionless',
     )
 
-    def generate_plots(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+    def generate_plots(self):
         """
         Plot the 2D RSM diffractogram.
 
@@ -768,12 +981,615 @@ class XRDResultRSM(XRDResult):
                     self[var_axis] is not None
                     and len(np.unique(self[var_axis].magnitude)) > 1
                 ):
-                    self.q_parallel, self.q_perpendicular = calculate_q_vectors_RSM(
+                    self.q_parallel, self.q_perpendicular = calculate_q_vectors_rsm(
                         wavelength=self.source_peak_wavelength,
                         two_theta=self.two_theta * np.ones_like(self.intensity),
                         omega=self[var_axis],
                     )
                     break
+
+
+class XRDResult1DHDF5(XRDResult):
+    """
+    Section containing the result of a 1D X-ray diffraction scan.
+    """
+
+    m_def = Section(
+        a_eln=ELNAnnotation(
+            properties=SectionProperties(
+                visible=Filter(
+                    exclude=['array_index'],
+                ),
+            ),
+        )
+    )
+    intensity = Quantity(
+        type=HDF5Reference,
+        description='The count at each 2-theta value, dimensionless',
+        shape=[],
+    )
+    two_theta = Quantity(
+        type=HDF5Reference,
+        description='The 2-theta range of the diffractogram',
+        shape=[],
+    )
+    q_norm = Quantity(
+        type=HDF5Reference,
+        description='The norm of scattering vector *Q* of the diffractogram',
+        shape=[],
+    )
+    omega = Quantity(
+        type=HDF5Reference,
+        description='The omega range of the diffractogram',
+        shape=[],
+    )
+    phi = Quantity(
+        type=HDF5Reference,
+        description='The phi range of the diffractogram',
+        shape=[],
+    )
+    chi = Quantity(
+        type=HDF5Reference,
+        description='The chi range of the diffractogram',
+        shape=[],
+    )
+    integration_time = Quantity(
+        type=HDF5Reference,
+        description='Integration time per channel',
+        shape=[],
+    )
+    intensity_plot: IntensityPlot = SubSection(section_def=IntensityPlot)
+    intensity_scattering_vector_plot: IntensityScatteringVectorPlot = SubSection(
+        section_def=IntensityScatteringVectorPlot
+    )
+
+    def generate_plots(self, hdf5_handler: HDF5Handler):
+        """
+        Plot the 1D diffractogram.
+
+        Args:
+            archive (EntryArchive): The archive containing the section that is being
+            normalized.
+            logger (BoundLogger): A structlog logger.
+
+        Returns:
+            (dict, dict): line_linear, line_log
+        """
+        plots = []
+
+        two_theta = hdf5_handler.read_dataset(path='entry/experiment_result/two_theta')
+        intensity = hdf5_handler.read_dataset(path='entry/experiment_result/intensity')
+        if two_theta is None or intensity is None:
+            return plots
+
+        x = two_theta.to('degree').magnitude
+        y = intensity.magnitude
+        fig_line_linear = px.line(
+            x=x,
+            y=y,
+        )
+        fig_line_linear.update_layout(
+            title={
+                'text': '<i>Intensity</i> over 2<i>θ</i> (linear scale)',
+                'x': 0.5,
+                'xanchor': 'center',
+            },
+            xaxis_title='2<i>θ</i> (°)',
+            yaxis_title='<i>Intensity</i>',
+            xaxis=dict(
+                fixedrange=False,
+            ),
+            yaxis=dict(
+                fixedrange=False,
+            ),
+            template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
+            width=600,
+            height=600,
+        )
+        fig_line_linear.update_traces(
+            hovertemplate='<i>Intensity</i>: %{y:.2f}<br>2<i>θ</i>: %{x}°',
+        )
+        plot_json = fig_line_linear.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
+        )
+        plots.append(
+            PlotlyFigure(
+                label='Intensity over 2θ (linear scale)',
+                index=1,
+                figure=plot_json,
+            )
+        )
+
+        fig_line_log = px.line(
+            x=x,
+            y=y,
+            log_y=True,
+        )
+        fig_line_log.update_layout(
+            title={
+                'text': '<i>Intensity</i> over 2<i>θ</i> (log scale)',
+                'x': 0.5,
+                'xanchor': 'center',
+            },
+            xaxis_title='2<i>θ</i> (°)',
+            yaxis_title='<i>Intensity</i>',
+            xaxis=dict(
+                fixedrange=False,
+            ),
+            yaxis=dict(
+                fixedrange=False,
+            ),
+            template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
+            width=600,
+            height=600,
+        )
+        fig_line_log.update_traces(
+            hovertemplate='<i>Intensity</i>: %{y:.2f}<br>2<i>θ</i>: %{x}°',
+        )
+        plot_json = fig_line_log.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
+        )
+        plots.append(
+            PlotlyFigure(
+                label='Intensity over 2θ (log scale)',
+                index=0,
+                figure=plot_json,
+            )
+        )
+
+        q_norm = hdf5_handler.read_dataset(path='entry/experiment_result/q_norm')
+        if q_norm is None:
+            return plots
+
+        x = q_norm.to('1/angstrom').magnitude
+        fig_line_log = px.line(
+            x=x,
+            y=y,
+            log_y=True,
+        )
+        fig_line_log.update_layout(
+            title={
+                'text': '<i>Intensity</i> over |<em>q</em>| (log scale)',
+                'x': 0.5,
+                'xanchor': 'center',
+            },
+            xaxis_title='|<em>q</em>| (Å<sup>-1</sup>)',
+            yaxis_title='<i>Intensity</i>',
+            xaxis=dict(
+                fixedrange=False,
+            ),
+            yaxis=dict(
+                fixedrange=False,
+            ),
+            template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
+            width=600,
+            height=600,
+        )
+        fig_line_log.update_traces(
+            hovertemplate=(
+                '<i>Intensity</i>: %{y:.2f}<br>|<em>q</em>|: %{x} Å<sup>-1</sup>'
+            ),
+        )
+        plot_json = fig_line_log.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
+        )
+        plots.append(
+            PlotlyFigure(
+                label='Intensity over q_norm (log scale)',
+                index=2,
+                figure=plot_json,
+            )
+        )
+
+        return plots
+
+    def calculate_scattering_vectors(self, hdf5_handler: HDF5Handler):
+        """
+        Calculate the scattering vector norm and add to the HDF5 handler.
+
+        Args:
+            hdf5_handler (HDF5Handler): A handler for the HDF5 file.
+        """
+        if hdf5_handler is None:
+            return
+        intensity = hdf5_handler.read_dataset(
+            path='/ENTRY[entry]/experiment_result/intensity'
+        )
+        two_theta = hdf5_handler.read_dataset(
+            path='/ENTRY[entry]/experiment_result/two_theta'
+        )
+        if intensity is None or two_theta is None:
+            return
+
+        if self.source_peak_wavelength is not None:
+            q_norm = hdf5_handler.read_dataset(
+                path='/ENTRY[entry]/experiment_result/q_norm'
+            )
+            q_norm, two_theta = calculate_two_theta_or_q(
+                wavelength=self.source_peak_wavelength,
+                two_theta=two_theta,
+                q=q_norm,
+            )
+            hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/q_norm',
+                dataset=Dataset(
+                    data=q_norm,
+                    archive_path='data.results[0].q_norm',
+                ),
+            )
+            hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/two_theta',
+                dataset=Dataset(
+                    data=two_theta,
+                    archive_path='data.results[0].two_theta',
+                ),
+            )
+
+    def generate_hdf5_plots(self, hdf5_handler: HDF5Handler):
+        """
+        Initializes sections to generate the plots for intensity over position and
+        scattering vectors.
+
+        Args:
+            hdf5_handler (HDF5Handler): The handler for the HDF5 file.
+        """
+        if hdf5_handler is None:
+            return
+        self.m_setdefault('intensity_plot')
+        self.intensity_plot.generate_hdf5_plots(hdf5_handler)
+
+        if self.source_peak_wavelength is not None:
+            self.m_setdefault('intensity_scattering_vector_plot')
+            self.intensity_scattering_vector_plot.generate_hdf5_plots(hdf5_handler)
+
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+        """
+        The normalize function of the `XRDResult` section.
+
+        Args:
+            archive (EntryArchive): The archive containing the section that is being
+            normalized.
+            logger (BoundLogger): A structlog logger.
+        """
+        super().normalize(archive, logger)
+        if self.name is None:
+            if self.scan_axis:
+                self.name = f'{self.scan_axis} Scan Result'
+            else:
+                self.name = 'XRD Scan Result'
+
+
+class XRDResultRSMHDF5(XRDResult):
+    """
+    Section containing the result of a Reciprocal Space Map (RSM) scan.
+    """
+
+    m_def = Section(
+        a_eln=ELNAnnotation(
+            properties=SectionProperties(
+                visible=Filter(
+                    exclude=['array_index'],
+                ),
+            ),
+        )
+    )
+    intensity = Quantity(
+        type=HDF5Reference,
+        description='The count at each 2-theta value, dimensionless',
+        shape=[],
+    )
+    two_theta = Quantity(
+        type=HDF5Reference,
+        description='The 2-theta range of the diffractogram',
+        shape=[],
+    )
+    q_norm = Quantity(
+        type=HDF5Reference,
+        description='The norm of scattering vector *Q* of the diffractogram',
+        shape=[],
+    )
+    omega = Quantity(
+        type=HDF5Reference,
+        description='The omega range of the diffractogram',
+        shape=[],
+    )
+    phi = Quantity(
+        type=HDF5Reference,
+        description='The phi range of the diffractogram',
+        shape=[],
+    )
+    chi = Quantity(
+        type=HDF5Reference,
+        description='The chi range of the diffractogram',
+        shape=[],
+    )
+    integration_time = Quantity(
+        type=HDF5Reference,
+        description='Integration time per channel',
+        shape=[],
+    )
+    q_parallel = Quantity(
+        type=HDF5Reference,
+        description='The scattering vector *Q_parallel* of the diffractogram',
+    )
+    q_perpendicular = Quantity(
+        type=HDF5Reference,
+        description='The scattering vector *Q_perpendicular* of the diffractogram',
+    )
+    intensity_plot: IntensityPlot = SubSection(section_def=IntensityPlot)
+    intensity_scattering_vector_plot: IntensityScatteringVectorPlot = SubSection(
+        section_def=IntensityScatteringVectorPlot
+    )
+
+    def generate_plots(self, hdf5_handler: HDF5Handler):
+        """
+        Plot the 2D RSM diffractogram.
+
+        Args:
+            archive (EntryArchive): The archive containing the section that is being
+            normalized.
+            logger (BoundLogger): A structlog logger.
+
+        Returns:
+            (dict, dict): json_2theta_omega, json_q_vector
+        """
+        plots = []
+
+        two_theta = hdf5_handler.read_dataset(path='entry/experiment_result/two_theta')
+        intensity = hdf5_handler.read_dataset(path='entry/experiment_result/intensity')
+        omega = hdf5_handler.read_dataset(path='entry/experiment_result/omega')
+        if two_theta is None or intensity is None or omega is None:
+            return plots
+
+        # Plot for 2theta-omega RSM
+        # Zero values in intensity become -inf in log scale and are not plotted
+        x = omega.to('degree').magnitude
+        y = two_theta.to('degree').magnitude
+        z = intensity.magnitude
+        log_z = np.log10(z)
+        x_range, y_range = get_bounding_range_2d(x, y)
+
+        fig_2theta_omega = px.imshow(
+            img=np.around(log_z, 3).T,
+            x=np.around(x, 3),
+            y=np.around(y, 3),
+        )
+        fig_2theta_omega.update_coloraxes(
+            colorscale='inferno',
+            cmin=np.nanmin(log_z[log_z != -np.inf]),
+            cmax=log_z.max(),
+            colorbar={
+                'len': 0.9,
+                'title': 'log<sub>10</sub> <i>Intensity</i>',
+                'ticks': 'outside',
+                'tickformat': '5',
+            },
+        )
+        fig_2theta_omega.update_layout(
+            title={
+                'text': 'Reciprocal Space Map over 2<i>θ</i>-<i>ω</i>',
+                'x': 0.5,
+                'xanchor': 'center',
+            },
+            xaxis_title='<i>ω</i> (°)',
+            yaxis_title='2<i>θ</i> (°)',
+            xaxis=dict(
+                autorange=False,
+                fixedrange=False,
+                range=x_range,
+            ),
+            yaxis=dict(
+                autorange=False,
+                fixedrange=False,
+                range=y_range,
+            ),
+            template='plotly_white',
+            hovermode='closest',
+            hoverlabel=dict(
+                bgcolor='white',
+            ),
+            dragmode='zoom',
+            width=600,
+            height=600,
+        )
+        fig_2theta_omega.update_traces(
+            hovertemplate=(
+                '<i>Intensity</i>: 10<sup>%{z:.2f}</sup><br>'
+                '2<i>θ</i>: %{y}°<br>'
+                '<i>ω</i>: %{x}°'
+                '<extra></extra>'
+            )
+        )
+        plot_json = fig_2theta_omega.to_plotly_json()
+        plot_json['config'] = dict(
+            scrollZoom=False,
+        )
+        plots.append(
+            PlotlyFigure(
+                label='RSM 2θ-ω',
+                index=1,
+                figure=plot_json,
+            ),
+        )
+
+        # Plot for RSM in Q-vectors
+        q_parallel = hdf5_handler.read_dataset(
+            path='entry/experiment_result/q_parallel',
+        )
+        q_perpendicular = hdf5_handler.read_dataset(
+            path='entry/experiment_result/q_perpendicular',
+        )
+        if q_parallel is not None and q_perpendicular is not None:
+            x = q_parallel.to('1/angstrom').magnitude.flatten()
+            y = q_perpendicular.to('1/angstrom').magnitude.flatten()
+            # q_vectors lead to irregular grid
+            # generate a regular grid using interpolation
+            x_regular = np.linspace(x.min(), x.max(), z.shape[0])
+            y_regular = np.linspace(y.min(), y.max(), z.shape[1])
+            x_grid, y_grid = np.meshgrid(x_regular, y_regular)
+            z_interpolated = griddata(
+                points=(x, y),
+                values=z.flatten(),
+                xi=(x_grid, y_grid),
+                method='linear',
+                fill_value=z.min(),
+            )
+            log_z_interpolated = np.log10(z_interpolated)
+            x_range, y_range = get_bounding_range_2d(x_regular, y_regular)
+
+            fig_q_vector = px.imshow(
+                img=np.around(log_z_interpolated, 3),
+                x=np.around(x_regular, 3),
+                y=np.around(y_regular, 3),
+            )
+            fig_q_vector.update_coloraxes(
+                colorscale='inferno',
+                cmin=np.nanmin(log_z[log_z != -np.inf]),
+                cmax=log_z_interpolated.max(),
+                colorbar={
+                    'len': 0.9,
+                    'title': 'log<sub>10</sub> <i>Intensity</i>',
+                    'ticks': 'outside',
+                    'tickformat': '5',
+                },
+            )
+            fig_q_vector.update_layout(
+                title={
+                    'text': 'Reciprocal Space Map over Q-vectors',
+                    'x': 0.5,
+                    'xanchor': 'center',
+                },
+                xaxis_title='<i>q</i><sub>&#x2016;</sub> (Å<sup>-1</sup>)',  # q ‖
+                yaxis_title='<i>q</i><sub>&#x22A5;</sub> (Å<sup>-1</sup>)',  # q ⊥
+                xaxis=dict(
+                    autorange=False,
+                    fixedrange=False,
+                    range=x_range,
+                ),
+                yaxis=dict(
+                    autorange=False,
+                    fixedrange=False,
+                    range=y_range,
+                ),
+                template='plotly_white',
+                hovermode='closest',
+                hoverlabel=dict(
+                    bgcolor='white',
+                ),
+                dragmode='zoom',
+                width=600,
+                height=600,
+            )
+            fig_q_vector.update_traces(
+                hovertemplate=(
+                    '<i>Intensity</i>: 10<sup>%{z:.2f}</sup><br>'
+                    '<i>q</i><sub>&#x22A5;</sub>: %{y} Å<sup>-1</sup><br>'
+                    '<i>q</i><sub>&#x2016;</sub>: %{x} Å<sup>-1</sup>'
+                    '<extra></extra>'
+                )
+            )
+            plot_json = fig_q_vector.to_plotly_json()
+            plot_json['config'] = dict(
+                scrollZoom=False,
+            )
+            plots.append(
+                PlotlyFigure(
+                    label='RSM Q-vectors',
+                    index=0,
+                    figure=plot_json,
+                ),
+            )
+
+        return plots
+
+    def calculate_scattering_vectors(self, hdf5_handler: HDF5Handler):
+        """
+        Calculate the scattering vectors for the RSM scan and add to the HDF5Handler.
+
+        Args:
+            hdf5_handler (HDF5Handler): The handler for the HDF5 file.
+        """
+        if hdf5_handler is None:
+            return
+        intensity = hdf5_handler.read_dataset(
+            path='/ENTRY[entry]/experiment_result/intensity'
+        )
+        two_theta = hdf5_handler.read_dataset(
+            path='/ENTRY[entry]/experiment_result/two_theta'
+        )
+        var_axis = None
+        for axis in ['omega', 'chi', 'phi']:
+            axis_value = hdf5_handler.read_dataset(
+                path=f'/ENTRY[entry]/experiment_result/{axis}'
+            )
+            if axis_value is not None and len(np.unique(axis_value.magnitude)) > 1:
+                var_axis = axis
+                break
+        if intensity is None or two_theta is None or var_axis is None:
+            return
+
+        if self.source_peak_wavelength is not None:
+            q_parallel, q_perpendicular = calculate_q_vectors_rsm(
+                wavelength=self.source_peak_wavelength,
+                two_theta=two_theta * np.ones_like(intensity),
+                omega=hdf5_handler.read_dataset(
+                    path=f'/ENTRY[entry]/experiment_result/{var_axis}'
+                ),
+            )
+            hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/q_parallel',
+                dataset=Dataset(
+                    data=q_parallel,
+                    archive_path='data.results[0].q_parallel',
+                ),
+            )
+            hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/q_perpendicular',
+                dataset=Dataset(
+                    data=q_perpendicular,
+                    archive_path='data.results[0].q_perpendicular',
+                ),
+            )
+
+    def generate_hdf5_plots(self, hdf5_handler: HDF5Handler):
+        """
+        Initializes sections to generate the plots for intensity over position and
+        scattering vectors.
+
+        Args:
+            hdf5_handler (HDF5Handler): The handler for the HDF5 file.
+        """
+        if hdf5_handler is None:
+            return
+        self.m_setdefault('intensity_plot')
+        self.intensity_plot.generate_hdf5_plots(hdf5_handler)
+        if self.source_peak_wavelength is not None:
+            self.m_setdefault('intensity_scattering_vector_plot')
+            self.intensity_scattering_vector_plot.generate_hdf5_plots(hdf5_handler)
+
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+        super().normalize(archive, logger)
+
+        if self.name is None:
+            self.name = 'RSM Scan Result'
 
 
 class XRayDiffraction(Measurement):
@@ -816,8 +1632,9 @@ class XRayDiffraction(Measurement):
     )
     results = Measurement.results.m_copy()
     results.section_def = XRDResult
+    hdf5_handler: HDF5Handler = None
 
-    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):  # noqa: PLR0912
         """
         The normalize function of the `XRayDiffraction` section.
 
@@ -836,25 +1653,17 @@ class XRayDiffraction(Measurement):
                 if result.source_peak_wavelength is None:
                     result.source_peak_wavelength = self.xrd_settings.source.kalpha_one
                     result.normalize(archive, logger)
+
+        # calculate scattering vectors and add plots
+        for result in self.results:
+            if isinstance(result, XRDResult1DHDF5 | XRDResultRSMHDF5):
+                result.calculate_scattering_vectors(self.hdf5_handler)
+                result.generate_hdf5_plots(self.hdf5_handler)
+
         if not archive.results:
             archive.results = Results()
         if not archive.results.properties:
             archive.results.properties = Properties()
-        if not archive.results.properties.structural:
-            diffraction_patterns = []
-            for result in self.results:
-                if len(result.intensity.shape) == 1:
-                    diffraction_patterns.append(
-                        DiffractionPattern(
-                            incident_beam_wavelength=result.source_peak_wavelength,
-                            two_theta_angles=result.two_theta,
-                            intensity=result.intensity,
-                            q_vector=result.q_norm,
-                        )
-                    )
-            archive.results.properties.structural = StructuralProperties(
-                diffraction_pattern=diffraction_patterns
-            )
         if not archive.results.method:
             archive.results.method = Method(
                 method_name='XRD',
@@ -863,8 +1672,43 @@ class XRayDiffraction(Measurement):
                 ),
             )
 
+        if not archive.results.properties.structural:
+            diffraction_patterns = []
+            for result in self.results:
+                if self.hdf5_handler and isinstance(
+                    result, XRDResult1DHDF5 | XRDResultRSMHDF5
+                ):
+                    intensity = self.hdf5_handler.read_dataset(
+                        '/ENTRY[entry]/experiment_result/intensity'
+                    )
+                    two_theta = self.hdf5_handler.read_dataset(
+                        '/ENTRY[entry]/experiment_result/two_theta'
+                    )
+                    q_norm = self.hdf5_handler.read_dataset(
+                        '/ENTRY[entry]/experiment_result/q_norm'
+                    )
+                elif isinstance(result, XRDResult1D | XRDResultRSM):
+                    intensity = result.intensity
+                    two_theta = result.two_theta
+                    q_norm = result.q_norm
+                else:
+                    intensity = two_theta = q_norm = None
 
-class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
+                if intensity is not None and len(intensity.shape) == 1:
+                    diffraction_patterns.append(
+                        DiffractionPattern(
+                            incident_beam_wavelength=result.source_peak_wavelength,
+                            two_theta_angles=two_theta,
+                            intensity=intensity,
+                            q_vector=q_norm,
+                        )
+                    )
+            archive.results.properties.structural = StructuralProperties(
+                diffraction_pattern=diffraction_patterns
+            )
+
+
+class ELNXRayDiffraction(XRayDiffraction, EntryData):
     """
     Example section for how XRayDiffraction can be implemented with a general reader for
     common XRD file types.
@@ -875,11 +1719,30 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         label='X-Ray Diffraction (XRD)',
         a_eln=ELNAnnotation(
             lane_width='800px',
-            hide=['generate_nexus_file'],
+            properties=SectionProperties(
+                order=[
+                    'name',
+                    'datetime',
+                    'data_file',
+                    'diffraction_method_name',
+                    'lab_id',
+                    'location',
+                    'auxiliary_file',
+                    'nexus_view',
+                    'overwrite_auxiliary_file',
+                    'description',
+                ]
+            ),
         ),
         a_template={
             'measurement_identifiers': {},
         },
+        a_h5web=H5WebAnnotation(
+            paths=[
+                'results/0/intensity_plot',
+                'results/0/intensity_scattering_vector_plot',
+            ]
+        ),
     )
     data_file = Quantity(
         type=str,
@@ -895,12 +1758,24 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     diffraction_method_name.m_annotations['eln'] = ELNAnnotation(
         component=ELNComponentEnum.EnumEditQuantity,
     )
-    generate_nexus_file = Quantity(
+    auxiliary_file = Quantity(
+        type=str,
+        description='Auxiliary file (like .h5 or .nxs) containing the entry data.',
+        a_eln=ELNAnnotation(
+            component=ELNComponentEnum.FileEditQuantity,
+        ),
+        a_browser=BrowserAnnotation(adaptor='RawFileAdaptor'),
+    )
+    nexus_view = Quantity(
+        type=ArchiveSection,
+        description='Reference to the NeXus entry.',
+        a_eln=ELNAnnotation(component=ELNComponentEnum.ReferenceEditQuantity),
+    )
+    overwrite_auxiliary_file = Quantity(
         type=bool,
-        description='Whether or not to generate a NeXus output file (if possible).',
+        description='Overwrite the auxiliary file with the current data.',
         a_eln=ELNAnnotation(
             component=ELNComponentEnum.BoolEditQuantity,
-            label='Generate NeXus file',
         ),
     )
 
@@ -908,7 +1783,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         """
         Method for getting the correct read and write functions for the current data
         file.
-
         Returns:
             tuple[Callable, Callable]: The read, write functions.
         """
@@ -937,49 +1811,38 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         metadata_dict: dict = xrd_dict.get('metadata', {})
         source_dict: dict = metadata_dict.get('source', {})
 
-        scan_type = metadata_dict.get('scan_type', None)
-        if scan_type == 'line':
-            result = XRDResult1D(
-                intensity=xrd_dict.get('intensity', None),
-                two_theta=xrd_dict.get('2Theta', None),
-                omega=xrd_dict.get('Omega', None),
-                chi=xrd_dict.get('Chi', None),
-                phi=xrd_dict.get('Phi', None),
-                scan_axis=metadata_dict.get('scan_axis', None),
-                integration_time=xrd_dict.get('countTime', None),
-            )
-            result.normalize(archive, logger)
+        scan_type = metadata_dict.get('scan_type')
+        if scan_type not in ['line', 'rsm']:
+            logger.error(f'Scan type `{scan_type}` is not supported.')
+            return
 
+        # Create a new result section
+        results = []
+        result = None
+        if scan_type == 'line':
+            result = XRDResult1DHDF5()
         elif scan_type == 'rsm':
-            result = XRDResultRSM(
-                intensity=xrd_dict.get('intensity', None),
-                two_theta=xrd_dict.get('2Theta', None),
-                omega=xrd_dict.get('Omega', None),
-                chi=xrd_dict.get('Chi', None),
-                phi=xrd_dict.get('Phi', None),
-                scan_axis=metadata_dict.get('scan_axis', None),
-                integration_time=xrd_dict.get('countTime', None),
-            )
+            result = XRDResultRSMHDF5()
+        if result is not None:
+            result.scan_axis = metadata_dict.get('scan_axis')
             result.normalize(archive, logger)
-        else:
-            raise NotImplementedError(f'Scan type `{scan_type}` is not supported.')
+            results.append(result)
 
         source = XRayTubeSource(
-            xray_tube_material=source_dict.get('anode_material', None),
-            kalpha_one=source_dict.get('kAlpha1', None),
-            kalpha_two=source_dict.get('kAlpha2', None),
-            ratio_kalphatwo_kalphaone=source_dict.get('ratioKAlpha2KAlpha1', None),
-            kbeta=source_dict.get('kBeta', None),
-            xray_tube_voltage=source_dict.get('voltage', None),
-            xray_tube_current=source_dict.get('current', None),
+            xray_tube_material=source_dict.get('anode_material'),
+            kalpha_one=source_dict.get('kAlpha1'),
+            kalpha_two=source_dict.get('kAlpha2'),
+            ratio_kalphatwo_kalphaone=source_dict.get('ratioKAlpha2KAlpha1'),
+            kbeta=source_dict.get('kBeta'),
+            xray_tube_voltage=source_dict.get('voltage'),
+            xray_tube_current=source_dict.get('current'),
         )
         source.normalize(archive, logger)
-
         xrd_settings = XRDSettings(source=source)
         xrd_settings.normalize(archive, logger)
 
         samples = []
-        if metadata_dict.get('sample_id', None) is not None:
+        if metadata_dict.get('sample_id') is not None:
             sample = CompositeSystemReference(
                 lab_id=metadata_dict['sample_id'],
             )
@@ -987,115 +1850,24 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             samples.append(sample)
 
         xrd = ELNXRayDiffraction(
-            results=[result],
+            results=results,
             xrd_settings=xrd_settings,
             samples=samples,
         )
+
         merge_sections(self, xrd, logger)
 
-    def write_nx_xrd(
-        self,
-        xrd_dict: 'Template',
-        archive: 'EntryArchive',
-        logger: 'BoundLogger',
-    ) -> None:
+    def backward_compatibility(self):
         """
-        Populate `ELNXRayDiffraction` section from a NeXus Template.
-
-        Args:
-            xrd_dict (Dict[str, Any]): A dictionary with the XRD data.
-            archive (EntryArchive): The archive containing the section.
-            logger (BoundLogger): A structlog logger.
+        Method for backward compatibility.
         """
-        # TODO add the result section based on the scan_type
-        result = XRDResult(
-            intensity=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/intensity',
-                None,
-            ),
-            two_theta=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/two_theta',
-                None,
-            ),
-            omega=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/omega',
-                None,
-            ),
-            chi=xrd_dict.get('/ENTRY[entry]/2theta_plot/chi', None),
-            phi=xrd_dict.get(
-                '/ENTRY[entry]/2theta_plot/phi',
-                None,
-            ),
-            scan_axis=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/DETECTOR[detector]/scan_axis',
-                None,
-            ),
-            integration_time=xrd_dict.get(
-                '/ENTRY[entry]/COLLECTION[collection]/count_time', None
-            ),
-        )
-        result.normalize(archive, logger)
-
-        source = XRayTubeSource(
-            xray_tube_material=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_material',
-                None,
-            ),
-            kalpha_one=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_one',
-                None,
-            ),
-            kalpha_two=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/k_alpha_two',
-                None,
-            ),
-            ratio_kalphatwo_kalphaone=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/ratio_k_alphatwo_k_alphaone',
-                None,
-            ),
-            kbeta=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/kbeta',
-                None,
-            ),
-            xray_tube_voltage=xrd_dict.get(
-                'ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_voltage',
-                None,
-            ),
-            xray_tube_current=xrd_dict.get(
-                '/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source]/xray_tube_current',
-                None,
-            ),
-        )
-        source.normalize(archive, logger)
-
-        xrd_settings = XRDSettings(source=source)
-        xrd_settings.normalize(archive, logger)
-
-        sample = CompositeSystemReference(
-            lab_id=xrd_dict.get(
-                '/ENTRY[entry]/SAMPLE[sample]/sample_id',
-                None,
-            ),
-        )
-        sample.normalize(archive, logger)
-
-        xrd = ELNXRayDiffraction(
-            results=[result],
-            xrd_settings=xrd_settings,
-            samples=[sample],
-        )
-        merge_sections(self, xrd, logger)
-
-        nexus_output = None
-        if self.generate_nexus_file:
-            archive_name = archive.metadata.mainfile.split('.')[0]
-            nexus_output = f'{archive_name}_output.nxs'
-        handle_nexus_subsection(
-            xrd_dict,
-            nexus_output,
-            archive,
-            logger,
-        )
+        # Migration to using `HFD5Reference`: remove non-HDF5 results and plotly figures
+        if self.get('results') and isinstance(
+            self.results[0], XRDResult1D | XRDResultRSM
+        ):
+            self.results = []
+        if self.get('figures'):
+            self.figures = []
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
@@ -1106,20 +1878,98 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             normalized.
             logger (BoundLogger): A structlog logger.
         """
-        if self.data_file is not None:
-            read_function, write_function = self.get_read_write_functions()
-            if read_function is None or write_function is None:
-                logger.warn(
-                    f'No compatible reader found for the file: "{self.data_file}".'
-                )
-            else:
-                with archive.m_context.raw_file(self.data_file) as file:
-                    xrd_dict = read_function(file.name, logger)
-                write_function(xrd_dict, archive, logger)
-        super().normalize(archive, logger)
-        if not self.results:
+        self.backward_compatibility()
+        if self.data_file is None:
+            super().normalize(archive, logger)
             return
-        self.figures = self.results[0].generate_plots(archive, logger)
+
+        read_function, write_function = self.get_read_write_functions()
+        if read_function is None or write_function is None:
+            logger.warn(f'No compatible reader found for the file: "{self.data_file}".')
+            super().normalize(archive, logger)
+            return
+        with archive.m_context.raw_file(self.data_file) as file:
+            xrd_dict = read_function(file.name, logger)
+        write_function(xrd_dict, archive, logger)
+
+        filename = self.data_file.rsplit('.', 1)[0]
+        self.auxiliary_file = (
+            f'{filename}.h5'
+            if archive.m_context.raw_path_exists(f'{filename}.h5')
+            else f'{filename}.nxs'
+        )
+        if (
+            not archive.m_context.raw_path_exists(self.auxiliary_file)
+            or not self.results[0].intensity
+            or self.overwrite_auxiliary_file
+        ):
+            self.hdf5_handler = HDF5Handler(
+                filename=self.auxiliary_file,
+                archive=archive,
+                logger=logger,
+            )
+            if self.auxiliary_file.endswith('.nxs'):
+                self.hdf5_handler.nexus_dataset_map = NEXUS_DATASET_MAP
+
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/intensity',
+                dataset=Dataset(
+                    data=xrd_dict.get('intensity'),
+                    archive_path='data.results[0].intensity',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/two_theta',
+                dataset=Dataset(
+                    data=xrd_dict.get('2Theta'),
+                    archive_path='data.results[0].two_theta',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/omega',
+                dataset=Dataset(
+                    data=xrd_dict.get('Omega'),
+                    archive_path='data.results[0].omega',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/chi',
+                dataset=Dataset(
+                    data=xrd_dict.get('Chi'),
+                    archive_path='data.results[0].chi',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_result/phi',
+                dataset=Dataset(
+                    data=xrd_dict.get('Phi'),
+                    archive_path='data.results[0].phi',
+                ),
+            )
+            self.hdf5_handler.add_dataset(
+                path='/ENTRY[entry]/experiment_config/count_time',
+                dataset=Dataset(
+                    data=xrd_dict.get('countTime'),
+                    archive_path='data.results[0].integration_time',
+                ),
+            )
+            super().normalize(archive, logger)
+
+            self.hdf5_handler.write_file()
+            if self.hdf5_handler.filename != self.auxiliary_file:
+                self.auxiliary_file = self.hdf5_handler.filename
+
+            self.nexus_view = None
+            if self.auxiliary_file.endswith('.nxs'):
+                nx_entry_id = get_entry_id_from_file_name(
+                    archive=archive, file_name=self.auxiliary_file
+                )
+                self.nexus_view = get_reference(archive.metadata.upload_id, nx_entry_id)
+
+            # TODO (ka-sarthak): update the flag through the normalizer once it works.
+            # self.overwrite_auxiliary_file = False
+        else:
+            super().normalize(archive, logger)
 
 
 class RawFileXRDData(EntryData):
