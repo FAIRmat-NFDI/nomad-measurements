@@ -30,11 +30,10 @@ If you want a corresponding ELN schema, create a new class with the signature:
 For example, ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData).
 """
 
+from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Union,
 )
 
 import numpy as np
@@ -1077,7 +1076,7 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
 
     def get_instrument_reference(
         self, data_dict: dict[str, Any], archive: 'EntryArchive', logger: 'BoundLogger'
-    ) -> Union[InstrumentReference, None]:
+    ) -> InstrumentReference | None:
         """
         Method for getting the instrument reference.
         Looks for an existing instrument with the given serial number.
