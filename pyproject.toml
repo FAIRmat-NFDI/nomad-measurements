@@ -38,6 +38,9 @@ dependencies = [
     "pynxtools==0.9.3",
     "fairmat-readers-xrd>=0.0.7",
     "fairmat-readers-transmission>=0.0.2",
+    "toposort", # pynxtools==0.9.3 depends on this, but does not define it as a dep.
+    # this will be fixed in future version
+    # TODO Remove `toposort` when `pyxtools` is updated
 ]
 [project.urls]
 "Homepage" = "https://github.com/FAIRmat-NFDI/nomad-measurements"
