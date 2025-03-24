@@ -470,6 +470,11 @@ class PolDepol(Accessory):
     )
 
     def normalize(self, archive, logger):
+        """
+        Sets the name of the accessory based on the mode.
+        """
+        if self.mode and self.name is None:
+            self.name = f'{self.mode}'
         if (
             self.mode is None or self.mode == 'Depolarizer'
         ) and self.polarizer_angle is not None:
@@ -505,6 +510,14 @@ class Aperture(Accessory):
         },
         unit='mm',
     )
+
+    def normalize(self, archive, logger):
+        """
+        Sets the name of the accessory.
+        """
+        if self.name is None:
+            self.name = 'Aperture'
+        super().normalize(archive, logger)
 
 
 class SettingOverWavelengthRange(ArchiveSection):
