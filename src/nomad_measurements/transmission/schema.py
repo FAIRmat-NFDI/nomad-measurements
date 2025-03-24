@@ -1414,13 +1414,13 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
         transmission.transmission_settings.attenuator.normalize(archive, logger)
 
         if self.get('transmission_settings') and self.transmission_settings.get(
-            'accessory'
+            'accessories'
         ):
-            for idx, accessory in enumerate(self.transmission_settings.accessory):
-                if isinstance(accessory, PolDepol) and accessory.mode == 'Polarizer':
-                    self.transmission_settings.accessory[
-                        idx
-                    ].polarizer_angle = data_dict['polarizer_angle']
+            for idx, accessory in enumerate(self.transmission_settings.accessories):
+                if isinstance(accessory, PolDepol):
+                    accessory.polarizer_angle = None
+                    if accessory.mode == 'Polarizer':
+                        accessory.polarizer_angle = data_dict['polarizer_angle']
 
         transmission.transmission_settings.normalize(archive, logger)
 
