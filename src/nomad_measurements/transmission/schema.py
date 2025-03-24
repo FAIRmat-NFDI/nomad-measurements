@@ -340,7 +340,6 @@ class TransmissionSampleReference(CompositeSystemReference):
                     'lab_id',
                     'reference',
                     'geometric_path_length',
-                    'optical_path_length',
                 ]
             )
         )
@@ -360,19 +359,8 @@ class TransmissionSampleReference(CompositeSystemReference):
         description="""
         Length of the sample along the direction of the light beam, i.e., the Euclidean
         distance between the entry and exit points of the light beam on the sample.
-        This is different from the optical path length, which is the product of the
-        refractive index of the sample and the geometric path length.
-        """,
-        a_eln={
-            'component': 'NumberEditQuantity',
-            'defaultDisplayUnit': 'millimeter',
-        },
-        unit='meter',
-    )
-    optical_path_length = Quantity(
-        type=np.float64,
-        description="""
-        Product of the refractive index of the sample and the geometric path length.
+        This is different from the optical path length, which depends on the
+        wavelength of light beam, refractive index, and the geometric path length.
         """,
         a_eln={
             'component': 'NumberEditQuantity',
@@ -396,7 +384,6 @@ class CrystallographicTransmissionSampleReference(TransmissionSampleReference):
                     'lab_id',
                     'reference',
                     'geometric_path_length',
-                    'optical_path_length',
                     'crystal_orientation',
                 ]
             )
