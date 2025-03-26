@@ -634,8 +634,8 @@ def resolve_path(section: 'ArchiveSection', path: str, logger: 'BoundLogger' = N
     return attr
 
 
-def read_hdf5_dataset(
-    file_path: str, dataset_path: str, archive: 'ArchiveSection' = None
+def resolve_hdf5_reference(
+    reference: str, archive: 'ArchiveSection' = None
 ) -> np.ndarray | pint.Quantity:
     """
     Read the dataset from the HDF5 file. If the HDF5 file is not available locally, the
@@ -646,15 +646,28 @@ def read_hdf5_dataset(
         file_path (str): The path of the HDF5 file.
         dataset_path (str): The dataset path in the HDF5 file.
         archive (ArchiveSection): The NOMAD archive.
-        TODO test if this works for EntryArchive or only EntryData
 
     Returns:
         np.ndarray | pint.Quantity: The dataset or None if not found.
     """
-    if not os.path.exists(file_path):
+
+    def _validate_reference(ref):
+        if not ref:
+            return False
+        pattern = r'^/uploads/[^/]+/raw/.+#/.+$'
+        return re.match(pattern, ref)
+
+    if not _validate_reference(reference):
+        raise ValueError('The given reference is not a valid HDF5 reference.')
+
+    upload_path, dataset = reference.rsplit('#', 1)
+    file_path = upload_path.split('/raw/', 1)[-1]
+    file_name = file_path.split('/')[-1]
+
+    if not os.path.exists(file_name):
         if not archive:
             raise ValueError(
-                'A NOMAD Archive is required to locate the file on NOMAD server.'
+                'The NOMAD archive containing the `HDF5Reference` was not given.'
             )
         get_raw_file(
             file_path,
@@ -663,10 +676,10 @@ def read_hdf5_dataset(
         )
     value = None
     with h5py.File(file_path, 'r') as h5:
-        if dataset_path in h5:
-            value = h5[dataset_path][...]
+        if dataset in h5:
+            value = h5[dataset][...]
             try:
-                units = h5[dataset_path].attrs['units']
+                units = h5[dataset].attrs['units']
                 value *= ureg(units)
             except KeyError:
                 pass
@@ -691,7 +704,7 @@ def get_raw_file(
         user (str): The username for authentication.
         password (str): The password for authentication.
     """
-    headers = {**Auth(user=user, password=password).headers()}
+    headers = Auth(user=user, password=password).headers()
 
     if path is None:
         path = ''
