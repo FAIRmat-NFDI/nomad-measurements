@@ -30,7 +30,7 @@ import pint
 import requests
 from nomad.client import Auth
 from nomad.config import config
-from nomad.datamodel.context import ClientContext
+from nomad.datamodel.context import ClientContext, ServerContext
 from nomad.datamodel.hdf5 import HDF5Reference
 from nomad.units import ureg
 from pydantic import BaseModel, Field
@@ -333,11 +333,7 @@ class HDF5Handler:
         """
         if path is None:
             return
-        if '#' not in path:
-            dataset_path = path
-        else:
-            dataset_path = path.rsplit('#', 1)
-
+        dataset_path = path if '#' not in path else path.rsplit('#', 1)[1]
         value = None
 
         if dataset_path in self._hdf5_datasets:
@@ -444,9 +440,10 @@ class HDF5Handler:
         pynxtools_writer(
             data=template, nxdl_f_path=nxdl_f_path, output_path=nx_full_file_path
         ).write()
-        self.archive.m_context.process_updated_raw_file(
-            self.filename, allow_modify=True
-        )
+        if isinstance(self.archive.m_context, ServerContext):
+            self.archive.m_context.process_updated_raw_file(
+                self.filename, allow_modify=True
+            )
 
     def _write_hdf5_file(self):
         """
@@ -675,7 +672,7 @@ def resolve_hdf5_reference(
             archive.m_context.installation_url,
         )
     value = None
-    with h5py.File(file_path, 'r') as h5:
+    with h5py.File(file_name, 'r') as h5:
         if dataset in h5:
             value = h5[dataset][...]
             try:
