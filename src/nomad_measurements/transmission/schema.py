@@ -340,7 +340,6 @@ class TransmissionSampleReference(CompositeSystemReference):
                     'lab_id',
                     'reference',
                     'geometric_path_length',
-                    'optical_path_length',
                 ]
             )
         )
@@ -360,19 +359,8 @@ class TransmissionSampleReference(CompositeSystemReference):
         description="""
         Length of the sample along the direction of the light beam, i.e., the Euclidean
         distance between the entry and exit points of the light beam on the sample.
-        This is different from the optical path length, which is the product of the
-        refractive index of the sample and the geometric path length.
-        """,
-        a_eln={
-            'component': 'NumberEditQuantity',
-            'defaultDisplayUnit': 'millimeter',
-        },
-        unit='meter',
-    )
-    optical_path_length = Quantity(
-        type=np.float64,
-        description="""
-        Product of the refractive index of the sample and the geometric path length.
+        This is different from the optical path length, which depends on the
+        wavelength of light beam, refractive index, and the geometric path length.
         """,
         a_eln={
             'component': 'NumberEditQuantity',
@@ -396,7 +384,6 @@ class CrystallographicTransmissionSampleReference(TransmissionSampleReference):
                     'lab_id',
                     'reference',
                     'geometric_path_length',
-                    'optical_path_length',
                     'crystal_orientation',
                 ]
             )
@@ -470,6 +457,11 @@ class PolDepol(Accessory):
     )
 
     def normalize(self, archive, logger):
+        """
+        Sets the name of the accessory based on the mode.
+        """
+        if self.mode and self.name is None:
+            self.name = f'{self.mode}'
         if (
             self.mode is None or self.mode == 'Depolarizer'
         ) and self.polarizer_angle is not None:
@@ -505,6 +497,14 @@ class Aperture(Accessory):
         },
         unit='mm',
     )
+
+    def normalize(self, archive, logger):
+        """
+        Sets the name of the accessory.
+        """
+        if self.name is None:
+            self.name = 'Aperture'
+        super().normalize(archive, logger)
 
 
 class SettingOverWavelengthRange(ArchiveSection):
@@ -1414,13 +1414,13 @@ class ELNUVVisNirTransmission(UVVisNirTransmission, PlotSection, EntryData):
         transmission.transmission_settings.attenuator.normalize(archive, logger)
 
         if self.get('transmission_settings') and self.transmission_settings.get(
-            'accessory'
+            'accessories'
         ):
-            for idx, accessory in enumerate(self.transmission_settings.accessory):
-                if isinstance(accessory, PolDepol) and accessory.mode == 'Polarizer':
-                    self.transmission_settings.accessory[
-                        idx
-                    ].polarizer_angle = data_dict['polarizer_angle']
+            for idx, accessory in enumerate(self.transmission_settings.accessories):
+                if isinstance(accessory, PolDepol):
+                    accessory.polarizer_angle = None
+                    if accessory.mode == 'Polarizer':
+                        accessory.polarizer_angle = data_dict['polarizer_angle']
 
         transmission.transmission_settings.normalize(archive, logger)
 
