@@ -18,6 +18,7 @@
 import copy
 import os.path
 import re
+import tempfile
 from collections import OrderedDict
 from typing import (
     TYPE_CHECKING,
@@ -633,50 +634,63 @@ def resolve_path(section: 'ArchiveSection', path: str, logger: 'BoundLogger' = N
 
 
 def resolve_hdf5_reference(
-    reference: str, archive: 'ArchiveSection' = None
+    reference: str | list[str],
+    archive: 'ArchiveSection',
 ) -> np.ndarray | pint.Quantity:
     """
-    Read the dataset from the HDF5 file. If the HDF5 file is not available locally, the
-    function tries to download the file from the NOMAD server using the
-    context of the provided archive.
+    Resolves the HDF5 references for the given NOMAD archive using the NOMAD API.
+    Multiple references can be resolved with one function call to reduce repeated API
+    calls to the network.
 
     Args:
-        reference (str): The reference path stored in the `HDF5Reference` quantity.
+        reference (str | list[str]): The reference path stored in the `HDF5Reference`
+            quantity. Can also be a list of paths.
         archive (ArchiveSection): The NOMAD archive containing the `HDF5Reference`
             quantity.
 
     Returns:
-        np.ndarray | pint.Quantity: The dataset or None if not found.
+        np.ndarray | pint.Quantity: The dataset or None if not found. If multiple
+            references are provided, a list of datasets is returned.
     """
+    if isinstance(reference, str):
+        reference = [reference]
 
-    reference_parts = parse_path(reference, archive.m_context.upload_id)
-    if not reference_parts:
-        raise ValueError('`reference` is not a valid HDF5 reference path.')
+    datasets = []
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        for ref in reference:
+            reference_parts = parse_path(ref, archive.m_context.upload_id)
+            if not reference_parts:
+                raise ValueError(f'"{ref}" is not a valid HDF5 reference path.')
 
-    _, _, file_path, _, dataset = reference_parts
-    file_name = os.path.split(file_path)[1]
+            _, _, file_path, _, dataset_path = reference_parts
+            tmp_file_path = tmp_dir + os.path.split(file_path)[1]
 
-    if not os.path.exists(file_name):
-        if not archive:
-            raise ValueError('`archive` containing the `HDF5Reference` was not given.')
-        get_raw_file(
-            file_path,
-            archive.m_context.upload_id,
-            archive.m_context.installation_url,
-        )
-    value = None
-    with h5py.File(file_name, 'r') as h5:
-        if dataset in h5:
-            value = h5[dataset][...]
-            try:
-                units = h5[dataset].attrs['units']
-                value *= ureg(units)
-            except KeyError:
-                pass
-    return value
+            if not os.path.exists(tmp_file_path):
+                # download the file from the server
+                response = request_raw_file(
+                    file_path,
+                    archive.m_context.upload_id,
+                    archive.m_context.installation_url,
+                )
+                with open(tmp_file_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+
+            value = None
+            with h5py.File(tmp_file_path, 'r') as h5:
+                if dataset_path in h5:
+                    value = h5[dataset_path][...]
+                    try:
+                        units = h5[dataset_path].attrs['units']
+                        value *= ureg(units)
+                    except KeyError:
+                        pass
+            datasets.append(value)
+
+    return datasets[0] if len(datasets) == 1 else datasets
 
 
-def get_raw_file(
+def request_raw_file(
     path: str,
     upload_id: str,
     base_url: str,
@@ -684,7 +698,7 @@ def get_raw_file(
     password: str = config.client.password,
 ):
     """
-    Downloads the raw file from the NOMAD server using the API endpoint
+    Gets the `request` response from the NOMAD server API endpoint
     `/uploads/{upload_id}/raw/{path}`.
 
     Attributes:
@@ -704,6 +718,4 @@ def get_raw_file(
 
     response.raise_for_status()
 
-    with open(path, 'wb') as f:
-        for chunk in response.iter_content(chunk_size=8192):
-            f.write(chunk)
+    return response
