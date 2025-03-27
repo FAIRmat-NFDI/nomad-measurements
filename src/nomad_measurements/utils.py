@@ -32,6 +32,7 @@ from nomad.client import Auth
 from nomad.config import config
 from nomad.datamodel.context import ClientContext, ServerContext
 from nomad.datamodel.hdf5 import HDF5Reference
+from nomad.datamodel.util import parse_path
 from nomad.units import ureg
 from pydantic import BaseModel, Field
 from pynxtools.dataconverter.helpers import (
@@ -640,32 +641,24 @@ def resolve_hdf5_reference(
     context of the provided archive.
 
     Args:
-        file_path (str): The path of the HDF5 file.
-        dataset_path (str): The dataset path in the HDF5 file.
-        archive (ArchiveSection): The NOMAD archive.
+        reference (str): The reference path stored in the `HDF5Reference` quantity.
+        archive (ArchiveSection): The NOMAD archive containing the `HDF5Reference`
+            quantity.
 
     Returns:
         np.ndarray | pint.Quantity: The dataset or None if not found.
     """
 
-    def _validate_reference(ref):
-        if not ref:
-            return False
-        pattern = r'^/uploads/[^/]+/raw/.+#/.+$'
-        return re.match(pattern, ref)
+    reference_parts = parse_path(reference, archive.m_context.upload_id)
+    if not reference_parts:
+        raise ValueError('`reference` is not a valid HDF5 reference path.')
 
-    if not _validate_reference(reference):
-        raise ValueError('The given reference is not a valid HDF5 reference.')
-
-    upload_path, dataset = reference.rsplit('#', 1)
-    file_path = upload_path.split('/raw/', 1)[-1]
-    file_name = file_path.split('/')[-1]
+    _, _, file_path, _, dataset = reference_parts
+    file_name = os.path.split(file_path)[1]
 
     if not os.path.exists(file_name):
         if not archive:
-            raise ValueError(
-                'The NOMAD archive containing the `HDF5Reference` was not given.'
-            )
+            raise ValueError('`archive` containing the `HDF5Reference` was not given.')
         get_raw_file(
             file_path,
             archive.m_context.upload_id,
