@@ -18,6 +18,7 @@
 import copy
 import os.path
 import re
+import tempfile
 from collections import OrderedDict
 from typing import (
     TYPE_CHECKING,
@@ -27,8 +28,12 @@ from typing import (
 import h5py
 import numpy as np
 import pint
-from nomad.datamodel.context import ClientContext
+import requests
+from nomad.client import Auth
+from nomad.config import config
+from nomad.datamodel.context import ClientContext, ServerContext
 from nomad.datamodel.hdf5 import HDF5Reference
+from nomad.datamodel.util import parse_path
 from nomad.units import ureg
 from pydantic import BaseModel, Field
 from pynxtools.dataconverter.helpers import (
@@ -330,11 +335,7 @@ class HDF5Handler:
         """
         if path is None:
             return
-        if '#' not in path:
-            dataset_path = path
-        else:
-            dataset_path = path.rsplit('#', 1)
-
+        dataset_path = path if '#' not in path else path.rsplit('#', 1)[1]
         value = None
 
         if dataset_path in self._hdf5_datasets:
@@ -441,9 +442,10 @@ class HDF5Handler:
         pynxtools_writer(
             data=template, nxdl_f_path=nxdl_f_path, output_path=nx_full_file_path
         ).write()
-        self.archive.m_context.process_updated_raw_file(
-            self.filename, allow_modify=True
-        )
+        if isinstance(self.archive.m_context, ServerContext):
+            self.archive.m_context.process_updated_raw_file(
+                self.filename, allow_modify=True
+            )
 
     def _write_hdf5_file(self):
         """
@@ -629,3 +631,91 @@ def resolve_path(section: 'ArchiveSection', path: str, logger: 'BoundLogger' = N
         return None
 
     return attr
+
+
+def resolve_hdf5_reference(
+    reference: str | list[str],
+    archive: 'ArchiveSection',
+) -> np.ndarray | pint.Quantity:
+    """
+    Resolves the HDF5 references for the given NOMAD archive using the NOMAD API.
+    Multiple references can be resolved with one function call to reduce repeated API
+    calls to the network.
+
+    Args:
+        reference (str | list[str]): The reference path stored in the `HDF5Reference`
+            quantity. Can also be a list of paths.
+        archive (ArchiveSection): The NOMAD archive containing the `HDF5Reference`
+            quantity.
+
+    Returns:
+        np.ndarray | pint.Quantity: The dataset or None if not found. If multiple
+            references are provided, a list of datasets is returned.
+    """
+    if isinstance(reference, str):
+        reference = [reference]
+
+    datasets = []
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        for ref in reference:
+            reference_parts = parse_path(ref, archive.m_context.upload_id)
+            if not reference_parts:
+                raise ValueError(f'"{ref}" is not a valid HDF5 reference path.')
+
+            _, _, file_path, _, dataset_path = reference_parts
+            tmp_file_path = tmp_dir + os.path.split(file_path)[1]
+
+            if not os.path.exists(tmp_file_path):
+                # download the file from the server
+                response = request_raw_file(
+                    file_path,
+                    archive.m_context.upload_id,
+                    archive.m_context.installation_url,
+                )
+                with open(tmp_file_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+
+            value = None
+            with h5py.File(tmp_file_path, 'r') as h5:
+                if dataset_path in h5:
+                    value = h5[dataset_path][...]
+                    try:
+                        units = h5[dataset_path].attrs['units']
+                        value *= ureg(units)
+                    except KeyError:
+                        pass
+            datasets.append(value)
+
+    return datasets[0] if len(datasets) == 1 else datasets
+
+
+def request_raw_file(
+    path: str,
+    upload_id: str,
+    base_url: str,
+    user: str = config.client.user,
+    password: str = config.client.password,
+):
+    """
+    Gets the `request` response from the NOMAD server API endpoint
+    `/uploads/{upload_id}/raw/{path}`.
+
+    Attributes:
+        path (str): The path of the raw file to be downloaded.
+        upload_id (str): The upload ID of the raw file.
+        base_url (str): The base URL of the NOMAD server.
+        user (str): The username for authentication.
+        password (str): The password for authentication.
+    """
+    headers = Auth(user=user, password=password).headers()
+
+    if path is None:
+        path = ''
+    endpoint = f'{base_url}/uploads/{upload_id}/raw/{path}'
+
+    response = requests.get(endpoint, headers=headers, timeout=120)
+
+    response.raise_for_status()
+
+    return response
