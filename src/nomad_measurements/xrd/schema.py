@@ -49,7 +49,7 @@ from nomad.datamodel.metainfo.basesections import (
     MeasurementResult,
     ReadableIdentifiers,
 )
-from nomad.datamodel.metainfo.plot import PlotlyFigure
+from nomad.datamodel.metainfo.plot import PlotlyFigure, PlotSection
 from nomad.datamodel.results import (
     DiffractionPattern,
     MeasurementMethod,
@@ -1708,7 +1708,7 @@ class XRayDiffraction(Measurement):
             )
 
 
-class ELNXRayDiffraction(XRayDiffraction, EntryData):
+class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     """
     Example section for how XRayDiffraction can be implemented with a general reader for
     common XRD file types.
@@ -1761,9 +1761,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
     auxiliary_file = Quantity(
         type=str,
         description='Auxiliary file (like .h5 or .nxs) containing the entry data.',
-        a_eln=ELNAnnotation(
-            component=ELNComponentEnum.FileEditQuantity,
-        ),
         a_browser=BrowserAnnotation(adaptor='RawFileAdaptor'),
     )
     nexus_view = Quantity(
@@ -1771,12 +1768,23 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         description='Reference to the NeXus entry.',
         a_eln=ELNAnnotation(component=ELNComponentEnum.ReferenceEditQuantity),
     )
-    overwrite_auxiliary_file = Quantity(
+    trigger_switch_results_section = Quantity(
         type=bool,
-        description='Overwrite the auxiliary file with the current data.',
-        a_eln=ELNAnnotation(
-            component=ELNComponentEnum.BoolEditQuantity,
-        ),
+        description="""
+        Switches the results section. If it is a non-HDF5 section, it will be converted
+        to HDF5 section (using NeXus file in the backend) and vice versa.
+        If the results contains large datasets and the entry takes longer to process,
+        it is recommended to use the HDF5 section.
+        """,
+        a_eln=dict(component='ActionEditQuantity', label='Switch Results Section'),
+    )
+    update_nexus_file = Quantity(
+        type=bool,
+        description="""
+        Updates the nexus file with the current ELN state, if the results section uses
+        HDF5 references along with a NeXus file.
+        """,
+        a_eln=dict(component='ActionEditQuantity', label='Update NeXus File'),
     )
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
