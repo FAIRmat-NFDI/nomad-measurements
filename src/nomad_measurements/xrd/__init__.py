@@ -1,7 +1,13 @@
 from nomad.config.models.plugins import ParserEntryPoint, SchemaPackageEntryPoint
+from pydantic import Field
 
 
 class XRDSchemaPackageEntryPoint(SchemaPackageEntryPoint):
+    use_hdf5_results: bool = Field(
+        default=False,
+        description='Whether to use HDF5 results sections by default.',
+    )
+
     def load(self):
         from nomad_measurements.xrd.schema import m_package
 

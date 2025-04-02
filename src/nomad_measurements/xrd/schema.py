@@ -28,6 +28,7 @@ from fairmat_readers_xrd import (
     read_panalytical_xrdml,
     read_rigaku_rasx,
 )
+from nomad.config import config
 from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
@@ -90,6 +91,7 @@ if TYPE_CHECKING:
         BoundLogger,
     )
 
+schema_config = config.get_plugin_entry_point('nomad_measurements.xrd:schema')
 
 m_package = SchemaPackage(aliases=['nomad_measurements.xrd.parser.parser'])
 
@@ -1757,17 +1759,17 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         type=bool,
         description="""
         Switches the results section. If it is a non-HDF5 section, it will be converted
-        to HDF5 section (using NeXus file in the backend) and vice versa.
+        to HDF5 section (which uses NeXus file in the backend) and vice versa.
         If the results contains large datasets and the entry takes longer to process,
         it is recommended to use the HDF5 section.
         """,
-        a_eln=dict(component='ActionEditQuantity', label='Switch Results Section'),
+        a_eln=dict(component='ActionEditQuantity', label='Switch To/From HDF5 Results'),
     )
     trigger_update_nexus_file = Quantity(
         type=bool,
         description="""
-        Updates the nexus file with the current ELN state, if the results section uses
-        HDF5 references along with a NeXus file.
+        Updates the nexus file with the current ELN state when using HDF5 results
+        section.
         """,
         a_eln=dict(component='ActionEditQuantity', label='Update NeXus File'),
     )
@@ -1970,7 +1972,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                 )
                 self.nexus_view = get_reference(archive.metadata.upload_id, nx_entry_id)
 
-            self.trigger_update_nexus_file = False
+        self.trigger_update_nexus_file = False
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
@@ -2000,11 +2002,15 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             if scan_type not in ['line', 'rsm']:
                 logger.error(f'Scan type `{scan_type}` is not supported.')
                 return
-            # use the non-HDF5 section as default
-            if scan_type == 'line':
+            if schema_config.use_hdf5_results and scan_type == 'line':
+                self.results = [XRDResult1DHDF5()]
+            elif not schema_config.use_hdf5_results and scan_type == 'line':
                 self.results = [XRDResult1D()]
-            elif scan_type == 'rsm':
+            elif schema_config.use_hdf5_results and scan_type == 'rsm':
+                self.results = [XRDResultRSMHDF5()]
+            elif not schema_config.use_hdf5_results and scan_type == 'rsm':
                 self.results = [XRDResultRSM()]
+            self.trigger_update_nexus_file = True
         elif self.trigger_switch_results_section:
             self.switch_results_section()
             self.trigger_switch_results_section = False
