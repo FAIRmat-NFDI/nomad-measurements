@@ -1857,17 +1857,24 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
 
         merge_sections(self, xrd, logger)
 
-    def backward_compatibility(self):
+    def switch_results_section(self):
         """
-        Method for backward compatibility.
+        Switches the results section between HDF5 and non-HDF5 sections.
         """
-        # Migration to using `HFD5Reference`: remove non-HDF5 results and plotly figures
-        if self.get('results') and isinstance(
-            self.results[0], XRDResult1D | XRDResultRSM
-        ):
-            self.results = []
-        if self.get('figures'):
+        if isinstance(self.results[0], XRDResult1D):
+            self.results = [XRDResult1DHDF5()]
             self.figures = []
+        elif isinstance(self.results[0], XRDResultRSM):
+            self.results = [XRDResultRSMHDF5()]
+            self.figures = []
+        elif isinstance(self.results[0], XRDResult1DHDF5):
+            self.results = [XRDResult1D()]
+            self.auxiliary_file = None
+            self.nexus_view = None
+        elif isinstance(self.results[0], XRDResultRSMHDF5):
+            self.results = [XRDResultRSM()]
+            self.auxiliary_file = None
+            self.nexus_view = None
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
@@ -1878,7 +1885,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             normalized.
             logger (BoundLogger): A structlog logger.
         """
-        self.backward_compatibility()
         if self.data_file is None:
             super().normalize(archive, logger)
             return
