@@ -1763,7 +1763,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         """,
         a_eln=dict(component='ActionEditQuantity', label='Switch Results Section'),
     )
-    update_nexus_file = Quantity(
+    trigger_update_nexus_file = Quantity(
         type=bool,
         description="""
         Updates the nexus file with the current ELN state, if the results section uses
@@ -1994,7 +1994,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             xrd_dict = read_function(file.name, logger)
         write_function(xrd_dict, archive, logger)
 
-        # setup results section
+        # set up results section
         if not self.results:
             scan_type = xrd_dict.get('metadata', {}).get('scan_type')
             if scan_type not in ['line', 'rsm']:
