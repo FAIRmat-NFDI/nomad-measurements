@@ -1840,9 +1840,11 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         if isinstance(self.results[0], XRDResult1D):
             self.results = [XRDResult1DHDF5()]
             self.figures = []
+            self.update_nexus_file = True
         elif isinstance(self.results[0], XRDResultRSM):
             self.results = [XRDResultRSMHDF5()]
             self.figures = []
+            self.update_nexus_file = True
         elif isinstance(self.results[0], XRDResult1DHDF5):
             self.results = [XRDResult1D()]
             self.auxiliary_file = None
@@ -1889,7 +1891,10 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                     setattr(self.results[0], k, v)
             self.results[0].normalize(archive, logger)
             self.figures = self.results[0].generate_plots()
-        elif isinstance(self.results[0], XRDResult1DHDF5 | XRDResultRSMHDF5):
+        elif (
+            isinstance(self.results[0], XRDResult1DHDF5 | XRDResultRSMHDF5)
+            and self.update_nexus_file
+        ):
             filename = self.data_file.rsplit('.', 1)[0]
             self.auxiliary_file = (
                 f'{filename}.h5'
@@ -1964,6 +1969,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                     archive=archive, file_name=self.auxiliary_file
                 )
                 self.nexus_view = get_reference(archive.metadata.upload_id, nx_entry_id)
+
+            self.update_nexus_file = False
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
