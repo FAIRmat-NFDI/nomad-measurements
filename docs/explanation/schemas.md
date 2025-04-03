@@ -208,9 +208,9 @@ to this. Otherwise, the parsed entries use a non-HDF5 result section by default.
 ```yaml
 # "nomad.yaml" file for your oasis
 plugins:
-entry_points:
+  entry_points:
     options:
-    'nomad_measurements.xrd:schema':
+      nomad_measurements.xrd:schema:
         use_hdf5_results: true # defaults to `false` when not specified
 ```
 
