@@ -189,9 +189,18 @@ We make use of [`HDF5Reference`](https://nomad-lab.eu/prod/v1/docs/howto/customi
 
 ### HDF5 References in X-Ray Diffraction ELNs
 
-In our ELN schemas for XRD, we allow the user to switch between results section using `HDF5Reference`. The user can switch between an HDF5 or a non-HDF5 result section clicking the button `Switch To/From HDF5 Results`. When the result section is switched to an HDF5 one, a NeXus file is generated (which is a `.h5` file with additional validations) and results are written there. The entry only stores the references to these HDF5 datasets in the NeXus file. The same button can be used to switch back to a non-HDF5 result section if needed.
+In our ELN schemas for XRD, we allow the user to switch between result sections
+using `HDF5Reference`. The user can switch between an HDF5 or a non-HDF5 result
+section by clicking the button `Switch To/From HDF5 Results`. When the result
+section is switched to an HDF5 one, a NeXus file is generated (which is a `.h5`
+file with additional validations) and results are written there. The entry only
+stores the references to these HDF5 datasets in the NeXus file. The same button
+can be used to switch back to a non-HDF5 result section if needed.
 
-An oasis administrator can also set in the `nomad.yaml` whether to use the HDF5 or non-HDF5 result section when parsing XRD data for in the entry for the first time. Users who usually work with RSM or high-resolution XRD scans can opt-in to this. Otherwise, the parsed entries use a non-HDF5 result section by default.
+An oasis administrator can also set in the `nomad.yaml` whether to use the HDF5
+or non-HDF5 result section when parsing XRD data in the entry for the first
+time. Users who usually work with RSM or high-resolution XRD scans can opt-in
+to this. Otherwise, the parsed entries use a non-HDF5 result section by default.
 ```yaml
 # "nomad.yaml" file for your oasis
 plugins:
@@ -203,7 +212,10 @@ entry_points:
 
 ### Working with downloaded entries
 
-If the entries using HDF5 result sections are downloaded over the API, accessing the data of the quantity requires additional step. The entry only stores a reference path (`str`) to the data. Make use of the util function `nomad_measurements.utils.resolve_hdf5_reference` to resolve these paths.
+If the entries using HDF5 result sections are downloaded over the API,
+accessing the data of the quantity requires an additional step. The entry only
+stores a reference path (`str`) to the data. Make use of the util function
+`nomad_measurements.utils.resolve_hdf5_reference` to resolve these paths.
 
 ```py
 from nomad.client import ArchiveQuery
@@ -228,4 +240,3 @@ intensity, two_theta = resolve_hdf5_reference(
     archive=xrd,
 ) # resolves the references and returns the XRD data
 ```
-
