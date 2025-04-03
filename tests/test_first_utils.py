@@ -86,6 +86,8 @@ def test_merge_sections(capfd):
     out, _ = capfd.readouterr()
     assert out == (
         'Merging sections with different values for quantity "float_array".\n'
+        'Merging sections with different values for quantity '
+        '"float_array_w_diff_length".\n'
         'Merging sections with different values for quantity "bool_array".\n'
         'Merging sections with different values for quantity "name".\n'
     )
