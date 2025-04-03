@@ -222,7 +222,7 @@ from nomad.client import ArchiveQuery
 from nomad_measurements.utils import resolve_hdf5_reference
 
 aq = ArchiveQuery(
-    query={'entry_id:any': ['F-b8Bw-kpjKfq']},
+    query={'entry_id:any': ['<Entry ID of an XRD entry>']},
     url='http://nomad-lab.eu/prod/v1/oasis/api',
 )
 xrd = aq.download()[0].data
