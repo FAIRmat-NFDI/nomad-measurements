@@ -185,7 +185,11 @@ and searching for: `"nomad_measurements.transmission"`.
 
 ## HDF5 References
 
-We make use of [`HDF5Reference`](https://nomad-lab.eu/prod/v1/docs/howto/customization/hdf5.html#hdf5reference) as a quantity type in some schemas. These quantities allow to store large datasets in an external `.h5` file, while only storing references to the HDF5 datasets in the NOMAD entry. As a result, the users can connect large datasets to ELN entries without sacrificing their responsiveness.
+We make use of [`HDF5Reference`](https://nomad-lab.eu/prod/v1/docs/howto/customization/hdf5.html#hdf5reference)
+as a quantity type in some schemas. These quantities allow to store large
+datasets in an external `.h5` file, while only storing references to the HDF5
+datasets in the NOMAD entry. As a result, the users can connect large datasets
+to ELN entries without sacrificing their responsiveness.
 
 ### HDF5 References in X-Ray Diffraction ELNs
 
