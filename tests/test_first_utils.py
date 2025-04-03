@@ -34,6 +34,7 @@ from nomad_measurements.utils import (
 class TestComponent(Component):
     float_array = Quantity(type=np.float64, shape=[2, '*'])
     float_array_w_units = Quantity(type=np.float64, shape=['*'], unit='eV')
+    float_array_w_diff_length = Quantity(type=np.float64, shape=['*'])
     bool_array = Quantity(type=bool, shape=['*'])
     enum_value = Quantity(type=MEnum(['A', 'B', 'C']))
 
@@ -43,6 +44,7 @@ def test_merge_sections(capfd):
         mass_fraction=1,
         float_array=[[1.0, 1.0], [1.0, 3.0]],
         float_array_w_units=[1.0, 1.0],
+        float_array_w_diff_length=[1.0, 3.0],
         bool_array=[True, False],
         enum_value='A',
     )
@@ -51,6 +53,7 @@ def test_merge_sections(capfd):
         mass_fraction=1,
         float_array=[[1.0, 3.0], [1.0, 3.0]],
         float_array_w_units=[1.0, 1.0],
+        float_array_w_diff_length=[1.0, 3.0, 4.0],
         bool_array=[True, True],
         enum_value='A',
     )
@@ -83,6 +86,8 @@ def test_merge_sections(capfd):
     out, _ = capfd.readouterr()
     assert out == (
         'Merging sections with different values for quantity "float_array".\n'
+        'Merging sections with different values for quantity '
+        '"float_array_w_diff_length".\n'
         'Merging sections with different values for quantity "bool_array".\n'
         'Merging sections with different values for quantity "name".\n'
     )

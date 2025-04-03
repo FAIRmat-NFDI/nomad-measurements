@@ -93,7 +93,11 @@ def create_archive(
 
 
 def _not_equal(a, b) -> bool:
-    comparison = a != b
+    try:
+        comparison = a != b
+    except ValueError:
+        # If the comparison fails, we assume they are not equal
+        return True
     if isinstance(comparison, np.ndarray):
         return comparison.any()
     return comparison
