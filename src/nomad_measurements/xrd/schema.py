@@ -1856,7 +1856,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             self.auxiliary_file = None
             self.nexus_view = None
 
-    def populate_results_section(
+    def populate_measurement_results(
         self, xrd_dict: dict, archive: 'EntryArchive', logger: 'BoundLogger'
     ):
         """
@@ -2015,8 +2015,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             self.switch_results_section()
             self.trigger_switch_results_section = False
 
-        # populate the results section
-        self.populate_results_section(xrd_dict, archive, logger)
+        # populate the measurement results section
+        self.populate_measurement_results(xrd_dict, archive, logger)
 
         super().normalize(archive, logger)
 
