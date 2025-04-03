@@ -1646,6 +1646,15 @@ class XRayDiffraction(Measurement):
             logger (BoundLogger): A structlog logger.
         """
         super().normalize(archive, logger)
+        if (
+            self.xrd_settings is not None
+            and self.xrd_settings.source is not None
+            and self.xrd_settings.source.kalpha_one is not None
+        ):
+            for result in self.results:
+                if result.source_peak_wavelength is None:
+                    result.source_peak_wavelength = self.xrd_settings.source.kalpha_one
+                    result.normalize(archive, logger)
 
         if not archive.results:
             archive.results = Results()
