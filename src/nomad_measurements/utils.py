@@ -55,10 +55,6 @@ if TYPE_CHECKING:
     )
 
 
-class NXFileGenerationError(Exception):
-    pass
-
-
 def get_reference(upload_id: str, entry_id: str) -> str:
     return f'../uploads/{upload_id}/archive/{entry_id}#data'
 

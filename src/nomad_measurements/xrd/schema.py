@@ -28,6 +28,7 @@ from fairmat_readers_xrd import (
     read_panalytical_xrdml,
     read_rigaku_rasx,
 )
+from nomad.config import config
 from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
@@ -49,7 +50,7 @@ from nomad.datamodel.metainfo.basesections import (
     MeasurementResult,
     ReadableIdentifiers,
 )
-from nomad.datamodel.metainfo.plot import PlotlyFigure
+from nomad.datamodel.metainfo.plot import PlotlyFigure, PlotSection
 from nomad.datamodel.results import (
     DiffractionPattern,
     MeasurementMethod,
@@ -90,6 +91,7 @@ if TYPE_CHECKING:
         BoundLogger,
     )
 
+schema_config = config.get_plugin_entry_point('nomad_measurements.xrd:schema')
 
 m_package = SchemaPackage(aliases=['nomad_measurements.xrd.parser.parser'])
 
@@ -1654,12 +1656,6 @@ class XRayDiffraction(Measurement):
                     result.source_peak_wavelength = self.xrd_settings.source.kalpha_one
                     result.normalize(archive, logger)
 
-        # calculate scattering vectors and add plots
-        for result in self.results:
-            if isinstance(result, XRDResult1DHDF5 | XRDResultRSMHDF5):
-                result.calculate_scattering_vectors(self.hdf5_handler)
-                result.generate_hdf5_plots(self.hdf5_handler)
-
         if not archive.results:
             archive.results = Results()
         if not archive.results.properties:
@@ -1708,7 +1704,7 @@ class XRayDiffraction(Measurement):
             )
 
 
-class ELNXRayDiffraction(XRayDiffraction, EntryData):
+class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     """
     Example section for how XRayDiffraction can be implemented with a general reader for
     common XRD file types.
@@ -1761,9 +1757,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
     auxiliary_file = Quantity(
         type=str,
         description='Auxiliary file (like .h5 or .nxs) containing the entry data.',
-        a_eln=ELNAnnotation(
-            component=ELNComponentEnum.FileEditQuantity,
-        ),
         a_browser=BrowserAnnotation(adaptor='RawFileAdaptor'),
     )
     nexus_view = Quantity(
@@ -1771,12 +1764,23 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         description='Reference to the NeXus entry.',
         a_eln=ELNAnnotation(component=ELNComponentEnum.ReferenceEditQuantity),
     )
-    overwrite_auxiliary_file = Quantity(
+    trigger_switch_results_section = Quantity(
         type=bool,
-        description='Overwrite the auxiliary file with the current data.',
-        a_eln=ELNAnnotation(
-            component=ELNComponentEnum.BoolEditQuantity,
-        ),
+        description="""
+        Switches the results section. If it is a non-HDF5 section, it will be converted
+        to HDF5 section (which uses NeXus file in the backend) and vice versa.
+        If the results contains large datasets and the entry takes longer to process,
+        it is recommended to use the HDF5 section.
+        """,
+        a_eln=dict(component='ActionEditQuantity', label='Switch To/From HDF5 Results'),
+    )
+    trigger_update_nexus_file = Quantity(
+        type=bool,
+        description="""
+        Updates the nexus file with the current ELN state when using HDF5 results
+        section.
+        """,
+        a_eln=dict(component='ActionEditQuantity', label='Update NeXus File'),
     )
 
     def get_read_write_functions(self) -> tuple[Callable, Callable]:
@@ -1811,23 +1815,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
         metadata_dict: dict = xrd_dict.get('metadata', {})
         source_dict: dict = metadata_dict.get('source', {})
 
-        scan_type = metadata_dict.get('scan_type')
-        if scan_type not in ['line', 'rsm']:
-            logger.error(f'Scan type `{scan_type}` is not supported.')
-            return
-
-        # Create a new result section
-        results = []
-        result = None
-        if scan_type == 'line':
-            result = XRDResult1DHDF5()
-        elif scan_type == 'rsm':
-            result = XRDResultRSMHDF5()
-        if result is not None:
-            result.scan_axis = metadata_dict.get('scan_axis')
-            result.normalize(archive, logger)
-            results.append(result)
-
         source = XRayTubeSource(
             xray_tube_material=source_dict.get('anode_material'),
             kalpha_one=source_dict.get('kAlpha1'),
@@ -1850,59 +1837,81 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
             samples.append(sample)
 
         xrd = ELNXRayDiffraction(
-            results=results,
+            results=[],
             xrd_settings=xrd_settings,
             samples=samples,
         )
 
         merge_sections(self, xrd, logger)
 
-    def backward_compatibility(self):
+    def switch_results_section(self):
         """
-        Method for backward compatibility.
+        Switches the results section between HDF5 and non-HDF5 sections.
         """
-        # Migration to using `HFD5Reference`: remove non-HDF5 results and plotly figures
-        if self.get('results') and isinstance(
-            self.results[0], XRDResult1D | XRDResultRSM
-        ):
-            self.results = []
-        if self.get('figures'):
+        if isinstance(self.results[0], XRDResult1D):
+            self.results = [XRDResult1DHDF5()]
             self.figures = []
+            self.trigger_update_nexus_file = True
+        elif isinstance(self.results[0], XRDResultRSM):
+            self.results = [XRDResultRSMHDF5()]
+            self.figures = []
+            self.trigger_update_nexus_file = True
+        elif isinstance(self.results[0], XRDResult1DHDF5):
+            self.results = [XRDResult1D()]
+            self.auxiliary_file = None
+            self.nexus_view = None
+        elif isinstance(self.results[0], XRDResultRSMHDF5):
+            self.results = [XRDResultRSM()]
+            self.auxiliary_file = None
+            self.nexus_view = None
 
-    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+    def populate_measurement_results(
+        self, xrd_dict: dict, archive: 'EntryArchive', logger: 'BoundLogger'
+    ):
         """
-        The normalize function of the `ELNXRayDiffraction` section.
+        Populate the results section of the X-ray diffraction data. It performs the
+        appropriate actions based on the type of results section (HDF5 or non-HDF5) and
+        updates the results and figures accordingly.
 
         Args:
-            archive (EntryArchive): The archive containing the section that is being
-            normalized.
+            xrd_dict (Dict): The XRD data dictionary.
+            archive (EntryArchive): The archive containing the section.
             logger (BoundLogger): A structlog logger.
         """
-        self.backward_compatibility()
-        if self.data_file is None:
-            super().normalize(archive, logger)
-            return
+        metadata_dict: dict = xrd_dict.get('metadata', {})
 
-        read_function, write_function = self.get_read_write_functions()
-        if read_function is None or write_function is None:
-            logger.warn(f'No compatible reader found for the file: "{self.data_file}".')
-            super().normalize(archive, logger)
-            return
-        with archive.m_context.raw_file(self.data_file) as file:
-            xrd_dict = read_function(file.name, logger)
-        write_function(xrd_dict, archive, logger)
-
-        filename = self.data_file.rsplit('.', 1)[0]
-        self.auxiliary_file = (
-            f'{filename}.h5'
-            if archive.m_context.raw_path_exists(f'{filename}.h5')
-            else f'{filename}.nxs'
+        result_dict = dict(
+            scan_axis=metadata_dict.get('scan_axis'),
+            intensity=xrd_dict.get('intensity'),
+            two_theta=xrd_dict.get('2Theta'),
+            omega=xrd_dict.get('Omega'),
+            chi=xrd_dict.get('Chi'),
+            phi=xrd_dict.get('Phi'),
+            integration_time=xrd_dict.get('countTime'),
         )
         if (
-            not archive.m_context.raw_path_exists(self.auxiliary_file)
-            or not self.results[0].intensity
-            or self.overwrite_auxiliary_file
+            self.xrd_settings is not None
+            and self.xrd_settings.source is not None
+            and self.xrd_settings.source.kalpha_one is not None
         ):
+            result_dict['source_peak_wavelength'] = self.xrd_settings.source.kalpha_one
+
+        if isinstance(self.results[0], XRDResult1D | XRDResultRSM):
+            for k, v in result_dict.items():
+                if v is not None:
+                    setattr(self.results[0], k, v)
+            self.results[0].normalize(archive, logger)
+            self.figures = self.results[0].generate_plots()
+        elif (
+            isinstance(self.results[0], XRDResult1DHDF5 | XRDResultRSMHDF5)
+            and self.trigger_update_nexus_file
+        ):
+            filename = self.data_file.rsplit('.', 1)[0]
+            self.auxiliary_file = (
+                f'{filename}.h5'
+                if archive.m_context.raw_path_exists(f'{filename}.h5')
+                else f'{filename}.nxs'
+            )
             self.hdf5_handler = HDF5Handler(
                 filename=self.auxiliary_file,
                 archive=archive,
@@ -1953,12 +1962,18 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                     archive_path='data.results[0].integration_time',
                 ),
             )
-            super().normalize(archive, logger)
+            self.results[0].scan_axis = result_dict.get('scan_axis')
+            self.results[0].source_peak_wavelength = result_dict.get(
+                'source_peak_wavelength'
+            )
+            self.results[0].calculate_scattering_vectors(self.hdf5_handler)
+            self.results[0].generate_hdf5_plots(self.hdf5_handler)
+            self.results[0].normalize(archive, logger)
 
             self.hdf5_handler.write_file()
+
             if self.hdf5_handler.filename != self.auxiliary_file:
                 self.auxiliary_file = self.hdf5_handler.filename
-
             self.nexus_view = None
             if self.auxiliary_file.endswith('.nxs'):
                 nx_entry_id = get_entry_id_from_file_name(
@@ -1966,10 +1981,53 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData):
                 )
                 self.nexus_view = get_reference(archive.metadata.upload_id, nx_entry_id)
 
-            # TODO (ka-sarthak): update the flag through the normalizer once it works.
-            # self.overwrite_auxiliary_file = False
-        else:
+        self.trigger_update_nexus_file = False
+
+    def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
+        """
+        The normalize function of the `ELNXRayDiffraction` section.
+
+        Args:
+            archive (EntryArchive): The archive containing the section that is being
+            normalized.
+            logger (BoundLogger): A structlog logger.
+        """
+        if self.data_file is None:
             super().normalize(archive, logger)
+            return
+
+        read_function, write_function = self.get_read_write_functions()
+        if read_function is None or write_function is None:
+            logger.warn(f'No compatible reader found for the file: "{self.data_file}".')
+            super().normalize(archive, logger)
+            return
+        with archive.m_context.raw_file(self.data_file) as file:
+            xrd_dict = read_function(file.name, logger)
+        write_function(xrd_dict, archive, logger)
+
+        # set up results section
+        if not self.results:
+            scan_type = xrd_dict.get('metadata', {}).get('scan_type')
+            if scan_type not in ['line', 'rsm']:
+                logger.error(f'Scan type `{scan_type}` is not supported.')
+                return
+            if schema_config.use_hdf5_results and scan_type == 'line':
+                self.results = [XRDResult1DHDF5()]
+            elif not schema_config.use_hdf5_results and scan_type == 'line':
+                self.results = [XRDResult1D()]
+            elif schema_config.use_hdf5_results and scan_type == 'rsm':
+                self.results = [XRDResultRSMHDF5()]
+            elif not schema_config.use_hdf5_results and scan_type == 'rsm':
+                self.results = [XRDResultRSM()]
+            self.trigger_update_nexus_file = True
+        elif self.trigger_switch_results_section:
+            self.switch_results_section()
+            self.trigger_switch_results_section = False
+
+        # populate the measurement results section
+        self.populate_measurement_results(xrd_dict, archive, logger)
+
+        super().normalize(archive, logger)
 
 
 class RawFileXRDData(EntryData):
