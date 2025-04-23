@@ -202,9 +202,7 @@ def find_qd_steps_from_sequence(sequence):  # noqa: PLR0912, PLR0915
                 )
             )
         elif line.startswith('ENT'):
-            all_steps.append(
-                QDMeasurementScanTempEndStep(name='End Temperature Scan.')
-            )
+            all_steps.append(QDMeasurementScanTempEndStep(name='End Temperature Scan.'))
         elif line.startswith('ACTR'):
             details = line.split()
             autorange = ['Fixed Gain', 'Always Autorange', 'Sticky Autorange']
