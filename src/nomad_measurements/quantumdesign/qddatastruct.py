@@ -36,7 +36,7 @@ from nomad.metainfo import (
 )
 
 
-class PPMSSample(ArchiveSection):
+class QDSample(ArchiveSection):
     name = Quantity(type=str, description='Name/ID of the sample')
     type = Quantity(
         type=str, description='Type of the sample, e.g. single crystal, device,...'
@@ -53,9 +53,9 @@ class PPMSSample(ArchiveSection):
     )
 
 
-class PPMSResult(MeasurementResult):
+class QDResult(MeasurementResult):
     """
-    Section for the results of a generic PPMS measurement
+    Section for the results of a generic QD measurement
     """
 
     temperature = Quantity(
@@ -76,9 +76,9 @@ class PPMSResult(MeasurementResult):
     )
 
 
-class ETOResult(PPMSResult):
+class ETOResult(QDResult):
     """
-    Section for the results of an ETO PPMS measurement
+    Section for the results of an ETO QD measurement
     """
 
     resistance0 = Quantity(
@@ -95,9 +95,9 @@ class ETOResult(PPMSResult):
     )
 
 
-class ACTResult(PPMSResult):
+class ACTResult(QDResult):
     """
-    Section for the results of an ACT PPMS measurement
+    Section for the results of an ACT QD measurement
     """
 
     resistivity0 = Quantity(
@@ -114,9 +114,9 @@ class ACTResult(PPMSResult):
     )
 
 
-class ACMSResult(PPMSResult):
+class ACMSResult(QDResult):
     """
-    Section for the results of an ACMS PPMS measurement
+    Section for the results of an ACMS QD measurement
     """
 
     excitation = Quantity(
@@ -153,9 +153,9 @@ class ACMSResult(PPMSResult):
     )
 
 
-class MPMSResult(PPMSResult):
+class MPMSResult(QDResult):
     """
-    Section for the results of an ACT PPMS measurement
+    Section for the results of an ACT QD measurement
     """
 
     moment = Quantity(
@@ -166,9 +166,9 @@ class MPMSResult(PPMSResult):
     )
 
 
-class ResistivityResult(PPMSResult):
+class ResistivityResult(QDResult):
     """
-    Section for the results of an ACT PPMS measurement
+    Section for the results of an ACT QD measurement
     """
 
     bridge_1_resistivity = Quantity(
@@ -185,8 +185,8 @@ class ResistivityResult(PPMSResult):
     )
 
 
-class PPMSData(ArchiveSection):
-    """General data section from PPMS"""
+class QDData(ArchiveSection):
+    """General data section from QD"""
 
     name = Quantity(
         type=str,
@@ -214,7 +214,7 @@ class PPMSData(ArchiveSection):
 
 
 class ETOData(ArchiveSection):
-    """Data section from Channels in PPMS"""
+    """Data section from Channels in QD"""
 
     m_def = Section(
         label_quantity='name',
@@ -232,7 +232,7 @@ class ETOData(ArchiveSection):
 
 
 class ETOChannelData(ArchiveSection):
-    """Data section from Channels in PPMS"""
+    """Data section from Channels in QD"""
 
     m_def = Section(
         label_quantity='name',
@@ -333,8 +333,8 @@ class ETOChannelData(ArchiveSection):
     )
 
 
-class ETOPPMSData(PPMSData):
-    """Data section from PPMS"""
+class ETOQDData(QDData):
+    """Data section from QD"""
 
     m_def = Section(
         a_eln=dict(lane_width='600px'),
@@ -385,7 +385,7 @@ class ETOPPMSData(PPMSData):
 
 
 class ACTData(ArchiveSection):
-    """Data section from Channels in PPMS"""
+    """Data section from Channels in QD"""
 
     m_def = Section(
         label_quantity='name',
@@ -403,7 +403,7 @@ class ACTData(ArchiveSection):
 
 
 class ACTChannelData(ArchiveSection):
-    """Data section from Channels in PPMS"""
+    """Data section from Channels in QD"""
 
     m_def = Section(
         label_quantity='name',
@@ -495,8 +495,8 @@ class ACTChannelData(ArchiveSection):
     )
 
 
-class ACTPPMSData(PPMSData):
-    """Data section from PPMS"""
+class ACTQDData(QDData):
+    """Data section from QD"""
 
     m_def = Section(
         a_eln=dict(lane_width='600px'),
@@ -660,7 +660,7 @@ class ACMSData(ArchiveSection):
     )
 
 
-class ACMSPPMSData(PPMSData):
+class ACMSQDData(QDData):
     """Data section in ACMS"""
 
     m_def = Section(
@@ -1055,7 +1055,7 @@ class MPMSDCData(ArchiveSection):
     )
 
 
-class MPMSPPMSData(PPMSData):
+class MPMSQDData(QDData):
     """Data section in MPMS"""
 
     m_def = Section(
@@ -1282,7 +1282,7 @@ class MPMSPPMSData(PPMSData):
     dc_data = SubSection(section_def=MPMSDCData)
 
 
-class ResistivityPPMSData(PPMSData):
+class ResistivityQDData(QDData):
     """Data section in Resistivity"""
 
     m_def = Section(

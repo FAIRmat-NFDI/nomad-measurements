@@ -22,33 +22,33 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from nomad_measurements.ppms.ppmsdatastruct import (
+from nomad_measurements.quantumdesign.qddatastruct import (
     ACMSData,
-    ACMSPPMSData,
+    ACMSQDData,
     ACTChannelData,
     ACTData,
-    ACTPPMSData,
+    ACTQDData,
     ETOChannelData,
     ETOData,
-    ETOPPMSData,
+    ETOQDData,
     MPMSData,
     MPMSDCData,
-    MPMSPPMSData,
-    ResistivityPPMSData,
+    MPMSQDData,
+    ResistivityQDData,
 )
-from nomad_measurements.ppms.ppmssteps import (
-    PPMSMeasurementACTResistanceStep,
-    PPMSMeasurementETOResistanceStep,
-    PPMSMeasurementRemarkStep,
-    PPMSMeasurementScanFieldEndStep,
-    PPMSMeasurementScanFieldStep,
-    PPMSMeasurementScanTempEndStep,
-    PPMSMeasurementScanTempStep,
-    PPMSMeasurementSetMagneticFieldStep,
-    PPMSMeasurementSetPositionStep,
-    PPMSMeasurementSetTemperatureStep,
-    PPMSMeasurementStep,
-    PPMSMeasurementWaitStep,
+from nomad_measurements.quantumdesign.qdsteps import (
+    QDMeasurementACTResistanceStep,
+    QDMeasurementETOResistanceStep,
+    QDMeasurementRemarkStep,
+    QDMeasurementScanFieldEndStep,
+    QDMeasurementScanFieldStep,
+    QDMeasurementScanTempEndStep,
+    QDMeasurementScanTempStep,
+    QDMeasurementSetMagneticFieldStep,
+    QDMeasurementSetPositionStep,
+    QDMeasurementSetTemperatureStep,
+    QDMeasurementStep,
+    QDMeasurementWaitStep,
 )
 
 
@@ -86,14 +86,14 @@ def clean_channel_keys(input_key: str) -> str:
     )
 
 
-def find_ppms_steps_from_sequence(sequence):  # noqa: PLR0912, PLR0915
+def find_qd_steps_from_sequence(sequence):  # noqa: PLR0912, PLR0915
     all_steps = []
     for line in sequence:
         if line.startswith('!'):
             continue
         elif line.startswith('REM '):
             all_steps.append(
-                PPMSMeasurementRemarkStep(
+                QDMeasurementRemarkStep(
                     name='Remark: ' + line[4:],
                     remark_text=line[4:],
                 )
@@ -102,7 +102,7 @@ def find_ppms_steps_from_sequence(sequence):  # noqa: PLR0912, PLR0915
             details = line.split()
             onerror = ['No Action', 'Abort', 'Shutdown']
             all_steps.append(
-                PPMSMeasurementWaitStep(
+                QDMeasurementWaitStep(
                     name='Wait for ' + details[2] + ' s.',
                     delay=float(details[2]),
                     condition_temperature=bool(int(details[3])),
@@ -120,7 +120,7 @@ def find_ppms_steps_from_sequence(sequence):  # noqa: PLR0912, PLR0915
                 'Redefine present position',
             ]
             all_steps.append(
-                PPMSMeasurementSetPositionStep(
+                QDMeasurementSetPositionStep(
                     name='Move sample to position ' + details[2] + '.',
                     position_set=float(details[2]),
                     position_rate=float(details[5].strip('"')),
@@ -131,7 +131,7 @@ def find_ppms_steps_from_sequence(sequence):  # noqa: PLR0912, PLR0915
             details = line.split()
             mode = ['Fast Settle', 'No Overshoot']
             all_steps.append(
-                PPMSMeasurementSetTemperatureStep(
+                QDMeasurementSetTemperatureStep(
                     name='Set temperature to '
                     + details[2]
                     + ' K with '
@@ -147,7 +147,7 @@ def find_ppms_steps_from_sequence(sequence):  # noqa: PLR0912, PLR0915
             approach = ['Linear', 'No Overshoot', 'Oscillate']
             end_mode = ['Persistent', 'Driven']
             all_steps.append(
-                PPMSMeasurementSetMagneticFieldStep(
+                QDMeasurementSetMagneticFieldStep(
                     name='Set field to '
                     + details[2]
                     + ' Oe with '
@@ -165,7 +165,7 @@ def find_ppms_steps_from_sequence(sequence):  # noqa: PLR0912, PLR0915
             approach = ['Linear', 'No Overshoot', 'Oscillate', 'Sweep']
             end_mode = ['Persistent', 'Driven']
             all_steps.append(
-                PPMSMeasurementScanFieldStep(
+                QDMeasurementScanFieldStep(
                     name='Scan field from '
                     + details[2]
                     + ' Oe to '
@@ -181,13 +181,13 @@ def find_ppms_steps_from_sequence(sequence):  # noqa: PLR0912, PLR0915
                 )
             )
         elif line.startswith('ENB'):
-            all_steps.append(PPMSMeasurementScanFieldEndStep(name='End Field Scan.'))
+            all_steps.append(QDMeasurementScanFieldEndStep(name='End Field Scan.'))
         elif line.startswith('LPT'):
             details = line.split()
             spacing_code = ['Uniform', '1/T', 'log(T)']
             approach = ['Fast', 'No Overshoot', 'Sweep']
             all_steps.append(
-                PPMSMeasurementScanTempStep(
+                QDMeasurementScanTempStep(
                     name='Scan temperature from '
                     + details[2]
                     + ' K to '
@@ -203,7 +203,7 @@ def find_ppms_steps_from_sequence(sequence):  # noqa: PLR0912, PLR0915
             )
         elif line.startswith('ENT'):
             all_steps.append(
-                PPMSMeasurementScanTempEndStep(name='End Temperature Scan.')
+                QDMeasurementScanTempEndStep(name='End Temperature Scan.')
             )
         elif line.startswith('ACTR'):
             details = line.split()
@@ -227,7 +227,7 @@ def find_ppms_steps_from_sequence(sequence):  # noqa: PLR0912, PLR0915
                 0.00004,
             ]
             all_steps.append(
-                PPMSMeasurementACTResistanceStep(
+                QDMeasurementACTResistanceStep(
                     name='AC Transport Resistance measurement.',
                     measurement_active=[
                         bool(int(details[4])),
@@ -303,7 +303,7 @@ def find_ppms_steps_from_sequence(sequence):  # noqa: PLR0912, PLR0915
                 if i == 0:
                     name += '; '
             all_steps.append(
-                PPMSMeasurementETOResistanceStep(
+                QDMeasurementETOResistanceStep(
                     name=name,
                     mode=[mode[mode_int[0]], mode[mode_int[1]]],
                     excitation_amplitude=amplitude,
@@ -356,7 +356,7 @@ def get_fileopentime(line_time):
     return iso_date
 
 
-def get_ppms_steps_from_data(data, temperature_tolerance, field_tolerance):  # noqa: PLR0912
+def get_qd_steps_from_data(data, temperature_tolerance, field_tolerance):  # noqa: PLR0912
     all_steps = []
     runs_list = []
 
@@ -426,11 +426,11 @@ def get_ppms_steps_from_data(data, temperature_tolerance, field_tolerance):  # n
             if measurement_type == 'temperature':
                 value = np.round(float(data['Magnetic Field (Oe)'].iloc[i - 1]), -1)
                 all_steps.append(
-                    PPMSMeasurementStep(name='Temperature sweep at {value} Oe.')
+                    QDMeasurementStep(name='Temperature sweep at {value} Oe.')
                 )
             if measurement_type == 'field':
                 value = np.round(float(data['Temperature (K)'].iloc[i - 1]), 1)
-                all_steps.append(PPMSMeasurementStep(name=f'Field sweep at {value} K.'))
+                all_steps.append(QDMeasurementStep(name=f'Field sweep at {value} K.'))
             runs_list.append([measurement_type, value, startval, i])
             startval = i
             measurement_type = 'undefined'
@@ -438,7 +438,7 @@ def get_ppms_steps_from_data(data, temperature_tolerance, field_tolerance):  # n
     return all_steps, runs_list
 
 
-def get_acms_ppms_steps_from_data(data):  # noqa: PLR0912
+def get_acms_qd_steps_from_data(data):  # noqa: PLR0912
     all_steps = []
     runs_list = []
 
@@ -451,7 +451,7 @@ def get_acms_ppms_steps_from_data(data):  # noqa: PLR0912
             f_value = str(np.round(float(data['Frequency (Hz)'].iloc[i - 1]), -1))
             a_value = str(np.round(float(data['Amplitude (Oe)'].iloc[i - 1]), 1))
             all_steps.append(
-                PPMSMeasurementStep(
+                QDMeasurementStep(
                     name=f'Frequency sweep at Temperature {t_value} K, \
                         Field {h_value} Oe, and Amplitude {a_value} Oe.'
                 )
@@ -542,11 +542,11 @@ def read_specific_data(  # noqa: PLR0913
     data.m_add_sub_section(eval(f'{data_class.__name__}.{maps_label}'), map_object)
 
 
-def split_ppms_data_act(data_full, runs):  # noqa: PLR0912
+def split_qd_data_act(data_full, runs):  # noqa: PLR0912
     all_data = []
     for i in range(len(runs)):
         block = data_full.iloc[runs[i][2] : runs[i][3]]
-        data = ACTPPMSData()
+        data = ACTQDData()
         data.measurement_type = runs[i][0]
         if data.measurement_type == 'field':
             data.name = f'Field sweep at {str(runs[i][1])} K.'
@@ -554,19 +554,19 @@ def split_ppms_data_act(data_full, runs):  # noqa: PLR0912
             data.name = f'Temperature sweep at {str(runs[i][1])} Oe.'
         data.title = data.name
         read_other_data(data, block)
-        read_channel_data(data, block, ACTPPMSData, ACTChannelData)
-        read_map_data(data, block, ACTPPMSData, ACTData)
+        read_channel_data(data, block, ACTQDData, ACTChannelData)
+        read_map_data(data, block, ACTQDData, ACTData)
 
         all_data.append(data)
 
     return all_data
 
 
-def split_ppms_data_eto(data_full, runs):  # noqa: PLR0912
+def split_qd_data_eto(data_full, runs):  # noqa: PLR0912
     all_data = []
     for i in range(len(runs)):
         block = data_full.iloc[runs[i][2] : runs[i][3]]
-        data = ETOPPMSData()
+        data = ETOQDData()
         data.measurement_type = runs[i][0]
         if data.measurement_type == 'field':
             data.name = f'Field sweep at {str(runs[i][1])} K.'
@@ -574,19 +574,19 @@ def split_ppms_data_eto(data_full, runs):  # noqa: PLR0912
             data.name = f'Temperature sweep at {str(runs[i][1])} Oe.'
         data.title = data.name
         read_other_data(data, block)
-        read_channel_data(data, block, ETOPPMSData, ETOChannelData)
-        read_map_data(data, block, ETOPPMSData, ETOData, 'ETO Channel', 'ETO_Channel')
+        read_channel_data(data, block, ETOQDData, ETOChannelData)
+        read_map_data(data, block, ETOQDData, ETOData, 'ETO Channel', 'ETO_Channel')
 
         all_data.append(data)
 
     return all_data
 
 
-def split_ppms_data_mpms(data_full, runs):
+def split_qd_data_mpms(data_full, runs):
     all_data = []
     for i in range(len(runs)):
         block = data_full.iloc[runs[i][2] : runs[i][3]]
-        data = MPMSPPMSData()
+        data = MPMSQDData()
         data.measurement_type = runs[i][0]
         if data.measurement_type == 'field':
             data.name = f'Field sweep at {str(runs[i][1])} K.'
@@ -594,19 +594,19 @@ def split_ppms_data_mpms(data_full, runs):
             data.name = f'Temperature sweep at {str(runs[i][1])} Oe.'
         data.title = data.name
         read_other_data(data, block)
-        read_map_data(data, block, MPMSPPMSData, MPMSData)
-        read_specific_data(data, block, MPMSPPMSData, MPMSDCData, 'dc_data')
+        read_map_data(data, block, MPMSQDData, MPMSData)
+        read_specific_data(data, block, MPMSQDData, MPMSDCData, 'dc_data')
 
         all_data.append(data)
 
     return all_data
 
 
-def split_ppms_data_resistivity(data_full, runs):
+def split_qd_data_resistivity(data_full, runs):
     all_data = []
     for i in range(len(runs)):
         block = data_full.iloc[runs[i][2] : runs[i][3]]
-        data = ResistivityPPMSData()
+        data = ResistivityQDData()
         data.measurement_type = runs[i][0]
         if data.measurement_type == 'field':
             data.name = f'Field sweep at {str(runs[i][1])} K.'
@@ -620,11 +620,11 @@ def split_ppms_data_resistivity(data_full, runs):
     return all_data
 
 
-def split_ppms_data_acms(data_full, runs):
+def split_qd_data_acms(data_full, runs):
     all_data = []
     for i in range(len(runs)):
         block = data_full.iloc[runs[i][2] : runs[i][3]]
-        data = ACMSPPMSData()
+        data = ACMSQDData()
         data.measurement_type = runs[i][0]
         if data.measurement_type == 'temperature':
             data.name = f'Temperature sweep at Field {runs[i][1][1]} Oe, Frequency \
@@ -640,7 +640,7 @@ def split_ppms_data_acms(data_full, runs):
                 {runs[i][1][1]} Oe, and Frequency {runs[i][1][2]} Hz.'
         data.title = data.name
         read_other_data(data, block)
-        read_map_data(data, block, ACMSPPMSData, ACMSData)
+        read_map_data(data, block, ACMSQDData, ACMSData)
 
         all_data.append(data)
 

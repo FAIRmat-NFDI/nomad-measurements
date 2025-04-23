@@ -28,17 +28,17 @@ from nomad.metainfo import (
 )
 
 
-class PPMSMeasurementStep(ActivityStep):
+class QDMeasurementStep(ActivityStep):
     """
-    A step in the PPMS measurement.
+    A step in the QD measurement.
     """
 
     pass
 
 
-class PPMSMeasurementSetTemperatureStep(PPMSMeasurementStep):
+class QDMeasurementSetTemperatureStep(QDMeasurementStep):
     """
-    A step in the PPMS measurement.
+    A step in the QD measurement.
     """
 
     temperature_set = Quantity(
@@ -63,9 +63,9 @@ class PPMSMeasurementSetTemperatureStep(PPMSMeasurementStep):
     )
 
 
-class PPMSMeasurementSetMagneticFieldStep(PPMSMeasurementStep):
+class QDMeasurementSetMagneticFieldStep(QDMeasurementStep):
     """
-    A step in the PPMS measurement.
+    A step in the QD measurement.
     """
 
     field_set = Quantity(
@@ -94,9 +94,9 @@ class PPMSMeasurementSetMagneticFieldStep(PPMSMeasurementStep):
     )
 
 
-class PPMSMeasurementWaitStep(PPMSMeasurementStep):
+class QDMeasurementWaitStep(QDMeasurementStep):
     """
-    A step in the PPMS measurement.
+    A step in the QD measurement.
     """
 
     delay = Quantity(
@@ -142,9 +142,9 @@ class PPMSMeasurementWaitStep(PPMSMeasurementStep):
     )
 
 
-class PPMSMeasurementScanFieldStep(PPMSMeasurementStep):
+class QDMeasurementScanFieldStep(QDMeasurementStep):
     """
-    A step in the PPMS measurement.
+    A step in the QD measurement.
     """
 
     initial_field = Quantity(
@@ -210,17 +210,17 @@ class PPMSMeasurementScanFieldStep(PPMSMeasurementStep):
     )
 
 
-class PPMSMeasurementScanFieldEndStep(PPMSMeasurementStep):
+class QDMeasurementScanFieldEndStep(QDMeasurementStep):
     """
-    A step in the PPMS measurement.
+    A step in the QD measurement.
     """
 
     pass
 
 
-class PPMSMeasurementScanTempStep(PPMSMeasurementStep):
+class QDMeasurementScanTempStep(QDMeasurementStep):
     """
-    A step in the PPMS measurement.
+    A step in the QD measurement.
     """
 
     initial_temp = Quantity(
@@ -270,17 +270,17 @@ class PPMSMeasurementScanTempStep(PPMSMeasurementStep):
     )
 
 
-class PPMSMeasurementScanTempEndStep(PPMSMeasurementStep):
+class QDMeasurementScanTempEndStep(QDMeasurementStep):
     """
-    A step in the PPMS measurement.
+    A step in the QD measurement.
     """
 
     pass
 
 
-class PPMSMeasurementACTResistanceStep(PPMSMeasurementStep):
+class QDMeasurementACTResistanceStep(QDMeasurementStep):
     """
-    A step in the PPMS measurement.
+    A step in the QD measurement.
     """
 
     measurement_active = Quantity(
@@ -345,9 +345,9 @@ class PPMSMeasurementACTResistanceStep(PPMSMeasurementStep):
     )
 
 
-class PPMSMeasurementETOResistanceStep(PPMSMeasurementStep):
+class QDMeasurementETOResistanceStep(QDMeasurementStep):
     """
-    A step in the PPMS measurement.
+    A step in the QD measurement.
     """
 
     mode = Quantity(
@@ -417,9 +417,9 @@ class PPMSMeasurementETOResistanceStep(PPMSMeasurementStep):
     )
 
 
-class PPMSMeasurementSetPositionStep(PPMSMeasurementStep):
+class QDMeasurementSetPositionStep(QDMeasurementStep):
     """
-    A step in the PPMS measurement.
+    A step in the QD measurement.
     """
 
     position_set = Quantity(
@@ -446,9 +446,9 @@ class PPMSMeasurementSetPositionStep(PPMSMeasurementStep):
     )
 
 
-class PPMSMeasurementRemarkStep(PPMSMeasurementStep):
+class QDMeasurementRemarkStep(QDMeasurementStep):
     """
-    A step in the PPMS measurement.
+    A step in the QD measurement.
     """
 
     remark_text = Quantity(

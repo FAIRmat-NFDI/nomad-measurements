@@ -40,30 +40,30 @@ from structlog.stdlib import (
     BoundLogger,
 )
 
-from nomad_measurements.ppms.ppmsdatastruct import (
+from nomad_measurements.quantumdesign.qddatastruct import (
     ACMSResult,
     ACTResult,
     ETOResult,
     MPMSResult,
-    PPMSData,
-    PPMSResult,
-    PPMSSample,
+    QDData,
+    QDResult,
+    QDSample,
     ResistivityResult,
 )
-from nomad_measurements.ppms.ppmsfunctions import (
-    find_ppms_steps_from_sequence,
-    get_acms_ppms_steps_from_data,
+from nomad_measurements.quantumdesign.qdfunctions import (
+    find_qd_steps_from_sequence,
+    get_acms_qd_steps_from_data,
     get_fileopentime,
-    get_ppms_steps_from_data,
+    get_qd_steps_from_data,
     make_results,
-    split_ppms_data_acms,
-    split_ppms_data_act,
-    split_ppms_data_eto,
-    split_ppms_data_mpms,
-    split_ppms_data_resistivity,
+    split_qd_data_acms,
+    split_qd_data_act,
+    split_qd_data_eto,
+    split_qd_data_mpms,
+    split_qd_data_resistivity,
 )
-from nomad_measurements.ppms.ppmssteps import (
-    PPMSMeasurementStep,
+from nomad_measurements.quantumdesign.qdsteps import (
+    QDMeasurementStep,
 )
 
 if TYPE_CHECKING:
@@ -76,7 +76,7 @@ from nomad.metainfo import SchemaPackage
 m_package = SchemaPackage()
 
 
-class PPMSMeasurement(Measurement):
+class QDMeasurement(Measurement):
     m_def = Section(
         a_eln=ELNAnnotation(
             properties=SectionProperties(
@@ -100,18 +100,18 @@ class PPMSMeasurement(Measurement):
         a_browser=dict(adaptor='RawFileAdaptor'),
     )
     file_open_time = Quantity(
-        type=str, description='Time, where the PPMS file was created'
+        type=str, description='Time, where the QD file was created'
     )
     software = Quantity(
-        type=str, description='PPMS software package used for the measurement'
+        type=str, description='QD software package used for the measurement'
     )
 
     steps = SubSection(
-        section_def=PPMSMeasurementStep,
+        section_def=QDMeasurementStep,
         repeats=True,
     )
 
-    data = SubSection(section_def=PPMSData, repeats=True)
+    data = SubSection(section_def=QDData, repeats=True)
 
     sequence_file = Quantity(
         type=str,
@@ -120,8 +120,8 @@ class PPMSMeasurement(Measurement):
     )
 
     results = SubSection(
-        section_def=PPMSResult,
-        description='The result of the PPMS measurement.',
+        section_def=QDResult,
+        description='The result of the QD measurement.',
         repeats=True,
     )
 
@@ -142,8 +142,11 @@ class PPMSMeasurement(Measurement):
 
     def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
+
+        self.figures = []
+
         if archive.data.data_file:
-            logger.info('Parsing PPMS measurement file.')
+            logger.info('Parsing QD measurement file.')
             # For automatic step discovery, some parameters are needed:
             if not self.temperature_tolerance:
                 self.temperature_tolerance = 0.2
@@ -165,13 +168,13 @@ class PPMSMeasurement(Measurement):
                         if line.startswith('INFO') and 'SAMPLE' + i + '_' in line
                     ]
                     if sample_headers:
-                        sample = PPMSSample()
+                        sample = QDSample()
                         for line in sample_headers:
                             parts = re.split(r',\s*', line)
                             key = parts[-1].lower().replace('sample' + i + '_', '')
                             if hasattr(sample, key):
                                 setattr(sample, key, ', '.join(parts[1:-1]))
-                        self.m_add_sub_section(PPMSMeasurement.samples, sample)
+                        self.m_add_sub_section(QDMeasurement.samples, sample)
 
             for line in header_lines:
                 if line.startswith('FILEOPENTIME') and hasattr(self, 'datetime'):
@@ -200,11 +203,11 @@ class PPMSMeasurement(Measurement):
                     )
 
 
-class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
+class QDETOMeasurement(QDMeasurement, PlotSection, EntryData):
     def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
 
-        ### Start of the PPMSMeasurement normalizer
+        ### Start of the QDMeasurement normalizer
         if archive.data.data_file:
             logger.info('Parsing ETO measurement.')
             with archive.m_context.raw_file(self.data_file, 'r') as file:
@@ -223,19 +226,19 @@ class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 engine='python',
             )
 
-            all_steps, runs_list = get_ppms_steps_from_data(
+            all_steps, runs_list = get_qd_steps_from_data(
                 data_df, self.temperature_tolerance, self.field_tolerance
             )
 
             if self.sequence_file:
-                logger.info('Parsing PPMS sequence file.')
+                logger.info('Parsing QD sequence file.')
                 with archive.m_context.raw_file(self.sequence_file, 'r') as file:
                     sequence = file.readlines()
-                    self.steps = find_ppms_steps_from_sequence(sequence)
+                    self.steps = find_qd_steps_from_sequence(sequence)
             else:
                 self.steps = all_steps
 
-            self.data = split_ppms_data_eto(data_df, runs_list)
+            self.data = split_qd_data_eto(data_df, runs_list)
 
             result_dict = {
                 'temperature': 'temperature',
@@ -297,11 +300,11 @@ class PPMSETOMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 )
 
 
-class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
+class QDACTMeasurement(QDMeasurement, PlotSection, EntryData):
     def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
 
-        ### Start of the PPMSMeasurement normalizer
+        ### Start of the QDMeasurement normalizer
         if archive.data.data_file:
             logger.info('Parsing ACT measurement.')
             with archive.m_context.raw_file(self.data_file, 'r') as file:
@@ -320,19 +323,19 @@ class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 engine='python',
             )
 
-            all_steps, runs_list = get_ppms_steps_from_data(
+            all_steps, runs_list = get_qd_steps_from_data(
                 data_df, self.temperature_tolerance, self.field_tolerance
             )
 
             if self.sequence_file:
-                logger.info('Parsing PPMS sequence file.')
+                logger.info('Parsing QD sequence file.')
                 with archive.m_context.raw_file(self.sequence_file, 'r') as file:
                     sequence = file.readlines()
-                    self.steps = find_ppms_steps_from_sequence(sequence)
+                    self.steps = find_qd_steps_from_sequence(sequence)
             else:
                 self.steps = all_steps
 
-            self.data = split_ppms_data_act(data_df, runs_list)
+            self.data = split_qd_data_act(data_df, runs_list)
 
             result_dict = {
                 'temperature': 'temperature',
@@ -399,7 +402,7 @@ class PPMSACTMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 )
 
 
-class PPMSACMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
+class QDACMSMeasurement(QDMeasurement, PlotSection, EntryData):
     # Additional parameters for separating the measurements
     frequency_tolerance = Quantity(
         type=float,
@@ -417,7 +420,7 @@ class PPMSACMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
         super().normalize(archive, logger)
 
         if archive.data.data_file:
-            logger.info('Parsing PPMS measurement file.')
+            logger.info('Parsing QD measurement file.')
             # For automatic step discovery, some parameters are needed:
             if not self.temperature_tolerance:
                 self.frequency_tolerance = 10
@@ -440,7 +443,7 @@ class PPMSACMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 engine='python',
             )
 
-            all_steps, runs_list = get_acms_ppms_steps_from_data(
+            all_steps, runs_list = get_acms_qd_steps_from_data(
                 data_df,
             )
 
@@ -448,7 +451,7 @@ class PPMSACMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 self.steps = all_steps
 
             logger.info('Parsing ACMS measurement.')
-            self.data = split_ppms_data_acms(data_df, runs_list)
+            self.data = split_qd_data_acms(data_df, runs_list)
 
             result_dict = {
                 'temperature': 'temperature',
@@ -517,11 +520,11 @@ class PPMSACMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 )
 
 
-class PPMSMPMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
+class QDMPMSMeasurement(QDMeasurement, PlotSection, EntryData):
     def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
 
-        ### Start of the PPMSMeasurement normalizer
+        ### Start of the QDMeasurement normalizer
         if archive.data.data_file:
             logger.info('Parsing MPMS measurement.')
             with archive.m_context.raw_file(self.data_file, 'r') as file:
@@ -540,19 +543,19 @@ class PPMSMPMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 engine='python',
             )
 
-            all_steps, runs_list = get_ppms_steps_from_data(
+            all_steps, runs_list = get_qd_steps_from_data(
                 data_df, self.temperature_tolerance, self.field_tolerance
             )
 
             if self.sequence_file:
-                logger.info('Parsing PPMS sequence file.')
+                logger.info('Parsing QD sequence file.')
                 with archive.m_context.raw_file(self.sequence_file, 'r') as file:
                     sequence = file.readlines()
-                    self.steps = find_ppms_steps_from_sequence(sequence)
+                    self.steps = find_qd_steps_from_sequence(sequence)
             else:
                 self.steps = all_steps
 
-            self.data = split_ppms_data_mpms(data_df, runs_list)
+            self.data = split_qd_data_mpms(data_df, runs_list)
 
             result_dict = {
                 'temperature': 'temperature',
@@ -601,11 +604,11 @@ class PPMSMPMSMeasurement(PPMSMeasurement, PlotSection, EntryData):
             )
 
 
-class PPMSResistivityMeasurement(PPMSMeasurement, PlotSection, EntryData):
+class QDResistivityMeasurement(QDMeasurement, PlotSection, EntryData):
     def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
 
-        ### Start of the PPMSMeasurement normalizer
+        ### Start of the QDMeasurement normalizer
         if archive.data.data_file:
             logger.info('Parsing Resistivity measurement.')
             with archive.m_context.raw_file(self.data_file, 'r') as file:
@@ -624,19 +627,19 @@ class PPMSResistivityMeasurement(PPMSMeasurement, PlotSection, EntryData):
                 engine='python',
             )
 
-            all_steps, runs_list = get_ppms_steps_from_data(
+            all_steps, runs_list = get_qd_steps_from_data(
                 data_df, self.temperature_tolerance, self.field_tolerance
             )
 
             if self.sequence_file:
-                logger.info('Parsing PPMS sequence file.')
+                logger.info('Parsing QD sequence file.')
                 with archive.m_context.raw_file(self.sequence_file, 'r') as file:
                     sequence = file.readlines()
-                    self.steps = find_ppms_steps_from_sequence(sequence)
+                    self.steps = find_qd_steps_from_sequence(sequence)
             else:
                 self.steps = all_steps
 
-            self.data = split_ppms_data_resistivity(data_df, runs_list)
+            self.data = split_qd_data_resistivity(data_df, runs_list)
 
             result_dict = {
                 'temperature': 'temperature',

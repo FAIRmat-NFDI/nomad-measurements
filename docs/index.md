@@ -17,10 +17,10 @@ Mapping (RSM) scans. Supports automatic parsing of data for the following file f
 file formats (read more [here](explanation/schemas.md#transmission-spectrophotometry)):
   - Perkin Elmers: `*.asc`
  
-- **Physical Properies Measurement System (PPMS)**: Supports automatic parsing of
-measurement files and sequence files from the Quantum Design PPMS. For now, ETO, ACT, ACMS, MPMS, and 
+- **Quantum Design (QD)**: Supports automatic parsing of
+measurement files and sequence files from the Quantum Design devices (as given by MultiVu). For now, ETO, ACT, ACMS, MPMS, and 
 Resistivity modes are supported. Supported file formats:
-  - QuantumDesign PPMS: `*.dat` and `*.seq`
+  - QuantumDesign: `*.dat` and `*.seq`
 
 Additional measurement techniques are actively being developed and will be included soon, including:
 
