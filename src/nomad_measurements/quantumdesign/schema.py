@@ -23,6 +23,7 @@ from typing import (
 
 import pandas as pd
 from nomad.datamodel.data import (
+    ArchiveSection,
     EntryData,
 )
 from nomad.datamodel.metainfo.annotations import (
@@ -76,6 +77,38 @@ from nomad.metainfo import SchemaPackage
 m_package = SchemaPackage()
 
 
+class QDAnalysisParameters(ArchiveSection):
+    # Additional parameters for separating the measurements
+    temperature_tolerance = Quantity(
+        type=float,
+        unit='kelvin',
+        a_eln=ELNAnnotation(
+            component='NumberEditQuantity', defaultDisplayUnit='kelvin'
+        ),
+    )
+
+    field_tolerance = Quantity(
+        type=float,
+        unit='gauss',
+        a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='gauss'),
+    )
+
+
+class ACMSAnalysisParameters(QDAnalysisParameters):
+    # Additional parameters for separating the measurements
+    frequency_tolerance = Quantity(
+        type=float,
+        unit='hertz',
+        a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='hertz'),
+    )
+
+    amplitude_tolerance = Quantity(
+        type=float,
+        unit='gauss',
+        a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='gauss'),
+    )
+
+
 class QDMeasurement(Measurement):
     m_def = Section(
         a_eln=ELNAnnotation(
@@ -125,33 +158,22 @@ class QDMeasurement(Measurement):
         repeats=True,
     )
 
-    # Additional parameters for separating the measurements
-    temperature_tolerance = Quantity(
-        type=float,
-        unit='kelvin',
-        a_eln=ELNAnnotation(
-            component='NumberEditQuantity', defaultDisplayUnit='kelvin'
-        ),
-    )
-
-    field_tolerance = Quantity(
-        type=float,
-        unit='gauss',
-        a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='gauss'),
-    )
+    analysis_parameters = SubSection(section_def=QDAnalysisParameters)
 
     def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
+
+        self.analysis_parameters = QDAnalysisParameters()
 
         self.figures = []
 
         if archive.data.data_file:
             logger.info('Parsing QD measurement file.')
             # For automatic step discovery, some parameters are needed:
-            if not self.temperature_tolerance:
-                self.temperature_tolerance = 0.2
-            if not self.field_tolerance:
-                self.field_tolerance = 5.0
+            if not self.analysis_parameters.temperature_tolerance:
+                self.analysis_parameters.temperature_tolerance = 0.2
+            if not self.analysis_parameters.field_tolerance:
+                self.analysis_parameters.field_tolerance = 5.0
 
             with archive.m_context.raw_file(self.data_file, 'r') as file:
                 data = file.read()
@@ -186,18 +208,18 @@ class QDMeasurement(Measurement):
                 if line.startswith('BYAPP') and hasattr(self, 'software'):
                     setattr(self, 'software', line.replace('BYAPP,', '').strip())
                 if line.startswith('TEMPERATURETOLERANCE') and hasattr(
-                    self, 'temperature_tolerance'
+                    self.analysis_parameters, 'temperature_tolerance'
                 ):
                     setattr(
-                        self,
+                        self.analysis_parameters,
                         'temperature_tolerance',
                         float(line.replace('TEMPERATURETOLERANCE,', '').strip()),
                     )
                 if line.startswith('FIELDTOLERANCE') and hasattr(
-                    self, 'field_tolerance'
+                    self.analysis_parameters, 'field_tolerance'
                 ):
                     setattr(
-                        self,
+                        self.analysis_parameters,
                         'field_tolerance',
                         float(line.replace('FIELDTOLERANCE,', '').strip()),
                     )
@@ -227,7 +249,9 @@ class QDETOMeasurement(QDMeasurement, PlotSection, EntryData):
             )
 
             all_steps, runs_list = get_qd_steps_from_data(
-                data_df, self.temperature_tolerance, self.field_tolerance
+                data_df,
+                self.analysis_parameters.temperature_tolerance,
+                self.analysis_parameters.field_tolerance,
             )
 
             if self.sequence_file:
@@ -324,7 +348,9 @@ class QDACTMeasurement(QDMeasurement, PlotSection, EntryData):
             )
 
             all_steps, runs_list = get_qd_steps_from_data(
-                data_df, self.temperature_tolerance, self.field_tolerance
+                data_df,
+                self.analysis_parameters.temperature_tolerance,
+                self.analysis_parameters.field_tolerance,
             )
 
             if self.sequence_file:
@@ -403,29 +429,20 @@ class QDACTMeasurement(QDMeasurement, PlotSection, EntryData):
 
 
 class QDACMSMeasurement(QDMeasurement, PlotSection, EntryData):
-    # Additional parameters for separating the measurements
-    frequency_tolerance = Quantity(
-        type=float,
-        unit='hertz',
-        a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='hertz'),
-    )
-
-    amplitude_tolerance = Quantity(
-        type=float,
-        unit='gauss',
-        a_eln=ELNAnnotation(component='NumberEditQuantity', defaultDisplayUnit='gauss'),
-    )
+    analysis_parameters = SubSection(section_def=ACMSAnalysisParameters)
 
     def normalize(self, archive, logger: BoundLogger) -> None:  # noqa: PLR0912, PLR0915
         super().normalize(archive, logger)
 
+        self.analysis_parameters = ACMSAnalysisParameters()
+
         if archive.data.data_file:
             logger.info('Parsing QD measurement file.')
             # For automatic step discovery, some parameters are needed:
-            if not self.temperature_tolerance:
-                self.frequency_tolerance = 10
-            if not self.amplitude_tolerance:
-                self.amplitude_tolerance = 0.1
+            if not self.analysis_parameters.frequency_tolerance:
+                self.analysis_parameters.frequency_tolerance = 10
+            if not self.analysis_parameters.amplitude_tolerance:
+                self.analysis_parameters.amplitude_tolerance = 0.1
 
             with archive.m_context.raw_file(self.data_file, 'r') as file:
                 data = file.read()
@@ -544,7 +561,9 @@ class QDMPMSMeasurement(QDMeasurement, PlotSection, EntryData):
             )
 
             all_steps, runs_list = get_qd_steps_from_data(
-                data_df, self.temperature_tolerance, self.field_tolerance
+                data_df,
+                self.analysis_parameters.temperature_tolerance,
+                self.analysis_parameters.field_tolerance,
             )
 
             if self.sequence_file:
@@ -628,7 +647,9 @@ class QDResistivityMeasurement(QDMeasurement, PlotSection, EntryData):
             )
 
             all_steps, runs_list = get_qd_steps_from_data(
-                data_df, self.temperature_tolerance, self.field_tolerance
+                data_df,
+                self.analysis_parameters.temperature_tolerance,
+                self.analysis_parameters.field_tolerance,
             )
 
             if self.sequence_file:
