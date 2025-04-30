@@ -86,9 +86,9 @@ def fixture_parsed_measurement_archive(request):
     rel_measurement_archive_path = os.path.join(
         rel_file_path.rsplit('.', 1)[0] + '.archive.json'
     )
-    assert file_archive.data.measurement.m_proxy_value == os.path.abspath(
-        rel_measurement_archive_path
-    )
+    assert  f'{rel_measurement_archive_path}#/data'.endswith(
+        file_archive.data.eln.m_proxy_value)
+
 
     yield parse(rel_measurement_archive_path)[0]
 

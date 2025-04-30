@@ -29,4 +29,5 @@ parser_entry_point = ElnParserEntryPoint(
     mainfile_name_re=r'^.*\.xrdml$|^.*\.rasx$|^.*\.brml$',
     mainfile_mime_re='text/.*|application/zip',
     eln_m_def='nomad_measurements.xrd.schema.ELNXRayDiffraction',
+    data_type='xrd',
 )
