@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os
+
 import pytest
 from nomad.client import normalize_all
 
@@ -38,6 +40,7 @@ clean_up_extensions = ['.archive.json', '.nxs', '.h5']
     'parsed_measurement_archive, caplog',
     [((file, clean_up_extensions), log_levels) for file in test_files],
     indirect=True,
+    ids=[os.path.basename(file) for file in test_files],
 )
 def test_normalize_all(parsed_measurement_archive, caplog):
     """

@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os
+
 import pytest
 from nomad.client import normalize_all
 
@@ -31,6 +33,7 @@ test_files = [
     'parsed_measurement_archive, caplog',
     [(file, log_levels) for file in test_files],
     indirect=True,
+    ids=[os.path.basename(file) for file in test_files],
 )
 def test_normalize_eto(parsed_measurement_archive, caplog):
     """
@@ -63,6 +66,7 @@ test_files = [
     'parsed_measurement_archive, caplog',
     [(file, log_levels) for file in test_files],
     indirect=True,
+    ids=[os.path.basename(file) for file in test_files],
 )
 def test_normalize_act(parsed_measurement_archive, caplog):
     """
@@ -92,6 +96,7 @@ test_files = [
     'parsed_measurement_archive, caplog',
     [(file, log_levels) for file in test_files],
     indirect=True,
+    ids=[os.path.basename(file) for file in test_files],
 )
 def test_normalize_acms(parsed_measurement_archive, caplog):
     """
@@ -121,6 +126,7 @@ test_files = [
     'parsed_measurement_archive, caplog',
     [(file, log_levels) for file in test_files],
     indirect=True,
+    ids=[os.path.basename(file) for file in test_files],
 )
 def test_normalize_mpms(parsed_measurement_archive, caplog):
     """
@@ -151,6 +157,7 @@ test_files = [
     'parsed_measurement_archive, caplog',
     [(file, log_levels) for file in test_files],
     indirect=True,
+    ids=[os.path.basename(file) for file in test_files],
 )
 def test_normalize_resistivity(parsed_measurement_archive, caplog):
     """

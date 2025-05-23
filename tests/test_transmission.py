@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os
+
 import pytest
 from nomad.client import normalize_all
 
@@ -32,6 +34,7 @@ log_levels = ['error', 'critical']
     'parsed_measurement_archive, caplog',
     [(file, log_levels) for file in test_files],
     indirect=True,
+    ids=[os.path.basename(file) for file in test_files],
 )
 def test_normalize_all(parsed_measurement_archive, caplog):
     """
@@ -48,6 +51,7 @@ def test_normalize_all(parsed_measurement_archive, caplog):
     'parsed_measurement_archive, caplog',
     [(test_files[0], log_levels)],
     indirect=True,
+    ids=[os.path.basename(test_files[0])],
 )
 def test_normalized_data(parsed_measurement_archive, caplog):
     """
