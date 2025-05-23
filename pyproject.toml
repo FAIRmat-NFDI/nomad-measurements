@@ -34,7 +34,7 @@ maintainers = [
 ]
 license = { file = "LICENSE" }
 dependencies = [
-    "nomad-lab>=1.3.16dev",
+    "nomad-lab>=1.3.16",
     "pynxtools>=0.9.3",
     "fairmat-readers-xrd>=0.0.7",
     "fairmat-readers-transmission>=0.0.2",
