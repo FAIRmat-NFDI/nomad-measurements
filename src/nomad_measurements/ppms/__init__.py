@@ -8,13 +8,13 @@ class DataParserEntryPointETO(ParserEntryPoint):
     def load(self):
         from nomad_measurements.ppms.parser import PPMSETOParser
 
-        return PPMSETOParser(**self.dict())
+        return PPMSETOParser(**self.model_dump())
 
 
 eto_parser = DataParserEntryPointETO(
     name='DataParser for PPMS ETO',
-    description="""Parser for PPMS data files created by the ETO option. 
-        Parses files containing the 'BYAPP, Electrical Transport Option' line and 
+    description="""Parser for PPMS data files created by the ETO option.
+        Parses files containing the 'BYAPP, Electrical Transport Option' line and
         extracts resistivities, temperatures, fields, and other relevant data. """,
     mainfile_name_re=r'.+\.dat',
     mainfile_mime_re='text/plain|application/x-wine-extension-ini',
@@ -26,7 +26,7 @@ class DataParserEntryPointACT(ParserEntryPoint):
     def load(self):
         from nomad_measurements.ppms.parser import PPMSACTParser
 
-        return PPMSACTParser(**self.dict())
+        return PPMSACTParser(**self.model_dump())
 
 
 act_parser = DataParserEntryPointACT(
@@ -45,7 +45,7 @@ class DataParserEntryPointMPMS(ParserEntryPoint):
     def load(self):
         from nomad_measurements.ppms.parser import PPMSMPMSParser
 
-        return PPMSMPMSParser(**self.dict())
+        return PPMSMPMSParser(**self.model_dump())
 
 
 mpms_parser = DataParserEntryPointMPMS(
@@ -63,7 +63,7 @@ class DataParserEntryPointResisitivity(ParserEntryPoint):
     def load(self):
         from nomad_measurements.ppms.parser import PPMSResistivityParser
 
-        return PPMSResistivityParser(**self.dict())
+        return PPMSResistivityParser(**self.model_dump())
 
 
 resistivity_parser = DataParserEntryPointResisitivity(
@@ -81,7 +81,7 @@ class DataParserEntryPointACMS(ParserEntryPoint):
     def load(self):
         from nomad_measurements.ppms.parser import PPMSACMSParser
 
-        return PPMSACMSParser(**self.dict())
+        return PPMSACMSParser(**self.model_dump())
 
 
 acms_parser = DataParserEntryPointACMS(
@@ -100,7 +100,7 @@ class SqcParserEntryPoint(ParserEntryPoint):
     def load(self):
         from nomad_measurements.ppms.parser import PPMSSequenceParser
 
-        return PPMSSequenceParser(**self.dict())
+        return PPMSSequenceParser(**self.model_dump())
 
 
 sequence_parser = SqcParserEntryPoint(
