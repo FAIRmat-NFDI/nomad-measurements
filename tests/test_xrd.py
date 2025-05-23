@@ -36,14 +36,7 @@ clean_up_extensions = ['.archive.json', '.nxs', '.h5']
 
 @pytest.mark.parametrize(
     'parsed_measurement_archive, caplog',
-    [
-        (
-            (file, clean_up_extensions),
-            log_level,
-        )
-        for file in test_files
-        for log_level in log_levels
-    ],
+    [((file, clean_up_extensions), log_levels) for file in test_files],
     indirect=True,
 )
 def test_normalize_all(parsed_measurement_archive, caplog):

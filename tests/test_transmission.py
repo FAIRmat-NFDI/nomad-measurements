@@ -30,7 +30,7 @@ log_levels = ['error', 'critical']
 
 @pytest.mark.parametrize(
     'parsed_measurement_archive, caplog',
-    [(file, log_level) for file in test_files for log_level in log_levels],
+    [(file, log_levels) for file in test_files],
     indirect=True,
 )
 def test_normalize_all(parsed_measurement_archive, caplog):
@@ -46,7 +46,7 @@ def test_normalize_all(parsed_measurement_archive, caplog):
 
 @pytest.mark.parametrize(
     'parsed_measurement_archive, caplog',
-    [(test_files[0], log_level) for log_level in log_levels],
+    [(test_files[0], log_levels)],
     indirect=True,
 )
 def test_normalized_data(parsed_measurement_archive, caplog):
