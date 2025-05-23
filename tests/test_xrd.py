@@ -19,6 +19,7 @@ import os
 
 import pytest
 from nomad.client import normalize_all
+from nomad.config import config
 
 from nomad_measurements.xrd.schema import XRDResult1D, XRDResult1DHDF5
 
@@ -68,3 +69,35 @@ def test_normalize_all(parsed_measurement_archive, caplog):
             * 1e10
             == pytest.approx(1.540598, 1e-2)
         )
+
+
+test_files = [
+    'tests/data/xrd/XRD-918-16_10.xrdml',
+    'tests/data/xrd/RSM_111_sdd=350.rasx',
+]
+
+
+@pytest.mark.parametrize(
+    'parsed_measurement_archive, caplog',
+    [((file, clean_up_extensions), log_levels) for file in test_files],
+    indirect=True,
+    ids=[os.path.basename(file) for file in test_files],
+)
+def test_nexus_results_section(parsed_measurement_archive, caplog):
+    """
+    Tests the creation of nexus file and the results section.
+
+    Args:
+        parsed_archive (pytest.fixture): Fixture to handle the parsing of archive.
+        caplog (pytest.fixture): Fixture to capture errors from the logger.
+    """
+    config.get_plugin_entry_point(
+        'nomad_measurements.xrd:schema'
+    ).use_hdf5_results = True
+    normalize_all(parsed_measurement_archive)
+
+    assert parsed_measurement_archive.data.auxiliary_file.endswith('.nxs')
+    assert (
+        parsed_measurement_archive.data.results[0].intensity.rsplit('#')[-1]
+        == '/entry/experiment_result/intensity'
+    )
