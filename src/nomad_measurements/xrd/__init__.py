@@ -24,7 +24,7 @@ class XRDParserEntryPoint(ParserEntryPoint):
     def load(self):
         from nomad_measurements.xrd.parser import XRDParser
 
-        return XRDParser(**self.dict())
+        return XRDParser(**self.model_dump())
 
 
 parser = XRDParserEntryPoint(

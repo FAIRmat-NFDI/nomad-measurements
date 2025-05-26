@@ -15,21 +15,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os
+
 import pytest
 from nomad.client import normalize_all
+
+log_levels = ['error', 'critical']
 
 # Test ETO funtionality
 
 test_files = [
     'tests/data/ppms/ETO_Ch1_TMR_Ch2_Hall.dat',
 ]
-log_levels = ['error', 'critical']
 
 
 @pytest.mark.parametrize(
     'parsed_measurement_archive, caplog',
-    [(file, log_level) for file in test_files for log_level in log_levels],
+    [(file, log_levels) for file in test_files],
     indirect=True,
+    ids=[os.path.basename(file) for file in test_files],
 )
 def test_normalize_eto(parsed_measurement_archive, caplog):
     """
@@ -56,13 +60,13 @@ def test_normalize_eto(parsed_measurement_archive, caplog):
 test_files = [
     'tests/data/ppms/ACT_Ch1_Hall_Ch2_TMR.dat',
 ]
-log_levels = ['error', 'critical']
 
 
 @pytest.mark.parametrize(
     'parsed_measurement_archive, caplog',
-    [(file, log_level) for file in test_files for log_level in log_levels],
+    [(file, log_levels) for file in test_files],
     indirect=True,
+    ids=[os.path.basename(file) for file in test_files],
 )
 def test_normalize_act(parsed_measurement_archive, caplog):
     """
@@ -86,13 +90,13 @@ def test_normalize_act(parsed_measurement_archive, caplog):
 test_files = [
     'tests/data/ppms/ACMS_test.dat',
 ]
-log_levels = ['error', 'critical']
 
 
 @pytest.mark.parametrize(
     'parsed_measurement_archive, caplog',
-    [(file, log_level) for file in test_files for log_level in log_levels],
+    [(file, log_levels) for file in test_files],
     indirect=True,
+    ids=[os.path.basename(file) for file in test_files],
 )
 def test_normalize_acms(parsed_measurement_archive, caplog):
     """
@@ -116,13 +120,13 @@ def test_normalize_acms(parsed_measurement_archive, caplog):
 test_files = [
     'tests/data/ppms/MPMS_test.dat',
 ]
-log_levels = ['error', 'critical']
 
 
 @pytest.mark.parametrize(
     'parsed_measurement_archive, caplog',
-    [(file, log_level) for file in test_files for log_level in log_levels],
+    [(file, log_levels) for file in test_files],
     indirect=True,
+    ids=[os.path.basename(file) for file in test_files],
 )
 def test_normalize_mpms(parsed_measurement_archive, caplog):
     """
@@ -147,13 +151,13 @@ def test_normalize_mpms(parsed_measurement_archive, caplog):
 test_files = [
     'tests/data/ppms/Resistivity_Ch1_TMR_Ch2_Hall_test.dat',
 ]
-log_levels = ['error', 'critical']
 
 
 @pytest.mark.parametrize(
     'parsed_measurement_archive, caplog',
-    [(file, log_level) for file in test_files for log_level in log_levels],
+    [(file, log_levels) for file in test_files],
     indirect=True,
+    ids=[os.path.basename(file) for file in test_files],
 )
 def test_normalize_resistivity(parsed_measurement_archive, caplog):
     """
