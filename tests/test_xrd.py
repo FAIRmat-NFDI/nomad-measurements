@@ -92,7 +92,7 @@ def test_nexus_results_section(parsed_measurement_archive, caplog):
         caplog (pytest.fixture): Fixture to capture errors from the logger.
     """
     config.get_plugin_entry_point(
-        'nomad_measurements.xrd:schema'
+        'nomad_measurements.xrd:schema_entry_point'
     ).use_hdf5_results = True
     normalize_all(parsed_measurement_archive)
 
