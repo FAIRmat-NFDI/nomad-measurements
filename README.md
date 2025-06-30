@@ -40,9 +40,9 @@ plugins:
   include:
     - "nomad_measurements.general:schema_entry_point"
     - "nomad_measurements.xrd:schema_entry_point"
-    - "nomad_measurements.xrd.parser:parser"
+    - "nomad_measurements.xrd.parser:parser_entry_point"
     - "nomad_measurements.transmission:schema_entry_point"
-    - "nomad_measurements.transmission:parser"
+    - "nomad_measurements.transmission:parser_entry_point"
     - "nomad_measurements.ppms:eto_schema"
     - "nomad_measurements.ppms:act_schema"
     - "nomad_measurements.ppms:acms_schema"
