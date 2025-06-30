@@ -6,7 +6,7 @@
 
 # NOMAD's Measurements Plugin
 This is a plugin for [NOMAD](https://nomad-lab.eu) which contains base sections for
-materials science measurements. 
+materials science measurements.
 
 The `nomad_measurements.xrd` module supports
 parsing of following vendor-specific file formats:
@@ -33,15 +33,15 @@ pip install nomad-measurements --index-url https://gitlab.mpcdf.mpg.de/api/v4/pr
 Read the [NOMAD plugin documentation](https://nomad-lab.eu/prod/v1/staging/docs/plugins/plugins.html#add-a-plugin-to-your-nomad) for all details on how to deploy the plugin on your NOMAD instance.
 
 You don't need to modify the ```nomad.yaml``` configuration file of your NOMAD instance, beacuse the package is pip installed and all the available modules (entry points) are loaded.
-To include, instead, only some of the entry points, you need to specify them in the ```include``` section of the ```nomad.yaml```. In the following lines, a list of all the available entry points:  
+To include, instead, only some of the entry points, you need to specify them in the ```include``` section of the ```nomad.yaml```. In the following lines, a list of all the available entry points:
 
 ```yaml
 plugins:
   include:
-    - "nomad_measurements.general:schema"
-    - "nomad_measurements.xrd:schema"
+    - "nomad_measurements.general:schema_entry_point"
+    - "nomad_measurements.xrd:schema_entry_point"
     - "nomad_measurements.xrd.parser:parser"
-    - "nomad_measurements.transmission:schema"
+    - "nomad_measurements.transmission:schema_entry_point"
     - "nomad_measurements.transmission:parser"
     - "nomad_measurements.ppms:eto_schema"
     - "nomad_measurements.ppms:act_schema"
