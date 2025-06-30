@@ -14,7 +14,7 @@ class XRDSchemaPackageEntryPoint(SchemaPackageEntryPoint):
         return m_package
 
 
-schema = XRDSchemaPackageEntryPoint(
+schema_entry_point = XRDSchemaPackageEntryPoint(
     name='XRD Schema',
     description='Schema for XRD FAIR data.',
 )
@@ -27,7 +27,7 @@ class XRDParserEntryPoint(ParserEntryPoint):
         return XRDParser(**self.model_dump())
 
 
-parser = XRDParserEntryPoint(
+parser_entry_point = XRDParserEntryPoint(
     name='XRD Parser',
     description='Parser for several kinds of raw files from XRD measurements.',
     mainfile_name_re=r'^.*\.xrdml$|^.*\.rasx$|^.*\.brml$',

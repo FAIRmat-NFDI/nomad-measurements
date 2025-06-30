@@ -91,7 +91,9 @@ if TYPE_CHECKING:
         BoundLogger,
     )
 
-schema_config = config.get_plugin_entry_point('nomad_measurements.xrd:schema')
+schema_config = config.get_plugin_entry_point(
+    'nomad_measurements.xrd:schema_entry_point'
+)
 
 m_package = SchemaPackage(aliases=['nomad_measurements.xrd.parser.parser'])
 

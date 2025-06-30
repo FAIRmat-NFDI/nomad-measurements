@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 
 from nomad.config import config
 
-configuration = config.get_plugin_entry_point('nomad_measurements:schema')
+configuration = config.get_plugin_entry_point('nomad_measurements:schema_entry_point')
 
 m_package = SchemaPackage(
     aliases=[
