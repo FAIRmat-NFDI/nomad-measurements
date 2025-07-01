@@ -41,13 +41,13 @@ class TransmissionParserEntryPoint(ParserEntryPoint):
         return TransmissionParser(**self.model_dump())
 
 
-schema = TransmissionSchemaEntryPoint(
+schema_entry_point = TransmissionSchemaEntryPoint(
     name='Transmission Schema',
     description='Schema for data from Transmission Spectrophotometry.',
 )
 
 
-parser = TransmissionParserEntryPoint(
+parser_entry_point = TransmissionParserEntryPoint(
     name='Transmission Parser',
     description="""
     Parser for data from Transmission Spectrophotometry measurements. Currently

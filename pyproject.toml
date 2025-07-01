@@ -101,6 +101,7 @@ select = [
 
 ignore = [
     "F403", # 'from module import *' used; unable to detect undefined names
+    "PLC0415", # `import` should be at the top-level of a file
 ]
 
 fixable = ["ALL"]
@@ -130,9 +131,9 @@ where = ["src"]
 
 [project.entry-points.'nomad.plugin']
 
-general_schema = "nomad_measurements:schema"
-xrd_schema = "nomad_measurements.xrd:schema"
-xrd_parser = "nomad_measurements.xrd:parser"
+general_schema = "nomad_measurements:schema_entry_point"
+xrd_schema = "nomad_measurements.xrd:schema_entry_point"
+xrd_parser = "nomad_measurements.xrd:parser_entry_point"
 ppms_eto_schema = "nomad_measurements.ppms:eto_schema"
 ppms_act_schema = "nomad_measurements.ppms:act_schema"
 ppms_acms_schema = "nomad_measurements.ppms:acms_schema"
@@ -144,7 +145,7 @@ ppms_acms_parser = "nomad_measurements.ppms:acms_parser"
 ppms_mpms_parser = "nomad_measurements.ppms:mpms_parser"
 ppms_resistivity_parser = "nomad_measurements.ppms:resistivity_parser"
 ppms_sequence_parser = "nomad_measurements.ppms:sequence_parser"
-transmission_schema = "nomad_measurements.transmission:schema"
-transmission_parser = "nomad_measurements.transmission:parser"
+transmission_schema = "nomad_measurements.transmission:schema_entry_point"
+transmission_parser = "nomad_measurements.transmission:parser_entry_point"
 
 [tool.setuptools_scm]
