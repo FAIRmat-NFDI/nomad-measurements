@@ -12,8 +12,8 @@ class DataParserEntryPointETO(ParserEntryPoint):
 
 
 eto_parser = DataParserEntryPointETO(
-    name='DataParser for PPMS ETO',
-    description="""Parser for PPMS data files created by the ETO option.
+    name='DataParser for QD ETO',
+    description="""Parser for QD data files created by the ETO option.
         Parses files containing the 'BYAPP, Electrical Transport Option' line and
         extracts resistivities, temperatures, fields, and other relevant data. """,
     mainfile_name_re=r'.+\.dat',
