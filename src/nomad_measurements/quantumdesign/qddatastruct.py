@@ -1295,7 +1295,7 @@ class ResistivityQDData(QDData):
         type=np.dtype(np.float64),
         unit='deg',
         shape=['*'],
-        description='Position of the sample in the PPMS',
+        description='Position of the sample in the device',
     )
     number_of_readings = Quantity(
         type=np.dtype(np.float64),
