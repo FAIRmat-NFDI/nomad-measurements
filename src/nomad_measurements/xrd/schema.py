@@ -49,7 +49,7 @@ from nomad.datamodel.metainfo.basesections import (
     MeasurementResult,
     ReadableIdentifiers,
 )
-from nomad.datamodel.metainfo.basesections.v1 import ElnParserSection
+from nomad.datamodel.metainfo.eln import ElnParserSection
 from nomad.datamodel.metainfo.plot import PlotlyFigure, PlotSection
 from nomad.datamodel.results import (
     DiffractionPattern,
