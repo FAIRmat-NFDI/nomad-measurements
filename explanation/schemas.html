@@ -1,0 +1,959 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="The documentation for NOMAD plugin nomad-measurements.
+">
+      
+      
+        <meta name="author" content="The NOMAD Authors">
+      
+      
+      <link rel="icon" href="../assets/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-8.1.1">
+    
+    
+      
+        <title>Schemas - Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.23b6d78a.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
+        
+          
+          
+          <meta name="theme-color" content="">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web:300,400,400i,700%7C&display=fallback">
+        <style>:root{--md-text-font:"Titillium Web";--md-code-font:""}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="#2a4cdf" data-md-color-accent="#008a67">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#nomad-measurements-a-community-plugin" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="https://fairmat-nfdi.github.io/nomad-measurements/" title="Documentation" class="md-header__button md-logo" aria-label="Documentation" data-md-component="logo">
+      
+  <img src="../assets/nomad-plugin-logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Schemas
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/FAIRmat-NFDI/nomad-measurements" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="https://fairmat-nfdi.github.io/nomad-measurements/" title="Documentation" class="md-nav__button md-logo" aria-label="Documentation" data-md-component="logo">
+      
+  <img src="../assets/nomad-plugin-logo.png" alt="logo">
+
+    </a>
+    Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/FAIRmat-NFDI/nomad-measurements" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Explanation
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Explanation" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Explanation
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="levelsofschema.html" class="md-nav__link">
+        Levels of Schema
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Schemas
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="schemas.html" class="md-nav__link md-nav__link--active">
+        Schemas
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#technical-description" class="md-nav__link">
+    Technical description
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-model-description" class="md-nav__link">
+    Data model description
+  </a>
+  
+    <nav class="md-nav" aria-label="Data model description">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#general" class="md-nav__link">
+    General
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#x-ray-diffraction" class="md-nav__link">
+    X-Ray Diffraction
+  </a>
+  
+    <nav class="md-nav" aria-label="X-Ray Diffraction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#xraydiffraction" class="md-nav__link">
+    XRayDiffraction
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#xrdresult" class="md-nav__link">
+    XRDResult
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#xrdsettings" class="md-nav__link">
+    XRDSettings
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elnxraydiffraction" class="md-nav__link">
+    ELNXRayDiffraction
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transmission-spectrophotometry" class="md-nav__link">
+    Transmission Spectrophotometry
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hdf5-references" class="md-nav__link">
+    HDF5 References
+  </a>
+  
+    <nav class="md-nav" aria-label="HDF5 References">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hdf5-references-in-x-ray-diffraction-elns" class="md-nav__link">
+    HDF5 References in X-Ray Diffraction ELNs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#working-with-downloaded-entries" class="md-nav__link">
+    Working with downloaded entries
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3">
+          How-To Guides
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="How-To Guides" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          How-To Guides
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how_to/install.html" class="md-nav__link">
+        Install this Plugin
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how_to/use_this_plugin.html" class="md-nav__link">
+        Use this Plugin
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how_to/develop.html" class="md-nav__link">
+        Develop this Plugin
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/references.html" class="md-nav__link">
+        References
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/tutorial.html" class="md-nav__link">
+        Tutorials
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contact.html" class="md-nav__link">
+        Contact
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#technical-description" class="md-nav__link">
+    Technical description
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-model-description" class="md-nav__link">
+    Data model description
+  </a>
+  
+    <nav class="md-nav" aria-label="Data model description">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#general" class="md-nav__link">
+    General
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#x-ray-diffraction" class="md-nav__link">
+    X-Ray Diffraction
+  </a>
+  
+    <nav class="md-nav" aria-label="X-Ray Diffraction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#xraydiffraction" class="md-nav__link">
+    XRayDiffraction
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#xrdresult" class="md-nav__link">
+    XRDResult
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#xrdsettings" class="md-nav__link">
+    XRDSettings
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elnxraydiffraction" class="md-nav__link">
+    ELNXRayDiffraction
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transmission-spectrophotometry" class="md-nav__link">
+    Transmission Spectrophotometry
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hdf5-references" class="md-nav__link">
+    HDF5 References
+  </a>
+  
+    <nav class="md-nav" aria-label="HDF5 References">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hdf5-references-in-x-ray-diffraction-elns" class="md-nav__link">
+    HDF5 References in X-Ray Diffraction ELNs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#working-with-downloaded-entries" class="md-nav__link">
+    Working with downloaded entries
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+
+<h1 id="nomad-measurements-a-community-plugin">NOMAD-measurements: a Community plugin<a class="headerlink" href="#nomad-measurements-a-community-plugin" title="Permanent link">&para;</a></h1>
+<p>The NOMAD-measurements plugin contains schemas for different measurement methods.
+An overview of the package structure is shown below.</p>
+<h2 id="technical-description">Technical description<a class="headerlink" href="#technical-description" title="Permanent link">&para;</a></h2>
+<p>There are some technical aspects to understand the Python package built for this plugin, they are not crucial for the data model understanding itself:</p>
+<ul>
+<li>It is structured according to the <a href="https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/">src layout</a>.</li>
+<li>It is a <a href="https://docs.python.org/3/reference/import.html#regular-packages">regular Python package</a>, i. e., the structure is defined by the presence of <code>__init__.py</code> files. Each of these files contains one or multiple <a href="https://nomad-lab.eu/prod/v1/staging/docs/howto/plugins/plugins.html#plugin-entry-points">entry points</a>. These are used to load a portion of the code within your NOMAD through a specific section in the <code>nomad.yaml</code> file.</li>
+<li>It is pip installable. The <code>project.toml</code> file defines what will be installed, the dependencies, further details. The <strong>entry points</strong> included are listed in this file.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>nomad-measurements/
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── docs
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├── pyproject.toml
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>├── README.md
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>├── src
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│   └── nomad_measurements
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│       ├── general.py
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│       ├── __init__.py
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│       ├── utils.py
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│       ├── xrd
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│       |   ├── __init__.py
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│       |   ├── parser.py
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>│       |   └── schema.py
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>|       └── transmission
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>│           ├── __init__.py
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>│           ├── parser.py
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>│           └── schema.py
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>└── tests
+</code></pre></div>
+<h2 id="data-model-description">Data model description<a class="headerlink" href="#data-model-description" title="Permanent link">&para;</a></h2>
+<p>Each method has a dedicated <a href="https://docs.python.org/3/tutorial/modules.html">module</a>,
+i. e., a python file.</p>
+<h3 id="general">General<a class="headerlink" href="#general" title="Permanent link">&para;</a></h3>
+<p><code>nomad_measurements.general</code> module contains <code>NOMADMeasurementsCategory</code> which is a
+category section that can be used to club together the entry sections of
+<code>nomad_measurements</code>. A key benefit of using category is that all entry sections appear
+under the one label in the drop-down menu of <code>Create new entry from schema</code> dialog in
+NOMAD Oasis.</p>
+<p>If you want extend one of our entry sections with your specifications, and want to add
+it under the same category, add this category section in the <code>m_def</code> of the extended
+section. Here's an example code snippet:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nomad.metainfo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Section</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nomad_measurements.general</span><span class="w"> </span><span class="kn">import</span> <span class="n">NOMADMeasurementsCategory</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nomad_measurements.xrd.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">ELNXRayDiffraction</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyELNXRayDiffraction</span><span class="p">(</span><span class="n">ELNXRayDiffraction</span><span class="p">):</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">m_def</span> <span class="o">=</span> <span class="n">Section</span><span class="p">(</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>        <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="n">NOMADMeasurementsCategory</span><span class="p">],</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="p">)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="c1"># ... your specifications</span>
+</code></pre></div>
+The general module also contains <code>ActivityReference</code> and <code>ProcessReference</code> sections.
+<code>ActivityReference</code> can be used in your schemas to make
+<a href="https://nomad-lab.eu/prod/v1/docs/howto/plugins/schema_packages.html#references-and-proxies">references</a>
+to the <code>Measurement</code>
+entries. It allows to search an existing entry based on its <em>lab_id</em>, which is
+an inherited quantity in all <code>Measurement</code> sections, and automatically make a reference
+to it.</p>
+<h3 id="x-ray-diffraction">X-Ray Diffraction<a class="headerlink" href="#x-ray-diffraction" title="Permanent link">&para;</a></h3>
+<p><code>nomad_measurements.xrd.schema</code> module provides data models for X-Ray diffraction
+(XRD). These sections can be used to model the metadata related to the
+setting and results of the measurement.</p>
+<p>In addition to data modeling section, the module contains an ELN (stands for Electronic
+Lab Notebook) section, which can be used to create an NOMAD
+<a href="https://nomad-lab.eu/prod/v1/docs/reference/glossary.html#entry">entry</a>
+for XRD measurement
+and populate the data directly from the files coming from the instrument.
+The section also provides methods to generate plots for XRD patterns.</p>
+<p>In this documentation, we go over some of the important sections of this module.
+Alternatively, you can access all the section definitions by using the
+<a href="https://nomad-lab.eu/prod/v1/oasis/gui/analyze/metainfo/nomad_measurements">metainfo browser</a>
+and searching for: <code>"nomad_measurements.xrd"</code></p>
+<h4 id="xraydiffraction"><code>XRayDiffraction</code><a class="headerlink" href="#xraydiffraction" title="Permanent link">&para;</a></h4>
+<p><code>nomad_measurements.xrd.schema.XRayDiffraction</code> section extends
+<a href="https://nomad-lab.eu/prod/v1/docs/howto/customization/base_sections.html#measurement"><code>Measurement</code></a>
+base section and describes the settings and results of XRD measurement. This is achieved
+by composing <code>XRDSettings</code> and <code>XRDResult</code> sections as sub-sections.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">XRayDiffraction</span><span class="p">(</span><span class="n">Measurement</span><span class="p">):</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">diffraction_method_name</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">xrd_settings</span><span class="p">:</span> <span class="n">XRDSettings</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">XRDResult</span><span class="p">]</span>
+</code></pre></div>
+Once the section is populated, diffraction pattern is indexed under
+<code>properties.structural</code> field of entry's
+<a href="https://nomad-lab.eu/prod/v1/docs/reference/glossary.html#results-section-results">results</a>
+section, making it searchable in NOMAD.</p>
+<h4 id="xrdresult"><code>XRDResult</code><a class="headerlink" href="#xrdresult" title="Permanent link">&para;</a></h4>
+<p><code>nomad_measurements.xrd.schema.XRDResult</code> section describes results coming from XRD
+measurement. These include intensity, two theta, omega, phi, norm of q-vector,
+scan axis, and integration time. Their descriptions can be found here in the
+<a href="https://nomad-lab.eu/prod/v1/oasis/gui/analyze/metainfo/nomad_measurements/section_definitions@nomad_measurements.xrd.schema.XRDResult">metainfo browser</a>.</p>
+<p>The module also contains extension of this section, specifically <code>XRDResult1D</code> and
+<code>XRDResultRSM</code>. <code>XRDResult1D</code> provides <code>generate_plots</code> method which uses the results
+to generate intensity-vs-two-theta and intensity-vs-q-norm plots for line scans.</p>
+<p><code>XRDResultRSM</code> extends the
+data model to describe reciprocal space maps, or RSM. It redefines shape of <em>intensity</em>
+to be 2D array and adds two new quantities: <em>q_parallel</em> and <em>q_perpedicular</em>, each
+being a 2D array. Together, these can be used to describe intensity values in a
+2D reciprocal space. The section also provides <code>generate_plots</code> method to generate
+2D surface plot for intensity-vs-two-theta-omega and intensity-vs-q-vectors.</p>
+<p>We also have HDF5 versions of these result sections that make use of <code>HDF5Reference</code> quantities: <code>XRDResult1DHDF5</code> and
+<code>XRDResultRSMHDF5</code>. More about them <a href="#hdf5-references-in-x-ray-diffraction-elns">here</a>.</p>
+<h4 id="xrdsettings"><code>XRDSettings</code><a class="headerlink" href="#xrdsettings" title="Permanent link">&para;</a></h4>
+<p><code>nomad_measurements.xrd.schema.XRDSettings</code> section defines the settings related to the
+X-ray source. It composes <code>XRDTubeSource</code> section which describes tube material, current
+, voltage, <em>k</em><sub>&alpha;<sub>1</sub></sub>, <em>k</em><sub>&alpha;<sub>2</sub></sub>, <em>k</em><sub>&beta;</sub>, and
+<em>k</em><sub>&alpha;<sub>1</sub></sub>/<em>k</em><sub>&alpha;<sub>2</sub></sub></p>
+<h4 id="elnxraydiffraction"><code>ELNXRayDiffraction</code><a class="headerlink" href="#elnxraydiffraction" title="Permanent link">&para;</a></h4>
+<p><code>nomad_measurements.xrd.schema.ELNXRayDiffraction</code> section allows to use
+<code>XRayDiffraction</code> as an entry section, which can be used to
+create NOMAD <a href="https://nomad-lab.eu/prod/v1/docs/reference/glossary.html#entry">entries</a>.</p>
+<p>The quantity <em>data_file</em> can be used to upload a measurement file
+coming from the instrument. The section uses readers defined in
+<a href="https://pypi.org/project/fairmat-readers-xrd/">fairmat-readers-xrd</a> package to extract
+data from the file and populate the <code>XRayDiffraction</code> schema. Currently, the
+the reader package supports reading <code>.brml</code>, <code>.xrdml</code>, and <code>.rasx</code> files. Please check
+the package's
+<a href="https://github.com/FAIRmat-NFDI/readers-xrd?tab=readme-ov-file#fairmat-readers-xrd">documentation</a>
+for an up-to-date list of the supported file types.</p>
+<p>It also inherits the
+<a href="https://nomad-lab.eu/prod/v1/docs/reference/annotations.html#plot"><code>PlotSection</code></a>,
+which allows to display Plotly figures of the XRD pattern in the NOMAD Oasis. The plots
+are generated using the <code>generate_plots</code> methods of <a href="#xrdresult"><code>XRDResult</code></a> sections.</p>
+<h3 id="transmission-spectrophotometry">Transmission Spectrophotometry<a class="headerlink" href="#transmission-spectrophotometry" title="Permanent link">&para;</a></h3>
+<p><code>nomad_measurements.transmission.schema</code> provides NOMAD schemas for modeling
+data and metadata from transmission spectrophotometry. Currently, schemas
+specific to UV-Vis-NIR transmission are available. The module follows a class
+structure similar to the <a href="#x-ray-diffraction">xrd module</a>. The
+<code>UVVisNirTransmission</code> class can be composed using sub-sections for results and
+settings. <code>ELNUVVisNirTransmission</code> inherits <code>UVVisNirTransmission</code> and can be
+used to create NOMAD entries for the measurement.</p>
+<p>In addition, the module provides classes for modeling the instrument and its
+components: <code>Spectrophotometer</code>, <code>Detector</code>, <code>LightSource</code>, and <code>Monochromator</code>.
+These can be used to model data related to the instrument in a separate entry
+that can be referenced in the measurement entry under the <code>instruments</code>
+sub-section. As the instrument settings are measurement-specific, they should
+be modeled in the measurement entry under the <code>transmission_settings</code>
+sub-section.</p>
+<p>When a measurement file of a supported file type is added to a NOMAD upload,
+an <code>ELNUVVisNirTransmission</code> entry will be generated and populated with data
+from the file. If the instrument serial number is available in the file, an
+existing instrument entry containing the same serial number is automatically
+referenced in the measurement entry.</p>
+<p><code>ELNUVVisNirTransmission</code> uses readers defined in
+<a href="https://pypi.org/project/fairmat-readers-transmission/">fairmat-readers-transmission</a> package to extract
+data from the file and populate the schema. Currently, the reader package supports reading <code>.asc</code> files generated by Perkin Elmer UV WinLab software. Please check
+the package's
+<a href="https://github.com/FAIRmat-NFDI/readers-transmission?tab=readme-ov-file#fairmat-readers-transmission">documentation</a>
+for an up-to-date list of the supported file types.</p>
+<p>You can access all the section definitions by using the
+<a href="https://nomad-lab.eu/prod/v1/oasis/gui/analyze/metainfo/nomad_measurements">metainfo browser</a>
+and searching for: <code>"nomad_measurements.transmission"</code>.</p>
+<h2 id="hdf5-references">HDF5 References<a class="headerlink" href="#hdf5-references" title="Permanent link">&para;</a></h2>
+<p>We make use of <a href="https://nomad-lab.eu/prod/v1/docs/howto/customization/hdf5.html#hdf5reference"><code>HDF5Reference</code></a>
+as a quantity type in some schemas. These quantities allow to store large
+datasets in an external <code>.h5</code> file, while only storing references to the HDF5
+datasets in the NOMAD entry. As a result, the users can connect large datasets
+to ELN entries without sacrificing their responsiveness.</p>
+<h3 id="hdf5-references-in-x-ray-diffraction-elns">HDF5 References in X-Ray Diffraction ELNs<a class="headerlink" href="#hdf5-references-in-x-ray-diffraction-elns" title="Permanent link">&para;</a></h3>
+<p>In our ELN schemas for XRD, we allow the user to switch between result sections
+using <code>HDF5Reference</code>. The user can switch between an HDF5 or a non-HDF5 result
+section by clicking the button <code>Switch To/From HDF5 Results</code>. When the result
+section is switched to an HDF5 one, a NeXus file is generated (which is a <code>.h5</code>
+file with additional validations) and results are written there. The entry only
+stores the references to these HDF5 datasets in the NeXus file. The same button
+can be used to switch back to a non-HDF5 result section if needed.</p>
+<p>An oasis administrator can also set in the <code>nomad.yaml</code> whether to use the HDF5
+or non-HDF5 result section when parsing XRD data in the entry for the first
+time. Users who usually work with RSM or high-resolution XRD scans can opt-in
+to this. Otherwise, the parsed entries use a non-HDF5 result section by default.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># &quot;nomad.yaml&quot; file for your oasis</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nt">plugins</span><span class="p">:</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">entry_points</span><span class="p">:</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="nt">options</span><span class="p">:</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">      </span><span class="nt">nomad_measurements.xrd:schema</span><span class="p">:</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">        </span><span class="nt">use_hdf5_results</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"> </span><span class="c1"># defaults to `false` when not specified</span>
+</code></pre></div></p>
+<h3 id="working-with-downloaded-entries">Working with downloaded entries<a class="headerlink" href="#working-with-downloaded-entries" title="Permanent link">&para;</a></h3>
+<p>If the entries using HDF5 result sections are downloaded over the API,
+accessing the data of the quantity requires an additional step. The entry only
+stores a reference path (<code>str</code>) to the data. Make use of the util function
+<code>nomad_measurements.utils.resolve_hdf5_reference</code> to resolve these paths.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nomad.client</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArchiveQuery</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nomad_measurements.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">resolve_hdf5_reference</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">aq</span> <span class="o">=</span> <span class="n">ArchiveQuery</span><span class="p">(</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">query</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;entry_id:any&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;&lt;Entry ID of an XRD entry&gt;&#39;</span><span class="p">]},</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">url</span><span class="o">=</span><span class="s1">&#39;http://nomad-lab.eu/prod/v1/oasis/api&#39;</span><span class="p">,</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="p">)</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">xrd</span> <span class="o">=</span> <span class="n">aq</span><span class="o">.</span><span class="n">download</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="nb">print</span><span class="p">(</span><span class="n">xrd</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="nb">print</span><span class="p">(</span><span class="n">xrd</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">two_theta</span><span class="p">)</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="c1"># &quot;/uploads/&lt;upload_id&gt;/raw/xrd_example.nxs#/entry/experiment_result/intensity&quot;</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="c1"># &quot;/uploads/&lt;upload_id&gt;/raw/xrd_example.nxs#/entry/experiment_result/intensity&quot;</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="n">intensity</span><span class="p">,</span> <span class="n">two_theta</span> <span class="o">=</span> <span class="n">resolve_hdf5_reference</span><span class="p">(</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>    <span class="n">reference</span><span class="o">=</span><span class="p">[</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>        <span class="n">xrd</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>        <span class="n">xrd</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">two_theta</span><span class="p">,</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>    <span class="p">],</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>    <span class="n">archive</span><span class="o">=</span><span class="n">xrd</span><span class="p">,</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="p">)</span> <span class="c1"># resolves the references and returns the XRD data</span>
+</code></pre></div>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="levelsofschema.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Levels of Schema" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Levels of Schema
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../how_to/install.html" class="md-footer__link md-footer__link--next" aria-label="Next: Install this Plugin" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Install this Plugin
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant"], "search": "../assets/javascripts/workers/search.c7dec7e7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.da79ceb7.min.js"></script>
+      
+        <script src="../javascript.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
