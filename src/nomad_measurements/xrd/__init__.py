@@ -1,4 +1,7 @@
-from nomad.config.models.plugins import ParserEntryPoint, SchemaPackageEntryPoint
+from nomad.config.models.plugins import (
+    ElnParserEntryPoint,
+    SchemaPackageEntryPoint,
+)
 from pydantic import Field
 
 
@@ -20,16 +23,11 @@ schema_entry_point = XRDSchemaPackageEntryPoint(
 )
 
 
-class XRDParserEntryPoint(ParserEntryPoint):
-    def load(self):
-        from nomad_measurements.xrd.parser import XRDParser
-
-        return XRDParser(**self.model_dump())
-
-
-parser_entry_point = XRDParserEntryPoint(
+parser_entry_point = ElnParserEntryPoint(
     name='XRD Parser',
     description='Parser for several kinds of raw files from XRD measurements.',
     mainfile_name_re=r'^.*\.xrdml$|^.*\.rasx$|^.*\.brml$',
     mainfile_mime_re='text/.*|application/zip',
+    eln_m_def='nomad_measurements.xrd.schema.ELNXRayDiffraction',
+    data_type='X-Ray Diffraction',
 )
