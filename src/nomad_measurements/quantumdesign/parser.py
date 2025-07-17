@@ -41,13 +41,13 @@ from nomad.datamodel.metainfo.basesections import (
     BaseSection,
 )
 
-from nomad_measurements.ppms.schema import (
-    PPMSACMSMeasurement,
-    PPMSACTMeasurement,
-    PPMSETOMeasurement,
-    PPMSMeasurement,
-    PPMSMPMSMeasurement,
-    PPMSResistivityMeasurement,
+from nomad_measurements.quantumdesign.schema import (
+    QDACMSMeasurement,
+    QDACTMeasurement,
+    QDETOMeasurement,
+    QDMeasurement,
+    QDMPMSMeasurement,
+    QDResistivityMeasurement,
 )
 from nomad_measurements.utils import create_archive
 
@@ -62,7 +62,7 @@ def find_matching_sequence_file(archive, entry, logger):
         search_result = search(
             owner='user',
             query={
-                'results.eln.sections:any': ['PPMSSequenceFile'],
+                'results.eln.sections:any': ['QDSequenceFile'],
                 'upload_id:any': [archive.m_context.upload_id],
             },
             user_id=archive.metadata.main_author.user_id,
@@ -83,18 +83,18 @@ def find_matching_sequence_file(archive, entry, logger):
     return
 
 
-class PPMSFile(EntryData):
+class QDFile(EntryData):
     measurement = Quantity(
-        type=PPMSMeasurement,
+        type=QDMeasurement,
         a_eln=ELNAnnotation(
             component='ReferenceEditQuantity',
         ),
     )
 
 
-class PPMSParser(MatchingParser):
+class QDParser(MatchingParser):
     def set_entrydata_definition(self):
-        self.entrydata_definition = PPMSMeasurement
+        self.entrydata_definition = QDMeasurement
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         self.set_entrydata_definition()
@@ -104,51 +104,51 @@ class PPMSParser(MatchingParser):
         entry.data_file = data_file_with_path
         file_name = f'{data_file[:-4]}.archive.json'
         find_matching_sequence_file(archive, entry, logger)
-        archive.data = PPMSFile(measurement=create_archive(entry, archive, file_name))
+        archive.data = QDFile(measurement=create_archive(entry, archive, file_name))
         archive.metadata.entry_name = data_file + ' measurement file'
 
 
-class PPMSETOParser(PPMSParser):
+class QDETOParser(QDParser):
     def set_entrydata_definition(self):
-        self.entrydata_definition = PPMSETOMeasurement
+        self.entrydata_definition = QDETOMeasurement
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         super().parse(mainfile, archive, logger)
 
 
-class PPMSMPMSParser(PPMSParser):
+class QDMPMSParser(QDParser):
     def set_entrydata_definition(self):
-        self.entrydata_definition = PPMSMPMSMeasurement
+        self.entrydata_definition = QDMPMSMeasurement
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         super().parse(mainfile, archive, logger)
 
 
-class PPMSResistivityParser(PPMSParser):
+class QDResistivityParser(QDParser):
     def set_entrydata_definition(self):
-        self.entrydata_definition = PPMSResistivityMeasurement
+        self.entrydata_definition = QDResistivityMeasurement
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         super().parse(mainfile, archive, logger)
 
 
-class PPMSACTParser(PPMSParser):
+class QDACTParser(QDParser):
     def set_entrydata_definition(self):
-        self.entrydata_definition = PPMSACTMeasurement
+        self.entrydata_definition = QDACTMeasurement
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         super().parse(mainfile, archive, logger)
 
 
-class PPMSACMSParser(PPMSParser):
+class QDACMSParser(QDParser):
     def set_entrydata_definition(self):
-        self.entrydata_definition = PPMSACMSMeasurement
+        self.entrydata_definition = QDACMSMeasurement
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         super().parse(mainfile, archive, logger)
 
 
-class PPMSSequenceFile(BaseSection, EntryData):
+class QDSequenceFile(BaseSection, EntryData):
     file_path = Quantity(
         type=str,
         a_eln=dict(component='FileEditQuantity'),
@@ -156,9 +156,9 @@ class PPMSSequenceFile(BaseSection, EntryData):
     )
 
 
-class PPMSSequenceParser(MatchingParser):
+class QDSequenceParser(MatchingParser):
     def set_entrydata_definition(self):
-        self.entrydata_definition = PPMSSequenceFile
+        self.entrydata_definition = QDSequenceFile
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         self.set_entrydata_definition()

@@ -25,7 +25,7 @@ log_levels = ['error', 'critical']
 # Test ETO funtionality
 
 test_files = [
-    'tests/data/ppms/ETO_Ch1_TMR_Ch2_Hall.dat',
+    'tests/data/quantumdesign/ETO_Ch1_TMR_Ch2_Hall.dat',
 ]
 
 
@@ -58,7 +58,7 @@ def test_normalize_eto(parsed_measurement_archive, caplog):
 # Test ACT funtionality
 
 test_files = [
-    'tests/data/ppms/ACT_Ch1_Hall_Ch2_TMR.dat',
+    'tests/data/quantumdesign/ACT_Ch1_Hall_Ch2_TMR.dat',
 ]
 
 
@@ -88,7 +88,7 @@ def test_normalize_act(parsed_measurement_archive, caplog):
 # Test ACMS funtionality
 
 test_files = [
-    'tests/data/ppms/ACMS_test.dat',
+    'tests/data/quantumdesign/ACMS_test.dat',
 ]
 
 
@@ -118,7 +118,7 @@ def test_normalize_acms(parsed_measurement_archive, caplog):
 # Test MPMS funtionality
 
 test_files = [
-    'tests/data/ppms/MPMS_test.dat',
+    'tests/data/quantumdesign/MPMS_test.dat',
 ]
 
 
@@ -149,7 +149,7 @@ def test_normalize_mpms(parsed_measurement_archive, caplog):
 # Test Resistivity funtionality
 
 test_files = [
-    'tests/data/ppms/Resistivity_Ch1_TMR_Ch2_Hall_test.dat',
+    'tests/data/quantumdesign/Resistivity_Ch1_TMR_Ch2_Hall_test.dat',
 ]
 
 
