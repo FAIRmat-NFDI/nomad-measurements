@@ -122,7 +122,7 @@ def merge_sections(  # noqa: PLR0912
     if section is None:
         section = update.m_copy()
         return
-    if not isinstance(section, type(update)):
+    if update.m_def not in [section.m_def, *section.m_def.all_base_sections]:
         raise TypeError(
             'Cannot merge sections of different types: '
             f'{type(section)} and {type(update)}'
@@ -138,19 +138,19 @@ def merge_sections(  # noqa: PLR0912
                 logger.warning(warning)
             else:
                 print(warning)
-    for name, sub_section_def in update.m_def.all_sub_sections.items():
-        count = section.m_sub_section_count(sub_section_def)
+    for name, _ in update.m_def.all_sub_sections.items():
+        count = section.m_sub_section_count(name)
         if count == 0:
-            for update_sub_section in update.m_get_sub_sections(sub_section_def):
-                section.m_add_sub_section(sub_section_def, update_sub_section)
-        elif count == update.m_sub_section_count(sub_section_def):
+            for update_sub_section in update.m_get_sub_sections(name):
+                section.m_add_sub_section(name, update_sub_section)
+        elif count == update.m_sub_section_count(name):
             for i in range(count):
                 merge_sections(
-                    section.m_get_sub_section(sub_section_def, i),
-                    update.m_get_sub_section(sub_section_def, i),
+                    section.m_get_sub_section(name, i),
+                    update.m_get_sub_section(name, i),
                     logger,
                 )
-        elif update.m_sub_section_count(sub_section_def) > 0:
+        elif update.m_sub_section_count(name) > 0:
             warning = (
                 f'Merging sections with different number of "{name}" sub sections.'
             )
