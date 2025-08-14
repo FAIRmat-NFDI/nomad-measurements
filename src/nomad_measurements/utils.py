@@ -69,13 +69,11 @@ def create_archive(
     entity: 'ArchiveSection',
     archive: 'EntryArchive',
     file_name: str,
-    overwrite: bool=False,
+    overwrite: bool = False,
 ) -> str:
     if overwrite or not archive.m_context.raw_path_exists(file_name):
         with archive.m_context.update_entry(
-            file_name,
-            write=True,
-            process=True
+            file_name, write=True, process=True
         ) as entry:
             entry['data'] = entity.m_to_dict(with_root_def=True)
     return get_reference(
