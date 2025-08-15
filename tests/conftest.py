@@ -21,6 +21,7 @@ import os
 import pytest
 import structlog
 from nomad.client import parse
+from nomad.utils import hash as m_hash
 from nomad.utils import structlogging
 from structlog.testing import LogCapture
 
@@ -86,8 +87,10 @@ def fixture_parsed_measurement_archive(request):
     rel_measurement_archive_path = os.path.join(
         rel_file_path.rsplit('.', 1)[0] + '.archive.json'
     )
-    assert file_archive.data.measurement.m_proxy_value == os.path.abspath(
-        rel_measurement_archive_path
+    upload_id = None
+    assert file_archive.data.measurement.m_proxy_value == (
+        f'../uploads/{upload_id}/archive/'
+        f'{m_hash(upload_id, os.path.basename(rel_measurement_archive_path))}#data'
     )
 
     yield parse(rel_measurement_archive_path)[0]
