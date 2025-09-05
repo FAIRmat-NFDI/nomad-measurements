@@ -31,5 +31,5 @@ parser_entry_point = XRDParserEntryPoint(
     name='XRD Parser',
     description='Parser for several kinds of raw files from XRD measurements.',
     mainfile_name_re=r'^.*\.xrdml$|^.*\.rasx$|^.*\.brml$',
-    mainfile_mime_re='text/.*|application/zip',
+    mainfile_mime_re='text/.*|application/zip|application/octet-stream',
 )
