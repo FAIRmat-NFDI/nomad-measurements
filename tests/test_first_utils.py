@@ -42,19 +42,19 @@ class TestComponent(Component):
 def test_merge_sections(capfd):
     component_1 = TestComponent(
         mass_fraction=1,
+        bool_array=[True, False],
         float_array=[[1.0, 1.0], [1.0, 3.0]],
         float_array_w_units=[1.0, 1.0],
         float_array_w_diff_length=[1.0, 3.0],
-        bool_array=[True, False],
         enum_value='A',
     )
     component_2 = TestComponent(
         name='Cu',
         mass_fraction=1,
+        bool_array=[True, True],
         float_array=[[1.0, 3.0], [1.0, 3.0]],
         float_array_w_units=[1.0, 1.0],
         float_array_w_diff_length=[1.0, 3.0, 4.0],
-        bool_array=[True, True],
         enum_value='A',
     )
     substance_1 = PureSubstanceSection(
@@ -85,10 +85,10 @@ def test_merge_sections(capfd):
     merge_sections(system_1, system_2)
     out, _ = capfd.readouterr()
     assert out == (
+        'Merging sections with different values for quantity "bool_array".\n'
         'Merging sections with different values for quantity "float_array".\n'
         'Merging sections with different values for quantity '
         '"float_array_w_diff_length".\n'
-        'Merging sections with different values for quantity "bool_array".\n'
         'Merging sections with different values for quantity "name".\n'
     )
     assert system_1.components[0].mass_fraction == 1
