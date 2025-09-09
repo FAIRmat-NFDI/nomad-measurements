@@ -32,10 +32,10 @@ from nomad_measurements.utils import (
 
 
 class TestComponent(Component):
+    bool_array = Quantity(type=bool, shape=['*'])
     float_array = Quantity(type=np.float64, shape=[2, '*'])
     float_array_w_units = Quantity(type=np.float64, shape=['*'], unit='eV')
     float_array_w_diff_length = Quantity(type=np.float64, shape=['*'])
-    bool_array = Quantity(type=bool, shape=['*'])
     enum_value = Quantity(type=MEnum(['A', 'B', 'C']))
 
 
