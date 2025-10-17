@@ -44,11 +44,11 @@ from nomad.datamodel.metainfo.annotations import (
     H5WebAnnotation,
     SectionProperties,
 )
-from nomad.datamodel.metainfo.basesections import (
-    CompositeSystemReference,
+from nomad.datamodel.metainfo.basesections.v2 import (
     Measurement,
     MeasurementResult,
     ReadableIdentifiers,
+    SystemReference,
 )
 from nomad.datamodel.metainfo.plot import PlotlyFigure, PlotSection
 from nomad.datamodel.results import (
@@ -1832,7 +1832,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
 
         samples = []
         if metadata_dict.get('sample_id') is not None:
-            sample = CompositeSystemReference(
+            sample = SystemReference(
                 lab_id=metadata_dict['sample_id'],
             )
             sample.normalize(archive, logger)

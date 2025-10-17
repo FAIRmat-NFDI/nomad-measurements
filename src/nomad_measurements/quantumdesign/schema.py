@@ -30,7 +30,7 @@ from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
     SectionProperties,
 )
-from nomad.datamodel.metainfo.basesections import Measurement
+from nomad.datamodel.metainfo.basesections.v2 import Measurement
 from nomad.datamodel.metainfo.plot import PlotlyFigure, PlotSection
 from nomad.metainfo import (
     Quantity,

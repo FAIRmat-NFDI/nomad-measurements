@@ -50,15 +50,15 @@ from nomad.datamodel.metainfo.annotations import (
     Filter,
     SectionProperties,
 )
-from nomad.datamodel.metainfo.basesections import (
-    CompositeSystem,
-    CompositeSystemReference,
+from nomad.datamodel.metainfo.basesections.v2 import (
     Entity,
     Instrument,
     InstrumentReference,
     Measurement,
     MeasurementResult,
     ReadableIdentifiers,
+    System,
+    SystemReference,
 )
 from nomad.datamodel.metainfo.plot import (
     PlotlyFigure,
@@ -326,7 +326,7 @@ class PerkinElmersLambdaSpectrophotometer(Spectrophotometer):
         super().normalize(archive, logger)
 
 
-class TransmissionSampleReference(CompositeSystemReference):
+class TransmissionSampleReference(SystemReference):
     """
     Reference to the sample used in the transmission measurement. Additionally,
     it contains specific sample properties important for transmission measurements.
@@ -345,7 +345,7 @@ class TransmissionSampleReference(CompositeSystemReference):
         )
     )
     reference = Quantity(
-        type=CompositeSystem,
+        type=System,
         description="""
         A reference to the sample used.
         """,
