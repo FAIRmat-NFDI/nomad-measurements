@@ -360,20 +360,20 @@ class HDF5Handler:
         if self.nexus_dataset_map and not self._nexus_generation_error:
             try:
                 self._write_nx_file()
-            except NameError:
-                self.logger.warning(
-                    'The required "pynxtools" package for creating auxiliary .nxs '
-                    'files is not installed. Creating .h5 file instead.',
-                    exc_info=True,
-                )
-            except Exception:
-                self.logger.warning(
-                    'Encountered error while creating .nxs file. Creating .h5 file '
-                    'instead.',
-                    exc_info=True,
-                )
-            finally:
-                self._nexus_generation_error = False
+            except Exception as e:
+                if isinstance(e, NameError):
+                    self.logger.warning(
+                        'The required "pynxtools" package for creating auxiliary .nxs '
+                        'files is not installed. Creating .h5 file instead.',
+                        exc_info=True,
+                    )
+                else:
+                    self.logger.warning(
+                        'Encountered error while creating .nxs file. Creating .h5 file '
+                        'instead.',
+                        exc_info=True,
+                    )
+                self._nexus_generation_error = True
                 self._write_hdf5_file()
         else:
             self._write_hdf5_file()
