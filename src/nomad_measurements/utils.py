@@ -39,7 +39,7 @@ from pydantic import BaseModel, Field
 
 try:
     import pynxtools.dataconverter as pynxtools_dataconverter
-except ImportError as e:
+except ImportError:
     pass  # pynxtools is an optional dependency
 
 if TYPE_CHECKING:
