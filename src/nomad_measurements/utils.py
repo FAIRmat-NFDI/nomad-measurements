@@ -38,7 +38,9 @@ from nomad.units import ureg
 from pydantic import BaseModel, Field
 
 try:
-    import pynxtools.dataconverter as pynxtools_dataconverter
+    from pynxtools.dataconverter import helpers as pnx_helpers
+    from pynxtools.dataconverter import template as pnx_template
+    from pynxtools.dataconverter import writer as pnx_writer
 except ImportError:
     pass  # pynxtools is an optional dependency
 
@@ -399,11 +401,9 @@ class HDF5Handler:
         """
 
         app_def = self.nexus_dataset_map.get('/ENTRY[entry]/definition')
-        nxdl_root, nxdl_f_path = pynxtools_dataconverter.helpers.get_nxdl_root_and_path(
-            app_def
-        )
-        template = pynxtools_dataconverter.template.Template()
-        pynxtools_dataconverter.helpers.generate_template_from_nxdl(nxdl_root, template)
+        nxdl_root, nxdl_f_path = pnx_helpers.get_nxdl_root_and_path(app_def)
+        template = pnx_template.Template()
+        pnx_helpers.generate_template_from_nxdl(nxdl_root, template)
         attr_dict = {}
         dataset_dict = {}
         self._populate_nx_dataset_and_attribute(
@@ -441,7 +441,7 @@ class HDF5Handler:
                 self.archive.m_context.local_dir, self.filename
             )
 
-        pynxtools_dataconverter.writer.Writer(
+        pnx_writer.Writer(
             data=template, nxdl_f_path=nxdl_f_path, output_path=nx_full_file_path
         ).write()
         if isinstance(self.archive.m_context, ServerContext):
