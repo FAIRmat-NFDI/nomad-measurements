@@ -32,7 +32,7 @@ pip install nomad-measurements --index-url https://gitlab.mpcdf.mpg.de/api/v4/pr
 ### Setting up your OASIS
 Read the [NOMAD oasis documentation](https://nomad-lab.eu/prod/v1/docs/howto/oasis/configure.html#plugins) for details on how to add the plugin on your NOMAD instance.
 
-You don't need to modify the ```nomad.yaml``` configuration file of your NOMAD instance, beacuse the package is pip installed and all the available modules (entry points) are loaded.
+You don't need to modify the ```nomad.yaml``` configuration file of your NOMAD instance, because the package is pip installed and all the available modules (entry points) are loaded.
 To include, instead, only some of the entry points, you need to specify them in the ```include``` section of the ```nomad.yaml```. In the following lines, a list of all the available entry points:
 
 ```yaml
@@ -51,6 +51,18 @@ plugins:
     - "nomad_measurements.quantumdesign:acms_parser"
     - "nomad_measurements.quantumdesign:sequence_parser"
  ```
+
+X-ray diffraction ELN allows to generate a nexus `.nxs` file from the entry data by clicking on `Switch To/From HDF5 Results` button. This is useful for high-resolution or RSM scans, where the data is large and slows down the interaction with the entry. Once the data is moved to a nexus file, the entry only stores references to it, rather than the data itself, making the ELNs responsive. However, this requires that the plugin is installed with nexus dependencies. When adding this plugin to your oasis, nexus dependencies can be included by adding the following line in the `pyproject.toml`:
+
+```toml
+...
+dependencies = [
+  ...
+  "nomad-measurements[nexus]",
+]
+```
+
+If the nexus dependencies are not included, the functionality above still works but uses a plain `.h5` file rather than a `.nxs` file.
 
 
 ### Development
