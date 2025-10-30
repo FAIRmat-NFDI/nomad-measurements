@@ -23,6 +23,13 @@ from nomad.config import config
 
 from nomad_measurements.xrd.schema import XRDResult1D, XRDResult1DHDF5
 
+try:
+    import pynxtools  # noqa F401
+
+    HAS_PYNXTOOLS = True
+except ImportError:
+    HAS_PYNXTOOLS = False
+
 test_files = [
     'tests/data/xrd/XRD-918-16_10.xrdml',
     'tests/data/xrd/m54313_om2th_10.xrdml',
@@ -77,6 +84,7 @@ test_files = [
 ]
 
 
+@pytest.mark.skipif(not HAS_PYNXTOOLS, reason='pynxtools is not installed')
 @pytest.mark.parametrize(
     'parsed_measurement_archive, caplog',
     [((file, clean_up_extensions), log_levels) for file in test_files],
