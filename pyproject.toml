@@ -35,7 +35,6 @@ maintainers = [
 license = { file = "LICENSE" }
 dependencies = [
     "nomad-lab>=1.3.16",
-    "pynxtools>=0.10.0",
     "fairmat-readers-xrd>=0.0.7",
     "fairmat-readers-transmission>=0.0.2",
 ]
@@ -47,6 +46,7 @@ dependencies = [
 index-url = "https://gitlab.mpcdf.mpg.de/api/v4/projects/2187/packages/pypi/simple"
 
 [project.optional-dependencies]
+nexus = ["pynxtools>=0.10.0"]
 dev = [
     "pytest",
     "ruff",

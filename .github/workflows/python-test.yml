@@ -33,10 +33,10 @@ jobs:
         curl -LsSf https://astral.sh/uv/install.sh | sh
     - name: Install dependencies
       run: |
-        uv pip install -e '.[dev]'
+        uv sync --all-extras
     - name: Test with pytest
       run: |
-        pytest
+        uv run pytest
 
   ruff-linting:
     runs-on: ubuntu-latest

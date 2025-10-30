@@ -36,12 +36,13 @@ from nomad.datamodel.hdf5 import HDF5Reference
 from nomad.datamodel.util import parse_path
 from nomad.units import ureg
 from pydantic import BaseModel, Field
-from pynxtools.dataconverter.helpers import (
-    generate_template_from_nxdl,
-    get_nxdl_root_and_path,
-)
-from pynxtools.dataconverter.template import Template
-from pynxtools.dataconverter.writer import Writer as pynxtools_writer
+
+try:
+    from pynxtools.dataconverter import helpers as pnx_helpers
+    from pynxtools.dataconverter import template as pnx_template
+    from pynxtools.dataconverter import writer as pnx_writer
+except ImportError:
+    pass  # pynxtools is an optional dependency
 
 if TYPE_CHECKING:
     from nomad.datamodel.data import (
@@ -362,11 +363,19 @@ class HDF5Handler:
             try:
                 self._write_nx_file()
             except Exception as e:
+                if isinstance(e, NameError):
+                    self.logger.warning(
+                        'The required "pynxtools" package for creating auxiliary .nxs '
+                        'files is not installed. Creating .h5 file instead.',
+                        exc_info=True,
+                    )
+                else:
+                    self.logger.warning(
+                        'Encountered error while creating .nxs file. Creating .h5 file '
+                        'instead.',
+                        exc_info=True,
+                    )
                 self._nexus_generation_error = True
-                self.logger.warning(
-                    f'NeXusFileGenerationError: Encountered "{e}" error while creating '
-                    '.nxs file. Creating .h5 file instead.'
-                )
                 self._write_hdf5_file()
         else:
             self._write_hdf5_file()
@@ -392,9 +401,9 @@ class HDF5Handler:
         """
 
         app_def = self.nexus_dataset_map.get('/ENTRY[entry]/definition')
-        nxdl_root, nxdl_f_path = get_nxdl_root_and_path(app_def)
-        template = Template()
-        generate_template_from_nxdl(nxdl_root, template)
+        nxdl_root, nxdl_f_path = pnx_helpers.get_nxdl_root_and_path(app_def)
+        template = pnx_template.Template()
+        pnx_helpers.generate_template_from_nxdl(nxdl_root, template)
         attr_dict = {}
         dataset_dict = {}
         self._populate_nx_dataset_and_attribute(
@@ -432,7 +441,7 @@ class HDF5Handler:
                 self.archive.m_context.local_dir, self.filename
             )
 
-        pynxtools_writer(
+        pnx_writer.Writer(
             data=template, nxdl_f_path=nxdl_f_path, output_path=nx_full_file_path
         ).write()
         if isinstance(self.archive.m_context, ServerContext):
