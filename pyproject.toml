@@ -147,5 +147,6 @@ qd_resistivity_parser = "nomad_measurements.quantumdesign:resistivity_parser"
 qd_sequence_parser = "nomad_measurements.quantumdesign:sequence_parser"
 transmission_schema = "nomad_measurements.transmission:schema_entry_point"
 transmission_parser = "nomad_measurements.transmission:parser_entry_point"
+mapping_schema = "nomad_measurements.mapping:schema_entry_point"
 
 [tool.setuptools_scm]
