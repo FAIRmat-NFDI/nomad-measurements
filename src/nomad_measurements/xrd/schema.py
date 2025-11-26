@@ -605,146 +605,72 @@ class XRDResult1D(XRDResult):
             (dict, dict): line_linear, line_log
         """
         plots = []
-        if self.two_theta is None or self.intensity is None:
+        if self.intensity is None:
             return plots
 
-        x = self.two_theta.to('degree').magnitude
         y = self.intensity.magnitude
 
-        fig_line_linear = px.line(
-            x=x,
-            y=y,
-        )
-        fig_line_linear.update_layout(
-            title={
-                'text': '<i>Intensity</i> over 2<i>θ</i> (linear scale)',
-                'x': 0.5,
-                'xanchor': 'center',
-            },
-            xaxis_title='2<i>θ</i> (°)',
-            yaxis_title='<i>Intensity</i>',
-            xaxis=dict(
-                fixedrange=False,
-            ),
-            yaxis=dict(
-                fixedrange=False,
-            ),
-            template='plotly_white',
-            hovermode='closest',
-            hoverlabel=dict(
-                bgcolor='white',
-            ),
-            dragmode='zoom',
-            width=600,
-            height=600,
-        )
-        fig_line_linear.update_traces(
-            hovertemplate='<i>Intensity</i>: %{y:.2f}<br>2<i>θ</i>: %{x}°',
-        )
-        plot_json = fig_line_linear.to_plotly_json()
-        plot_json['config'] = dict(
-            scrollZoom=False,
-        )
-        plots.append(
-            PlotlyFigure(
-                label='Intensity over 2θ (linear scale)',
-                index=1,
-                figure=plot_json,
+        position_labels = {
+            'two_theta': '2θ',
+            'omega': 'ω',
+            'phi': 'φ',
+            'chi': 'χ',
+            'q_norm': '|q|',
+        }
+
+        for position in ['two_theta', 'omega', 'phi', 'chi', 'q_norm']:
+            position_label = position_labels[position]
+            unit_label = '(°)' if position != 'q_norm' else '(Å⁻¹)'
+            if getattr(self, position) is None:
+                continue
+            x = (
+                getattr(self, position).to('degree').magnitude
+                if position != 'q_norm'
+                else getattr(self, position).to('1/angstrom').magnitude
             )
-        )
-
-        fig_line_log = px.line(
-            x=x,
-            y=y,
-            log_y=True,
-        )
-        fig_line_log.update_layout(
-            title={
-                'text': '<i>Intensity</i> over 2<i>θ</i> (log scale)',
-                'x': 0.5,
-                'xanchor': 'center',
-            },
-            xaxis_title='2<i>θ</i> (°)',
-            yaxis_title='<i>Intensity</i>',
-            xaxis=dict(
-                fixedrange=False,
-            ),
-            yaxis=dict(
-                fixedrange=False,
-            ),
-            template='plotly_white',
-            hovermode='closest',
-            hoverlabel=dict(
-                bgcolor='white',
-            ),
-            dragmode='zoom',
-            width=600,
-            height=600,
-        )
-        fig_line_log.update_traces(
-            hovertemplate='<i>Intensity</i>: %{y:.2f}<br>2<i>θ</i>: %{x}°',
-        )
-        plot_json = fig_line_log.to_plotly_json()
-        plot_json['config'] = dict(
-            scrollZoom=False,
-        )
-        plots.append(
-            PlotlyFigure(
-                label='Intensity over 2θ (log scale)',
-                index=0,
-                figure=plot_json,
-            )
-        )
-
-        if self.q_norm is None:
-            return plots
-
-        x = self.q_norm.to('1/angstrom').magnitude
-        fig_line_log = px.line(
-            x=x,
-            y=y,
-            log_y=True,
-        )
-        fig_line_log.update_layout(
-            title={
-                'text': '<i>Intensity</i> over |<em>q</em>| (log scale)',
-                'x': 0.5,
-                'xanchor': 'center',
-            },
-            xaxis_title='|<em>q</em>| (Å<sup>-1</sup>)',
-            yaxis_title='<i>Intensity</i>',
-            xaxis=dict(
-                fixedrange=False,
-            ),
-            yaxis=dict(
-                fixedrange=False,
-            ),
-            template='plotly_white',
-            hovermode='closest',
-            hoverlabel=dict(
-                bgcolor='white',
-            ),
-            dragmode='zoom',
-            width=600,
-            height=600,
-        )
-        fig_line_log.update_traces(
-            hovertemplate=(
-                '<i>Intensity</i>: %{y:.2f}<br>|<em>q</em>|: %{x} Å<sup>-1</sup>'
-            ),
-        )
-        plot_json = fig_line_log.to_plotly_json()
-        plot_json['config'] = dict(
-            scrollZoom=False,
-        )
-        plots.append(
-            PlotlyFigure(
-                label='Intensity over q_norm (log scale)',
-                index=2,
-                figure=plot_json,
-            )
-        )
-
+            if len(x) != len(y):
+                continue
+            for scale in ['linear', 'log']:
+                fig_line = px.line(x=x, y=y, log_y=(scale == 'log'))
+                fig_line.update_layout(
+                    title={
+                        'text': f'<i>Intensity</i> over <i>{position_label}</i> '
+                        f'({scale} scale)',
+                        'x': 0.5,
+                        'xanchor': 'center',
+                    },
+                    xaxis_title=f'<i>{position_label}</i> {unit_label}',
+                    yaxis_title='<i>Intensity</i>',
+                    xaxis=dict(
+                        fixedrange=False,
+                    ),
+                    yaxis=dict(
+                        fixedrange=False,
+                    ),
+                    template='plotly_white',
+                    hovermode='closest',
+                    hoverlabel=dict(
+                        bgcolor='white',
+                    ),
+                    dragmode='zoom',
+                    width=600,
+                    height=600,
+                )
+                fig_line.update_traces(
+                    hovertemplate=f'<i>Intensity</i>: %{{y:.3f}}<br>'
+                    f'<i>{position_label}</i>: %{{x:.3f}} {unit_label}',
+                )
+                plot_json = fig_line.to_plotly_json()
+                plot_json['config'] = dict(
+                    scrollZoom=False,
+                )
+                plots.append(
+                    PlotlyFigure(
+                        label=f'Intensity over {position} ({scale} scale)',
+                        index=0,
+                        figure=plot_json,
+                    )
+                )
         return plots
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
