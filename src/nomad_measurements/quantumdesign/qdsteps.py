@@ -21,7 +21,7 @@
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
 )
-from nomad.datamodel.metainfo.basesections import ActivityStep
+from nomad.datamodel.metainfo.basesections.v2 import ActivityStep
 from nomad.metainfo import (
     MEnum,
     Quantity,

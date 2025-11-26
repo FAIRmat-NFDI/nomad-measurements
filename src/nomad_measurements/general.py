@@ -24,7 +24,7 @@ from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
     ELNComponentEnum,
 )
-from nomad.datamodel.metainfo.basesections import (
+from nomad.datamodel.metainfo.basesections.v2 import (
     Activity,
     Measurement,
     Process,

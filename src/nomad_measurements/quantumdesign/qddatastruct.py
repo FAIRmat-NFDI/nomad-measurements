@@ -24,9 +24,9 @@ from nomad.datamodel.data import (
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation,
 )
-from nomad.datamodel.metainfo.basesections import (
-    CompositeSystemReference,
+from nomad.datamodel.metainfo.basesections.v2 import (
     MeasurementResult,
+    SystemReference,
 )
 from nomad.metainfo import (
     MEnum,
@@ -48,7 +48,7 @@ class QDSample(ArchiveSection):
         type=str, description='Cross section through which the current flows'
     )
     sample = SubSection(
-        section_def=CompositeSystemReference,
+        section_def=SystemReference,
         description='Reference to the sample measured',
     )
 
