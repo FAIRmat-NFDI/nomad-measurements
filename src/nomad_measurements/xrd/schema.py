@@ -309,26 +309,32 @@ class IntensityPlot(ArchiveSection):
         description='The chi range of the diffractogram',
     )
 
-    def generate_hdf5_plots(self, hdf5_handler: HDF5Handler):
+    def generate_hdf5_plots(
+        self, hdf5_handler: HDF5Handler, plotting_position: str = 'two_theta'
+    ):
         """
         Add datasets and attributes to the HDF5 file for plotting the intensity over
         available positions.
 
         Args:
             hdf5_handler (HDF5Handler): The handler for the HDF5 file.
+            plotting_position (str): The position to be used for plotting the intensity.
+                Should be one of 'two_theta', 'omega', 'phi', or 'chi'.
         """
         prefix = '/ENTRY[entry]/experiment_result'
 
         intensity = hdf5_handler.read_dataset(path=f'{prefix}/intensity')
-        two_theta = hdf5_handler.read_dataset(path=f'{prefix}/two_theta')
-        if intensity is None or two_theta is None:
+        position_data = hdf5_handler.read_dataset(
+            path=f'/ENTRY[entry]/experiment_result/{plotting_position}'
+        )
+        if intensity is None or position_data is None:
             return
 
         hdf5_handler.add_dataset(
-            path=f'{prefix}/intensity_plot/two_theta',
+            path=f'{prefix}/intensity_plot/{plotting_position}',
             dataset=Dataset(
-                data=f'{prefix}/two_theta',
-                archive_path='data.results[0].intensity_plot.two_theta',
+                data=f'{prefix}/{plotting_position}',
+                archive_path=f'data.results[0].intensity_plot.{plotting_position}',
                 internal_reference=True,
             ),
             validate_path=False,
@@ -342,40 +348,48 @@ class IntensityPlot(ArchiveSection):
             ),
             validate_path=False,
         )
-        hdf5_handler.add_attribute(
-            path=f'{prefix}/intensity_plot',
-            params=dict(
-                axes='two_theta',
-                signal='intensity',
-                NX_class='NXdata',
-            ),
-        )
+
         if isinstance(self.m_parent, XRDResult1DHDF5):
+            if position_data.shape != intensity.shape:
+                return
+            hdf5_handler.add_attribute(
+                path=f'{prefix}/intensity_plot',
+                params=dict(
+                    axes=plotting_position,
+                    signal='intensity',
+                    NX_class='NXdata',
+                ),
+            )
             return
 
-        for var_axis in ['omega', 'phi', 'chi']:
-            var_axis_data = hdf5_handler.read_dataset(
-                path=f'/ENTRY[entry]/experiment_result/{var_axis}'
-            )
-            if var_axis_data is not None:
-                hdf5_handler.add_dataset(
-                    path=f'{prefix}/intensity_plot/{var_axis}',
-                    dataset=Dataset(
-                        data=f'{prefix}/{var_axis}',
-                        archive_path=f'data.results[0].intensity_plot.{var_axis}',
-                        internal_reference=True,
-                    ),
-                    validate_path=False,
+        # RSM scan plots: Add another axis and plot
+        if (
+            isinstance(self.m_parent, XRDResultRSMHDF5)
+            and plotting_position == 'two_theta'
+        ):
+            for var_axis in ['omega', 'phi', 'chi']:
+                var_axis_data = hdf5_handler.read_dataset(
+                    path=f'/ENTRY[entry]/experiment_result/{var_axis}'
                 )
-                hdf5_handler.add_attribute(
-                    path=f'{prefix}/intensity_plot',
-                    params=dict(
-                        axes=[var_axis, 'two_theta'],
-                        signal='intensity',
-                        NX_class='NXdata',
-                    ),
-                )
-                break
+                if var_axis_data is not None:
+                    hdf5_handler.add_dataset(
+                        path=f'{prefix}/intensity_plot/{var_axis}',
+                        dataset=Dataset(
+                            data=f'{prefix}/{var_axis}',
+                            archive_path=f'data.results[0].intensity_plot.{var_axis}',
+                            internal_reference=True,
+                        ),
+                        validate_path=False,
+                    )
+                    hdf5_handler.add_attribute(
+                        path=f'{prefix}/intensity_plot',
+                        params=dict(
+                            axes=['two_theta', var_axis],
+                            signal='intensity',
+                            NX_class='NXdata',
+                        ),
+                    )
+                    break
 
 
 class IntensityScatteringVectorPlot(ArchiveSection):
@@ -429,6 +443,8 @@ class IntensityScatteringVectorPlot(ArchiveSection):
             return
 
         if q_norm is not None:
+            if intensity.shape != q_norm.shape:
+                return
             hdf5_handler.add_dataset(
                 path=f'{prefix}/intensity_scattering_vector_plot/intensity',
                 dataset=Dataset(
@@ -592,14 +608,13 @@ class XRDResult1D(XRDResult):
         )
     )
 
-    def generate_plots(self):
+    def generate_plots(self, plotting_position: str = 'two_theta'):
         """
         Plot the 1D diffractogram.
 
         Args:
-            archive (EntryArchive): The archive containing the section that is being
-            normalized.
-            logger (BoundLogger): A structlog logger.
+            plotting_position (str): The position to be used for plotting the intensity.
+                Should be one of 'two_theta', 'omega', 'phi', 'chi'.
 
         Returns:
             (dict, dict): line_linear, line_log
@@ -607,9 +622,7 @@ class XRDResult1D(XRDResult):
         plots = []
         if self.intensity is None:
             return plots
-
         y = self.intensity.magnitude
-
         position_labels = {
             'two_theta': '2θ',
             'omega': 'ω',
@@ -617,8 +630,11 @@ class XRDResult1D(XRDResult):
             'chi': 'χ',
             'q_norm': '|q|',
         }
+        positions_for_plotting = [plotting_position]
+        if plotting_position == 'two_theta':
+            positions_for_plotting.append('q_norm')
 
-        for position in ['two_theta', 'omega', 'phi', 'chi', 'q_norm']:
+        for position in positions_for_plotting:
             position_label = position_labels[position]
             unit_label = '(°)' if position != 'q_norm' else '(Å⁻¹)'
             if getattr(self, position) is None:
@@ -1173,7 +1189,9 @@ class XRDResult1DHDF5(XRDResult):
                 ),
             )
 
-    def generate_hdf5_plots(self, hdf5_handler: HDF5Handler):
+    def generate_hdf5_plots(
+        self, hdf5_handler: HDF5Handler, plotting_position: str = 'two_theta'
+    ):
         """
         Initializes sections to generate the plots for intensity over position and
         scattering vectors.
@@ -1184,7 +1202,7 @@ class XRDResult1DHDF5(XRDResult):
         if hdf5_handler is None:
             return
         self.m_setdefault('intensity_plot')
-        self.intensity_plot.generate_hdf5_plots(hdf5_handler)
+        self.intensity_plot.generate_hdf5_plots(hdf5_handler, plotting_position)
 
         if self.source_peak_wavelength is not None:
             self.m_setdefault('intensity_scattering_vector_plot')
@@ -1793,6 +1811,103 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             self.auxiliary_file = None
             self.nexus_view = None
 
+    def populate_measurement_results_hdf5(
+        self,
+        result_dict: dict,
+        plotting_position: str,
+        archive: 'EntryArchive',
+        logger: 'BoundLogger',
+    ):
+        """
+        Populate the results section of the X-ray diffraction data for HDF5 results
+        section. It updates the HDF5 file with the new data and generates the plots.
+
+        Args:
+            result_dict (Dict): The result data dictionary.
+            plotting_position (str): The position to be used for plotting line scans.
+            archive (EntryArchive): The archive containing the section.
+            logger (BoundLogger): A structlog logger.
+        """
+        filename = self.data_file.rsplit('.', 1)[0]
+        self.auxiliary_file = (
+            f'{filename}.h5'
+            if archive.m_context.raw_path_exists(f'{filename}.h5')
+            else f'{filename}.nxs'
+        )
+        self.hdf5_handler = HDF5Handler(
+            filename=self.auxiliary_file,
+            archive=archive,
+            logger=logger,
+        )
+        if self.auxiliary_file.endswith('.nxs'):
+            self.hdf5_handler.nexus_dataset_map = NEXUS_DATASET_MAP
+
+        self.hdf5_handler.add_dataset(
+            path='/ENTRY[entry]/experiment_result/intensity',
+            dataset=Dataset(
+                data=result_dict.get('intensity'),
+                archive_path='data.results[0].intensity',
+            ),
+        )
+        self.hdf5_handler.add_dataset(
+            path='/ENTRY[entry]/experiment_result/two_theta',
+            dataset=Dataset(
+                data=result_dict.get('two_theta'),
+                archive_path='data.results[0].two_theta',
+            ),
+        )
+        self.hdf5_handler.add_dataset(
+            path='/ENTRY[entry]/experiment_result/omega',
+            dataset=Dataset(
+                data=result_dict.get('omega'),
+                archive_path='data.results[0].omega',
+            ),
+        )
+        self.hdf5_handler.add_dataset(
+            path='/ENTRY[entry]/experiment_result/chi',
+            dataset=Dataset(
+                data=result_dict.get('chi'),
+                archive_path='data.results[0].chi',
+            ),
+        )
+        self.hdf5_handler.add_dataset(
+            path='/ENTRY[entry]/experiment_result/phi',
+            dataset=Dataset(
+                data=result_dict.get('phi'),
+                archive_path='data.results[0].phi',
+            ),
+        )
+        self.hdf5_handler.add_dataset(
+            path='/ENTRY[entry]/experiment_config/count_time',
+            dataset=Dataset(
+                data=result_dict.get('integration_time'),
+                archive_path='data.results[0].integration_time',
+            ),
+        )
+        self.results[0].scan_axis = result_dict.get('scan_axis')
+        self.results[0].source_peak_wavelength = result_dict.get(
+            'source_peak_wavelength'
+        )
+        self.results[0].calculate_scattering_vectors(self.hdf5_handler)
+        if isinstance(self.results[0], XRDResult1DHDF5):
+            result: XRDResult1DHDF5 = self.results[0]
+            result.generate_hdf5_plots(self.hdf5_handler, plotting_position)
+        else:
+            result: XRDResultRSMHDF5 = self.results[0]
+            result.generate_hdf5_plots(self.hdf5_handler)
+        self.results[0].normalize(archive, logger)
+
+        self.hdf5_handler.write_file()
+
+        if self.hdf5_handler.filename != self.auxiliary_file:
+            self.auxiliary_file = self.hdf5_handler.filename
+        self.nexus_view = None
+        if self.auxiliary_file.endswith('.nxs'):
+            nx_entry_id = get_entry_id_from_file_name(
+                archive=archive, file_name=self.auxiliary_file
+            )
+            self.nexus_view = get_reference(archive.metadata.upload_id, nx_entry_id)
+
     def populate_measurement_results(
         self, xrd_dict: dict, archive: 'EntryArchive', logger: 'BoundLogger'
     ):
@@ -1817,6 +1932,14 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             phi=xrd_dict.get('Phi'),
             integration_time=xrd_dict.get('countTime'),
         )
+        plotting_position = None
+        if isinstance(self.results[0], (XRDResult1D, XRDResult1DHDF5)):
+            for position in ['two_theta', 'omega', 'chi', 'phi']:
+                if result_dict[position].shape == result_dict['intensity'].shape:
+                    plotting_position = position
+                    break
+            if plotting_position is None:
+                raise AssertionError('Cannot determine plotting position for 1D scan.')
         if (
             self.xrd_settings is not None
             and self.xrd_settings.source is not None
@@ -1829,87 +1952,24 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                 if v is not None:
                     setattr(self.results[0], k, v)
             self.results[0].normalize(archive, logger)
-            self.figures = self.results[0].generate_plots()
-        elif (
+            if isinstance(self.results[0], XRDResult1D):
+                result: XRDResult1D = self.results[0]
+                self.figures = result.generate_plots(
+                    plotting_position=plotting_position
+                )
+            elif isinstance(self.results[0], XRDResultRSM):
+                result: XRDResultRSM = self.results[0]
+                self.figures = result.generate_plots()
+        if (
             isinstance(self.results[0], XRDResult1DHDF5 | XRDResultRSMHDF5)
             and self.trigger_update_nexus_file
         ):
-            filename = self.data_file.rsplit('.', 1)[0]
-            self.auxiliary_file = (
-                f'{filename}.h5'
-                if archive.m_context.raw_path_exists(f'{filename}.h5')
-                else f'{filename}.nxs'
-            )
-            self.hdf5_handler = HDF5Handler(
-                filename=self.auxiliary_file,
-                archive=archive,
-                logger=logger,
-            )
-            if self.auxiliary_file.endswith('.nxs'):
-                self.hdf5_handler.nexus_dataset_map = NEXUS_DATASET_MAP
-
-            self.hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/intensity',
-                dataset=Dataset(
-                    data=xrd_dict.get('intensity'),
-                    archive_path='data.results[0].intensity',
-                ),
-            )
-            self.hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/two_theta',
-                dataset=Dataset(
-                    data=xrd_dict.get('2Theta'),
-                    archive_path='data.results[0].two_theta',
-                ),
-            )
-            self.hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/omega',
-                dataset=Dataset(
-                    data=xrd_dict.get('Omega'),
-                    archive_path='data.results[0].omega',
-                ),
-            )
-            self.hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/chi',
-                dataset=Dataset(
-                    data=xrd_dict.get('Chi'),
-                    archive_path='data.results[0].chi',
-                ),
-            )
-            self.hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_result/phi',
-                dataset=Dataset(
-                    data=xrd_dict.get('Phi'),
-                    archive_path='data.results[0].phi',
-                ),
-            )
-            self.hdf5_handler.add_dataset(
-                path='/ENTRY[entry]/experiment_config/count_time',
-                dataset=Dataset(
-                    data=xrd_dict.get('countTime'),
-                    archive_path='data.results[0].integration_time',
-                ),
-            )
-            self.results[0].scan_axis = result_dict.get('scan_axis')
-            self.results[0].source_peak_wavelength = result_dict.get(
-                'source_peak_wavelength'
-            )
-            self.results[0].calculate_scattering_vectors(self.hdf5_handler)
-            self.results[0].generate_hdf5_plots(self.hdf5_handler)
-            self.results[0].normalize(archive, logger)
-
-            self.hdf5_handler.write_file()
-
-            if self.hdf5_handler.filename != self.auxiliary_file:
-                self.auxiliary_file = self.hdf5_handler.filename
-            self.nexus_view = None
-            if self.auxiliary_file.endswith('.nxs'):
-                nx_entry_id = get_entry_id_from_file_name(
-                    archive=archive, file_name=self.auxiliary_file
+            try:
+                self.populate_measurement_results_hdf5(
+                    result_dict, plotting_position, archive, logger
                 )
-                self.nexus_view = get_reference(archive.metadata.upload_id, nx_entry_id)
-
-        self.trigger_update_nexus_file = False
+            finally:
+                self.trigger_update_nexus_file = False
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
@@ -1949,8 +2009,10 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                 self.results = [XRDResultRSM()]
             self.trigger_update_nexus_file = True
         elif self.trigger_switch_results_section:
-            self.switch_results_section()
-            self.trigger_switch_results_section = False
+            try:
+                self.switch_results_section()
+            finally:
+                self.trigger_switch_results_section = False
 
         # populate the measurement results section
         self.populate_measurement_results(xrd_dict, archive, logger)
