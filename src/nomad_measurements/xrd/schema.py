@@ -384,7 +384,7 @@ class IntensityPlot(ArchiveSection):
                     hdf5_handler.add_attribute(
                         path=f'{prefix}/intensity_plot',
                         params=dict(
-                            axes=['two_theta', var_axis],
+                            axes=[var_axis, 'two_theta'],
                             signal='intensity',
                             NX_class='NXdata',
                         ),
@@ -634,6 +634,7 @@ class XRDResult1D(XRDResult):
         if plotting_position == 'two_theta':
             positions_for_plotting.append('q_norm')
 
+        plot_index = 0
         for position in positions_for_plotting:
             position_label = position_labels[position]
             unit_label = '(°)' if position != 'q_norm' else '(Å⁻¹)'
@@ -683,10 +684,11 @@ class XRDResult1D(XRDResult):
                 plots.append(
                     PlotlyFigure(
                         label=f'Intensity over {position} ({scale} scale)',
-                        index=0,
+                        index=plot_index,
                         figure=plot_json,
                     )
                 )
+                plot_index += 1
         return plots
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
@@ -1198,6 +1200,8 @@ class XRDResult1DHDF5(XRDResult):
 
         Args:
             hdf5_handler (HDF5Handler): The handler for the HDF5 file.
+            plotting_position (str): The position to be used for plotting the intensity.
+                Should be one of 'two_theta', 'omega', 'phi', or 'chi'.
         """
         if hdf5_handler is None:
             return
@@ -1712,6 +1716,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     )
     trigger_switch_results_section = Quantity(
         type=bool,
+        default=False,
         description="""
         Switches the results section. If it is a non-HDF5 section, it will be converted
         to HDF5 section (which uses NeXus file in the backend) and vice versa.
@@ -1722,6 +1727,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
     )
     trigger_update_nexus_file = Quantity(
         type=bool,
+        default=False,
         description="""
         Updates the nexus file with the current ELN state when using HDF5 results
         section.
@@ -1825,6 +1831,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         Args:
             result_dict (Dict): The result data dictionary.
             plotting_position (str): The position to be used for plotting line scans.
+                Should be one of 'two_theta', 'omega', 'phi', or 'chi'.
             archive (EntryArchive): The archive containing the section.
             logger (BoundLogger): A structlog logger.
         """
@@ -1890,6 +1897,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         )
         self.results[0].calculate_scattering_vectors(self.hdf5_handler)
         if isinstance(self.results[0], XRDResult1DHDF5):
+            if plotting_position is None:
+                raise AssertionError('Plotting position should not be None.')
             result: XRDResult1DHDF5 = self.results[0]
             result.generate_hdf5_plots(self.hdf5_handler, plotting_position)
         else:
@@ -1935,7 +1944,10 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         plotting_position = None
         if isinstance(self.results[0], (XRDResult1D, XRDResult1DHDF5)):
             for position in ['two_theta', 'omega', 'chi', 'phi']:
-                if result_dict[position].shape == result_dict['intensity'].shape:
+                if (
+                    result_dict[position] is not None
+                    and result_dict[position].shape == result_dict['intensity'].shape
+                ):
                     plotting_position = position
                     break
             if plotting_position is None:
@@ -1960,16 +1972,13 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             elif isinstance(self.results[0], XRDResultRSM):
                 result: XRDResultRSM = self.results[0]
                 self.figures = result.generate_plots()
-        if (
+        elif (
             isinstance(self.results[0], XRDResult1DHDF5 | XRDResultRSMHDF5)
             and self.trigger_update_nexus_file
         ):
-            try:
-                self.populate_measurement_results_hdf5(
-                    result_dict, plotting_position, archive, logger
-                )
-            finally:
-                self.trigger_update_nexus_file = False
+            self.populate_measurement_results_hdf5(
+                result_dict, plotting_position, archive, logger
+            )
 
     def normalize(self, archive: 'EntryArchive', logger: 'BoundLogger'):
         """
@@ -2005,9 +2014,10 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                 self.results = [XRDResult1D()]
             elif schema_config.use_hdf5_results and scan_type == 'rsm':
                 self.results = [XRDResultRSMHDF5()]
+                self.trigger_update_nexus_file = True
             elif not schema_config.use_hdf5_results and scan_type == 'rsm':
                 self.results = [XRDResultRSM()]
-            self.trigger_update_nexus_file = True
+                self.trigger_update_nexus_file = True
         elif self.trigger_switch_results_section:
             try:
                 self.switch_results_section()
@@ -2015,7 +2025,12 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                 self.trigger_switch_results_section = False
 
         # populate the measurement results section
-        self.populate_measurement_results(xrd_dict, archive, logger)
+        try:
+            self.populate_measurement_results(xrd_dict, archive, logger)
+        except Exception as e:
+            logger.error(f'Error populating measurement results: {e}')
+        finally:
+            self.trigger_update_nexus_file = False
 
         super().normalize(archive, logger)
 
