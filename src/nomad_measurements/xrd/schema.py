@@ -2010,6 +2010,7 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                 return
             if schema_config.use_hdf5_results and scan_type == 'line':
                 self.results = [XRDResult1DHDF5()]
+                self.trigger_update_nexus_file = True
             elif not schema_config.use_hdf5_results and scan_type == 'line':
                 self.results = [XRDResult1D()]
             elif schema_config.use_hdf5_results and scan_type == 'rsm':
@@ -2017,7 +2018,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                 self.trigger_update_nexus_file = True
             elif not schema_config.use_hdf5_results and scan_type == 'rsm':
                 self.results = [XRDResultRSM()]
-                self.trigger_update_nexus_file = True
         elif self.trigger_switch_results_section:
             try:
                 self.switch_results_section()
