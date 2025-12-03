@@ -27,6 +27,7 @@ from fairmat_readers_xrd import (
     read_bruker_brml,
     read_panalytical_xrdml,
     read_rigaku_rasx,
+    read_rigaku_raw,
 )
 from nomad.config import config
 from nomad.datamodel.data import (
@@ -1798,6 +1799,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             return read_panalytical_xrdml, self.write_xrd_data
         if self.data_file.endswith('.brml'):
             return read_bruker_brml, self.write_xrd_data
+        if self.data_file.endswith('.raw'):
+            return read_rigaku_raw, self.write_xrd_data
         return None, None
 
     def write_xrd_data(

@@ -39,6 +39,7 @@ test_files = [
     'tests/data/xrd/Omega-2Theta_scan_high_temperature.rasx',
     'tests/data/xrd/RSM_111_sdd=350.rasx',
     'tests/data/xrd/TwoTheta_scan_powder.rasx',
+    # 'tests/data/xrd/test_sample.raw',  # Uncomment when test RAW file is available
 ]
 log_levels = ['error', 'critical']
 clean_up_extensions = ['.archive.json', '.nxs', '.h5']
