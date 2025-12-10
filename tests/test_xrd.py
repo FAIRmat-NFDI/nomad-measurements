@@ -39,7 +39,7 @@ test_files = [
     'tests/data/xrd/Omega-2Theta_scan_high_temperature.rasx',
     'tests/data/xrd/RSM_111_sdd=350.rasx',
     'tests/data/xrd/TwoTheta_scan_powder.rasx',
-    # 'tests/data/xrd/test_sample.raw',  # Tested separately (limited metadata)
+    'tests/data/xrd/TwoTheta_scan_scrambled.raw',  # Bruker RAW v4 (scrambled data)
 ]
 log_levels = ['error', 'critical']
 clean_up_extensions = ['.archive.json', '.nxs', '.h5']
@@ -62,7 +62,6 @@ def test_normalize_all(parsed_measurement_archive, caplog):
     normalize_all(parsed_measurement_archive)
 
     # Check XRD settings if available
-    # (some formats like .raw don't include source metadata)
     if parsed_measurement_archive.data.xrd_settings is not None:
         assert (
             parsed_measurement_archive.data.xrd_settings.source.xray_tube_material
@@ -122,25 +121,18 @@ def test_nexus_results_section(parsed_measurement_archive, caplog):
 
 def test_bruker_raw_parser():
     """
-    Tests the Bruker/Siemens RAW v4 parser directly.
+    Tests Bruker/Siemens RAW v4 format-specific features.
 
-    Bruker RAW v4 files contain:
-    - Scan data (angles, intensities, scan axis)
-    - X-ray tube anode material (from which wavelengths are looked up)
+    This test focuses on RAW-specific parsing that isn't covered by test_normalize_all:
+    - Scan axis name extraction from binary format
+    - Anode material extraction from binary format (offset 0x01A8)
+    - Wavelength lookup from anode material reference table
 
-    This test validates that the parser correctly extracts all available data.
-
-    Tests:
-    - File reading and parsing
-    - Scan parameter extraction (start_angle, step_size, num_points, scan_axis)
-    - Intensity data extraction
-    - Source metadata (anode material, wavelengths)
-    - Data array length consistency
-    - Value ranges are reasonable for XRD
+    General features (data arrays, normalization, etc.) are tested in test_normalize_all.
     """
     from fairmat_readers_xrd import read_bruker_raw
 
-    raw_file = 'tests/data/xrd/test_sample.raw'
+    raw_file = 'tests/data/xrd/TwoTheta_scan_scrambled.raw'
 
     # Verify file exists
     assert os.path.exists(raw_file), f'Test file not found: {raw_file}'
@@ -150,90 +142,42 @@ def test_bruker_raw_parser():
 
     # Verify basic structure
     assert result is not None, 'Parser should return data'
-    assert isinstance(result, dict), 'Result should be a dictionary'
 
-    # Check for required keys
-    assert '2Theta' in result, 'Result should contain 2Theta data'
-    assert 'intensity' in result, 'Result should contain intensity data'
-    assert 'metadata' in result, 'Result should contain metadata'
+    # TEST RAW-SPECIFIC FEATURES:
+
+    # 1. Scan axis name extraction from binary format (offset 0x04D0)
     assert 'scanmotname' in result, 'Result should contain scanmotname'
-
-    # Verify scanmotname (scan axis) was extracted
     assert (
         result['scanmotname'] == 'Theta'
     ), f"Expected scanmotname='Theta', got '{result['scanmotname']}'"
 
-    # Verify metadata contains scan_axis
     assert 'scan_axis' in result['metadata'], 'Metadata should contain scan_axis'
     assert (
         result['metadata']['scan_axis'] == 'Theta'
     ), f"Expected scan_axis='Theta', got '{result['metadata']['scan_axis']}'"
 
-    # Check that data arrays exist and have content
-    two_theta = result['2Theta']
-    intensity = result['intensity']
-
-    assert hasattr(two_theta, 'magnitude'), '2Theta should be a pint Quantity'
-    assert hasattr(intensity, 'magnitude'), 'intensity should be a pint Quantity'
-
-    two_theta_values = two_theta.magnitude
-    intensity_values = intensity.magnitude
-
-    assert len(two_theta_values) > 0, '2Theta should contain data points'
-    assert len(intensity_values) > 0, 'Intensity should contain data points'
-
-    # Verify arrays have matching lengths
-    assert len(two_theta_values) == len(
-        intensity_values
-    ), '2Theta and intensity arrays should have the same length'
-
-    # Verify angle values are in reasonable range for XRD
-    max_xrd_angle = 180
-    assert min(two_theta_values) >= 0, '2Theta values should be non-negative'
-    assert (
-        max(two_theta_values) <= max_xrd_angle
-    ), f'2Theta values should be <= {max_xrd_angle} degrees'
-
-    # Verify we got the expected number of points from the test file
-    # (known from format analysis: test_sample.raw has 7134 points)
-    expected_points = 7134
-    assert (
-        len(two_theta_values) == expected_points
-    ), f'Expected {expected_points} data points, got {len(two_theta_values)}'
-
-    # Verify scan parameters are in metadata
-    assert 'scan_type' in result['metadata'], 'Metadata should contain scan_type'
-    # For single-axis powder diffraction scans
-    assert (
-        result['metadata']['scan_type'] == 'line'
-    ), f"Expected scan_type='line', got '{result['metadata']['scan_type']}'"
-
-    # NEW: Verify source metadata (anode material and wavelengths)
+    # 2. Source metadata extraction (RAW-specific: anode material from binary + wavelength lookup)
     assert 'source' in result['metadata'], 'Metadata should contain source information'
     source = result['metadata']['source']
-    assert isinstance(source, dict), 'Source should be a dictionary'
 
-    # Check anode material was extracted
+    # Anode material extracted from offset 0x01A8 in binary file
     assert 'anode_material' in source, 'Source should contain anode_material'
     assert source['anode_material'] == 'Cu', 'Expected Cu anode for test file'
 
-    # Check wavelengths were looked up from anode material (schema uses kAlpha1, kAlpha2, kBeta)
+    # Wavelengths looked up from reference table based on anode material
     assert 'kAlpha1' in source, 'Source should contain K-alpha1 wavelength'
     assert 'kAlpha2' in source, 'Source should contain K-alpha2 wavelength'
     assert 'kBeta' in source, 'Source should contain K-beta wavelength'
+    assert 'ratioKAlpha2KAlpha1' in source, 'Source should contain K-alpha ratio'
 
-    # Verify wavelength values are reasonable for Cu
-    cu_kalpha1_min = 1.54
-    cu_kalpha1_max = 1.55
-    cu_kbeta_min = 1.39
-    cu_kbeta_max = 1.40
-    assert (
-        cu_kalpha1_min < source['kAlpha1'] < cu_kalpha1_max
-    ), 'Cu K-alpha1 should be ~1.54 Å'
-    assert (
-        cu_kalpha1_min < source['kAlpha2'] < cu_kalpha1_max
-    ), 'Cu K-alpha2 should be ~1.54 Å'
-    assert cu_kbeta_min < source['kBeta'] < cu_kbeta_max, 'Cu K-beta should be ~1.39 Å'
-
-    # Note: Count time is still not available in RAW format
-    # This would need to be provided via ELN or instrument configuration
+    # Verify Cu wavelength values from International Tables for Crystallography
+    assert source['kAlpha1'] == pytest.approx(
+        1.540598, abs=1e-6
+    ), 'Cu K-alpha1 wavelength incorrect'
+    assert source['kAlpha2'] == pytest.approx(
+        1.544426, abs=1e-6
+    ), 'Cu K-alpha2 wavelength incorrect'
+    assert source['kBeta'] == pytest.approx(
+        1.392250, abs=1e-6
+    ), 'Cu K-beta wavelength incorrect'
+    assert source['ratioKAlpha2KAlpha1'] == 0.5, 'K-alpha ratio should be 0.5'
