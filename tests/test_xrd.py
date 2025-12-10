@@ -140,36 +140,23 @@ def test_bruker_raw_parser():
     # Read the RAW file
     result = read_bruker_raw(raw_file)
 
-    # Verify basic structure
-    assert result is not None, 'Parser should return data'
-
     # TEST RAW-SPECIFIC FEATURES:
 
     # 1. Scan axis name extraction from binary format (offset 0x04D0)
-    assert 'scanmotname' in result, 'Result should contain scanmotname'
     assert (
         result['scanmotname'] == 'Theta'
     ), f"Expected scanmotname='Theta', got '{result['scanmotname']}'"
-
-    assert 'scan_axis' in result['metadata'], 'Metadata should contain scan_axis'
     assert (
         result['metadata']['scan_axis'] == 'Theta'
     ), f"Expected scan_axis='Theta', got '{result['metadata']['scan_axis']}'"
 
     # 2. Source metadata extraction (RAW-specific: anode material from binary + wavelength lookup)
-    assert 'source' in result['metadata'], 'Metadata should contain source information'
     source = result['metadata']['source']
 
     # Anode material extracted from offset 0x01A8 in binary file
-    assert 'anode_material' in source, 'Source should contain anode_material'
     assert source['anode_material'] == 'Cu', 'Expected Cu anode for test file'
 
     # Wavelengths looked up from reference table based on anode material
-    assert 'kAlpha1' in source, 'Source should contain K-alpha1 wavelength'
-    assert 'kAlpha2' in source, 'Source should contain K-alpha2 wavelength'
-    assert 'kBeta' in source, 'Source should contain K-beta wavelength'
-    assert 'ratioKAlpha2KAlpha1' in source, 'Source should contain K-alpha ratio'
-
     # Verify Cu wavelength values from International Tables for Crystallography
     assert source['kAlpha1'] == pytest.approx(
         1.540598, abs=1e-6
