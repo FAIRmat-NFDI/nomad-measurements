@@ -20,7 +20,6 @@ import os
 import pytest
 from nomad.client import normalize_all
 from nomad.config import config
-
 from nomad_measurements.xrd.schema import XRDResult1D, XRDResult1DHDF5
 
 try:
@@ -123,12 +122,14 @@ def test_bruker_raw_parser():
     """
     Tests Bruker/Siemens RAW v4 format-specific features.
 
-    This test focuses on RAW-specific parsing that isn't covered by test_normalize_all:
+    This test focuses on RAW-specific parsing that isn't covered by
+    test_normalize_all:
     - Scan axis name extraction from binary format
     - Anode material extraction from binary format (offset 0x01A8)
     - Wavelength lookup from anode material reference table
 
-    General features (data arrays, normalization, etc.) are tested in test_normalize_all.
+    General features (data arrays, normalization, etc.) are tested in
+    test_normalize_all.
     """
     from fairmat_readers_xrd import read_bruker_raw
 
@@ -150,21 +151,18 @@ def test_bruker_raw_parser():
         result['metadata']['scan_axis'] == 'Theta'
     ), f"Expected scan_axis='Theta', got '{result['metadata']['scan_axis']}'"
 
-    # 2. Source metadata extraction (RAW-specific: anode material from binary + wavelength lookup)
+    # 2. Source metadata extraction
+    # (RAW-specific: anode material from binary + wavelength lookup)
     source = result['metadata']['source']
 
     # Anode material extracted from offset 0x01A8 in binary file
-    assert source['anode_material'] == 'Cu', 'Expected Cu anode for test file'
+    assert source['anode_material'] == 'Cu'
 
     # Wavelengths looked up from reference table based on anode material
     # Verify Cu wavelength values from International Tables for Crystallography
-    assert source['kAlpha1'] == pytest.approx(
-        1.540598, abs=1e-6
-    ), 'Cu K-alpha1 wavelength incorrect'
-    assert source['kAlpha2'] == pytest.approx(
-        1.544426, abs=1e-6
-    ), 'Cu K-alpha2 wavelength incorrect'
-    assert source['kBeta'] == pytest.approx(
-        1.392250, abs=1e-6
-    ), 'Cu K-beta wavelength incorrect'
-    assert source['ratioKAlpha2KAlpha1'] == 0.5, 'K-alpha ratio should be 0.5'
+    assert source['kAlpha1'] == pytest.approx(1.540598, abs=1e-6)
+    assert source['kAlpha2'] == pytest.approx(1.544426, abs=1e-6)
+    assert source['kBeta'] == pytest.approx(1.392250, abs=1e-6)
+    # K-alpha2/K-alpha1 ratio is always 0.5 for all elements
+    expected_ratio = 0.5
+    assert source['ratioKAlpha2KAlpha1'] == expected_ratio
