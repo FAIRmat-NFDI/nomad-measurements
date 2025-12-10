@@ -9,9 +9,9 @@ Currently, this plugin supports the following measurement techniques:
 - **X-ray Diffraction (XRD)**: Supports 1D line scans and 2D Reciprocal Space
 Mapping (RSM) scans. Supports automatic parsing of data for the following file formats
 (read more [here](explanation/schemas.md#x-ray-diffraction)):
-  - Panalytical: `*.xrdml`
-  - Bruker: `*.brml`
-  - Rigaku: `*.rasx`, `*.raw`
+  - PANalytical: `*.xrdml`
+  - Bruker: `*.brml`, `*.raw` (RAW v4 format)
+  - Rigaku: `*.rasx`
 
 - **UV-Vis-NIR Transmission**: Supports automatic parsing of data for the following
 file formats (read more [here](explanation/schemas.md#transmission-spectrophotometry)):
