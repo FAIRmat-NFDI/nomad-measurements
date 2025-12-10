@@ -124,14 +124,17 @@ def test_bruker_raw_parser():
     """
     Tests the Bruker/Siemens RAW v4 parser directly.
 
-    Bruker RAW v4 files contain scan data but lack source metadata
-    (wavelength, X-ray tube material, count time). This test validates
-    that the parser correctly extracts available data from the binary format.
+    Bruker RAW v4 files contain:
+    - Scan data (angles, intensities, scan axis)
+    - X-ray tube anode material (from which wavelengths are looked up)
+
+    This test validates that the parser correctly extracts all available data.
 
     Tests:
     - File reading and parsing
     - Scan parameter extraction (start_angle, step_size, num_points, scan_axis)
     - Intensity data extraction
+    - Source metadata (anode material, wavelengths)
     - Data array length consistency
     - Value ranges are reasonable for XRD
     """
@@ -205,6 +208,32 @@ def test_bruker_raw_parser():
         result['metadata']['scan_type'] == 'line'
     ), f"Expected scan_type='line', got '{result['metadata']['scan_type']}'"
 
-    # Document what is NOT available (as expected)
-    # RAW format does not contain: wavelength, X-ray tube material, count time
-    # These must be provided by the user via ELN or other means
+    # NEW: Verify source metadata (anode material and wavelengths)
+    assert 'source' in result['metadata'], 'Metadata should contain source information'
+    source = result['metadata']['source']
+    assert isinstance(source, dict), 'Source should be a dictionary'
+
+    # Check anode material was extracted
+    assert 'anode_material' in source, 'Source should contain anode_material'
+    assert source['anode_material'] == 'Cu', 'Expected Cu anode for test file'
+
+    # Check wavelengths were looked up from anode material (schema uses kAlpha1, kAlpha2, kBeta)
+    assert 'kAlpha1' in source, 'Source should contain K-alpha1 wavelength'
+    assert 'kAlpha2' in source, 'Source should contain K-alpha2 wavelength'
+    assert 'kBeta' in source, 'Source should contain K-beta wavelength'
+
+    # Verify wavelength values are reasonable for Cu
+    cu_kalpha1_min = 1.54
+    cu_kalpha1_max = 1.55
+    cu_kbeta_min = 1.39
+    cu_kbeta_max = 1.40
+    assert (
+        cu_kalpha1_min < source['kAlpha1'] < cu_kalpha1_max
+    ), 'Cu K-alpha1 should be ~1.54 Å'
+    assert (
+        cu_kalpha1_min < source['kAlpha2'] < cu_kalpha1_max
+    ), 'Cu K-alpha2 should be ~1.54 Å'
+    assert cu_kbeta_min < source['kBeta'] < cu_kbeta_max, 'Cu K-beta should be ~1.39 Å'
+
+    # Note: Count time is still not available in RAW format
+    # This would need to be provided via ELN or instrument configuration
