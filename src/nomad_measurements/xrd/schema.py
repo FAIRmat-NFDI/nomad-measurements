@@ -34,6 +34,7 @@ from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
 )
+from nomad.datamodel.context import ServerContext
 from nomad.datamodel.hdf5 import (
     HDF5Reference,
 )
