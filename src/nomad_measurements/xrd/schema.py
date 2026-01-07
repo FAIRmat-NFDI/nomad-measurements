@@ -30,11 +30,11 @@ from fairmat_readers_xrd import (
     read_rigaku_rasx,
 )
 from nomad.config import config
+from nomad.datamodel.context import ServerContext
 from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
 )
-from nomad.datamodel.context import ServerContext
 from nomad.datamodel.hdf5 import (
     HDF5Reference,
 )
