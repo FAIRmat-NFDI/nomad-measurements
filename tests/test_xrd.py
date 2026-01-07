@@ -166,3 +166,6 @@ def test_bruker_raw_parser():
     # K-alpha2/K-alpha1 ratio is always 0.5 for all elements
     expected_ratio = 0.5
     assert source['ratioKAlpha2KAlpha1'] == expected_ratio
+
+    # 3. Sample ID extraction
+    assert result['metadata']['sample_id'] == 'HeOx-1001-nsp-sps-900C-10min-01-poliert'

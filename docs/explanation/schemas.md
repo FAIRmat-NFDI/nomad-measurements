@@ -137,7 +137,7 @@ The quantity *data_file* can be used to upload a measurement file
 coming from the instrument. The section uses readers defined in
 [fairmat-readers-xrd](https://pypi.org/project/fairmat-readers-xrd/) package to extract
 data from the file and populate the `XRayDiffraction` schema. Currently, the
-the reader package supports reading `.brml`, `.xrdml`, `.rasx`, and Brucker `.raw` files. Please check
+the reader package supports reading `.brml`, `.xrdml`, `.rasx`, and Bruker `.raw` files. Please check
 the package's
 [documentation](https://github.com/FAIRmat-NFDI/readers-xrd?tab=readme-ov-file#fairmat-readers-xrd)
 for an up-to-date list of the supported file types.

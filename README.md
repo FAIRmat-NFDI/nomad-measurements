@@ -13,6 +13,7 @@ parsing of following vendor-specific file formats:
 - `.rasx` (Rigaku)
 - `.xrdml` (Malvern Panalytical)
 - `.brml` (Bruker)
+- `.raw` (Bruker RAW v4)
 
 The `nomad_measurements.transmission` module supports
 parsing of following vendor-specific file formats:

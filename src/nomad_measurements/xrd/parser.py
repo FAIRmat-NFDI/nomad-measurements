@@ -47,15 +47,15 @@ class XRDParser(MatchingParser):
     ):
         """
         Override to add specific header check for .raw files.
-        For Rigaku .raw files, verify they have the RAW4.00 binary header.
+        For Bruker .raw files, verify they have the RAW4.00 binary header.
         """
         # First check using parent's matching logic (extension, MIME type)
         if not super().is_mainfile(filename, mime, buffer, decoded_buffer, compression):
             return False
 
-        # Additional check: if it's a .raw file, verify Rigaku RAW 4.00 header
+        # Additional check: if it's a .raw file, verify Bruker RAW 4.00 header
         if filename.endswith('.raw'):
-            # Check for Rigaku RAW 4.00 binary header at the start
+            # Check for Bruker RAW 4.00 binary header at the start
             if not buffer.startswith(b'RAW4.00'):
                 return False
 
