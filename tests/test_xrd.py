@@ -145,16 +145,14 @@ def test_reject_invalid_file_formats(invalid_file, tmp_path):
     To add new negative test cases, add entries to the invalid_test_files list
     with 'filename', 'content', and 'description' fields.
     """
-    from nomad.datamodel import EntryArchive
-    from nomad.parsing import parser as nomad_parser
+    from nomad.client import parse
 
     # Create the fake file
     fake_file = tmp_path / invalid_file['filename']
     fake_file.write_bytes(invalid_file['content'])
 
     # Try to parse - should not match XRDParser
-    archive = EntryArchive()
-    nomad_parser.parse(str(fake_file), archive)
+    archive = parse(str(fake_file))[0]
 
     # Verify it was not parsed as XRD data
     assert archive.data is None or not hasattr(archive.data, 'measurement'), (
