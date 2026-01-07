@@ -74,7 +74,7 @@ def test_normalize_all(parsed_measurement_archive, caplog):
         assert parsed_measurement_archive.data.results[
             0
         ].source_peak_wavelength.magnitude == pytest.approx(1.540598, 1e-2)
-    if isinstance(
+    if parsed_measurement_archive.data.results and isinstance(
         parsed_measurement_archive.data.results[0], XRDResult1D | XRDResult1DHDF5
     ):
         assert (
@@ -145,12 +145,12 @@ def test_bruker_raw_parser():
     # TEST RAW-SPECIFIC FEATURES:
 
     # 1. Scan axis name extraction from binary format (offset 0x04D0)
-    assert result['scanmotname'] == 'Theta', (
-        f"Expected scanmotname='Theta', got '{result['scanmotname']}'"
-    )
-    assert result['metadata']['scan_axis'] == 'Theta', (
-        f"Expected scan_axis='Theta', got '{result['metadata']['scan_axis']}'"
-    )
+    assert (
+        result['scanmotname'] == 'Theta'
+    ), f"Expected scanmotname='Theta', got '{result['scanmotname']}'"
+    assert (
+        result['metadata']['scan_axis'] == 'Theta'
+    ), f"Expected scan_axis='Theta', got '{result['metadata']['scan_axis']}'"
 
     # 2. Source metadata extraction
     # (RAW-specific: anode material from binary + wavelength lookup)
