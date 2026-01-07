@@ -6,19 +6,19 @@ Welcome to the official documentation for the **NOMAD-measurements Plugin**! Thi
 
 Currently, this plugin supports the following measurement techniques:
 
-- **X-ray Diffraction (XRD)**: Supports 1D line scans and 2D Reciprocal Space 
+- **X-ray Diffraction (XRD)**: Supports 1D line scans and 2D Reciprocal Space
 Mapping (RSM) scans. Supports automatic parsing of data for the following file formats
 (read more [here](explanation/schemas.md#x-ray-diffraction)):
-  - Panalytical: `*.xrdml`
-  - Bruker: `*.brml`
+  - PANalytical: `*.xrdml`
+  - Bruker: `*.brml`, `*.raw` (RAW v4 format)
   - Rigaku: `*.rasx`
 
-- **UV-Vis-NIR Transmission**: Supports automatic parsing of data for the following 
+- **UV-Vis-NIR Transmission**: Supports automatic parsing of data for the following
 file formats (read more [here](explanation/schemas.md#transmission-spectrophotometry)):
   - Perkin Elmers: `*.asc`
- 
+
 - **Quantum Design (QD)**: Supports automatic parsing of
-measurement files and sequence files from the Quantum Design devices (as given by MultiVu). For now, ETO, ACT, ACMS, MPMS, and 
+measurement files and sequence files from the Quantum Design devices (as given by MultiVu). For now, ETO, ACT, ACMS, MPMS, and
 Resistivity modes are supported. Supported file formats:
   - QuantumDesign: `*.dat` and `*.seq`
 

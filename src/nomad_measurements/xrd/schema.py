@@ -25,10 +25,12 @@ import numpy as np
 import plotly.express as px
 from fairmat_readers_xrd import (
     read_bruker_brml,
+    read_bruker_raw,
     read_panalytical_xrdml,
     read_rigaku_rasx,
 )
 from nomad.config import config
+from nomad.datamodel.context import ServerContext
 from nomad.datamodel.data import (
     ArchiveSection,
     EntryData,
@@ -1748,6 +1750,8 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             return read_panalytical_xrdml, self.write_xrd_data
         if self.data_file.endswith('.brml'):
             return read_bruker_brml, self.write_xrd_data
+        if self.data_file.endswith('.raw'):
+            return read_bruker_raw, self.write_xrd_data
         return None, None
 
     def write_xrd_data(
@@ -1781,7 +1785,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         xrd_settings.normalize(archive, logger)
 
         samples = []
-        if metadata_dict.get('sample_id') is not None:
+        if metadata_dict.get('sample_id') is not None and isinstance(
+            archive.m_context, ServerContext
+        ):
             sample = CompositeSystemReference(
                 lab_id=metadata_dict['sample_id'],
             )
