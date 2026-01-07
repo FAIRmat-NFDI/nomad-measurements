@@ -25,6 +25,7 @@ from nomad.datamodel.metainfo.basesections import (
 )
 from nomad.metainfo import MEnum, Quantity
 from nomad.units import ureg
+
 from nomad_measurements.utils import (
     merge_sections,
 )

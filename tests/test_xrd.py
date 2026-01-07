@@ -20,6 +20,7 @@ import os
 import pytest
 from nomad.client import normalize_all
 from nomad.config import config
+
 from nomad_measurements.xrd.schema import XRDResult1D, XRDResult1DHDF5
 
 try:
@@ -144,12 +145,12 @@ def test_bruker_raw_parser():
     # TEST RAW-SPECIFIC FEATURES:
 
     # 1. Scan axis name extraction from binary format (offset 0x04D0)
-    assert (
-        result['scanmotname'] == 'Theta'
-    ), f"Expected scanmotname='Theta', got '{result['scanmotname']}'"
-    assert (
-        result['metadata']['scan_axis'] == 'Theta'
-    ), f"Expected scan_axis='Theta', got '{result['metadata']['scan_axis']}'"
+    assert result['scanmotname'] == 'Theta', (
+        f"Expected scanmotname='Theta', got '{result['scanmotname']}'"
+    )
+    assert result['metadata']['scan_axis'] == 'Theta', (
+        f"Expected scan_axis='Theta', got '{result['metadata']['scan_axis']}'"
+    )
 
     # 2. Source metadata extraction
     # (RAW-specific: anode material from binary + wavelength lookup)
