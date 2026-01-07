@@ -44,6 +44,16 @@ test_files = [
 log_levels = ['error', 'critical']
 clean_up_extensions = ['.archive.json', '.nxs', '.h5']
 
+# Invalid files for testing negative matching (reject non-matching formats)
+invalid_test_files = [
+    {
+        'filename': 'invalid.raw',
+        'content': b'RIGAKU_RAW_FORMAT\x00\x00\x00' + b'\x00' * 1000,
+        'description': 'Non-Bruker RAW file (missing RAW4.00 header)',
+    },
+    # Future: Add other invalid formats here (e.g., fake .xrdml, .brml, etc.)
+]
+
 
 @pytest.mark.parametrize(
     'parsed_measurement_archive, caplog',
@@ -116,4 +126,37 @@ def test_nexus_results_section(parsed_measurement_archive, caplog):
     assert (
         parsed_measurement_archive.data.results[0].intensity.rsplit('#')[-1]
         == '/entry/experiment_result/intensity'
+    )
+
+
+@pytest.mark.parametrize(
+    'invalid_file',
+    invalid_test_files,
+    ids=[f['description'] for f in invalid_test_files],
+)
+def test_reject_invalid_file_formats(invalid_file, tmp_path):
+    """
+    Tests that files with invalid headers/formats are not matched by the parser.
+
+    This ensures the parser correctly rejects files that have the right extension
+    but wrong format (e.g., non-Bruker .raw files, malformed XML files, etc.).
+    Uses NOMAD's natural matching system to verify rejection.
+
+    To add new negative test cases, add entries to the invalid_test_files list
+    with 'filename', 'content', and 'description' fields.
+    """
+    from nomad.datamodel import EntryArchive
+    from nomad.parsing import parser as nomad_parser
+
+    # Create the fake file
+    fake_file = tmp_path / invalid_file['filename']
+    fake_file.write_bytes(invalid_file['content'])
+
+    # Try to parse - should not match XRDParser
+    archive = EntryArchive()
+    nomad_parser.parse(str(fake_file), archive)
+
+    # Verify it was not parsed as XRD data
+    assert archive.data is None or not hasattr(archive.data, 'measurement'), (
+        f'Parser incorrectly matched invalid file: {invalid_file["description"]}'
     )
