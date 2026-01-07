@@ -1834,7 +1834,9 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
         xrd_settings.normalize(archive, logger)
 
         samples = []
-        if metadata_dict.get('sample_id') is not None:
+        if metadata_dict.get('sample_id') is not None and isinstance(
+            archive.m_context, ServerContext
+        ):
             sample = CompositeSystemReference(
                 lab_id=metadata_dict['sample_id'],
             )
