@@ -151,10 +151,6 @@ def test_reject_invalid_file_formats(invalid_file, tmp_path):
     fake_file = tmp_path / invalid_file['filename']
     fake_file.write_bytes(invalid_file['content'])
 
-    # Try to parse - should not match XRDParser
-    archive = parse(str(fake_file))[0]
-
-    # Verify it was not parsed as XRD data
-    assert archive.data is None or not hasattr(archive.data, 'measurement'), (
-        f'Parser incorrectly matched invalid file: {invalid_file["description"]}'
-    )
+    # Try to parse - should raise AssertionError when no parser matches
+    with pytest.raises(AssertionError, match='there is no parser matching'):
+        parse(str(fake_file))
