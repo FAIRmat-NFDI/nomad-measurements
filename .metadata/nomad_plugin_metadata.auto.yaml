@@ -349,15 +349,15 @@ schema_dependencies:
 metadata_provenance:
 - source: pyproject
   extraction_method: deterministic
-  generated_at: '2026-03-19T14:39:01.416619+00:00'
+  generated_at: '2026-03-19T14:51:28.256431+00:00'
   generator_version: 0.1.0
 - source: plugin_entry_points
   extraction_method: deterministic
-  generated_at: '2026-03-19T14:39:01.416660+00:00'
+  generated_at: '2026-03-19T14:51:28.256467+00:00'
   generator_version: 0.1.0
 - source: citation_cff
   extraction_method: deterministic
-  generated_at: '2026-03-19T14:39:01.416676+00:00'
+  generated_at: '2026-03-19T14:51:28.256481+00:00'
   generator_version: 0.1.0
 stars: 15
 owner: FAIRmat-NFDI

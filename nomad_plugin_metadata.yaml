@@ -249,62 +249,28 @@ supported_filetypes:
 - .seq
 - .asc
 file_format_support:
-- id: xrdml
-  label: .xrdml
-  capability_id: xrd_parser
-  producer: xrd-parser
-  extensions:
-  - .xrdml
-  mime_types:
-  - text/.*|application/zip|application/octet-stream
-- id: rasx
-  label: .rasx
-  capability_id: xrd_parser
-  producer: xrd-parser
-  extensions:
-  - .rasx
-  mime_types:
-  - text/.*|application/zip|application/octet-stream
-- id: brml
-  label: .brml
-  capability_id: xrd_parser
-  producer: xrd-parser
-  extensions:
-  - .brml
-  mime_types:
-  - text/.*|application/zip|application/octet-stream
-- id: raw
-  label: .raw
-  capability_id: xrd_parser
-  producer: xrd-parser
-  extensions:
-  - .raw
-  mime_types:
-  - text/.*|application/zip|application/octet-stream
-- id: dat
-  label: .dat
-  capability_id: qd_eto_parser
-  producer: dataparser-for-qd-eto
+- id: dat-qd-act
+  label: .dat (QD ACT)
+  capability_id: qd_act_parser
+  producer: quantum-design-act
   extensions:
   - .dat
   mime_types:
-  - text/plain|application/x-wine-extension-ini
-- id: seq
-  label: .seq
-  capability_id: qd_sequence_parser
-  producer: qdsequenceparser
+  - text/plain
+  - application/x-wine-extension-ini
+  instrument_context: Quantum Design ACT
+  notes: Disambiguated from other QD .dat formats.
+- id: dat-qd-acms
+  label: .dat (QD ACMS)
+  capability_id: qd_acms_parser
+  producer: quantum-design-acms
   extensions:
-  - .seq
+  - .dat
   mime_types:
   - text/plain
-- id: asc
-  label: .asc
-  capability_id: transmission_parser
-  producer: transmission-parser
-  extensions:
-  - .asc
-  mime_types:
-  - text/.*|application/zip
+  - application/x-wine-extension-ini
+  instrument_context: Quantum Design ACMS
+  notes: Same extension as other QD parsers but different BYAPP signature.
 schema_dependencies:
 - dependency_type: python_package
   package_name: nomad-lab
@@ -349,15 +315,15 @@ schema_dependencies:
 metadata_provenance:
 - source: pyproject
   extraction_method: deterministic
-  generated_at: '2026-03-19T14:39:01.416619+00:00'
+  generated_at: '2026-03-19T14:51:28.256431+00:00'
   generator_version: 0.1.0
 - source: plugin_entry_points
   extraction_method: deterministic
-  generated_at: '2026-03-19T14:39:01.416660+00:00'
+  generated_at: '2026-03-19T14:51:28.256467+00:00'
   generator_version: 0.1.0
 - source: citation_cff
   extraction_method: deterministic
-  generated_at: '2026-03-19T14:39:01.416676+00:00'
+  generated_at: '2026-03-19T14:51:28.256481+00:00'
   generator_version: 0.1.0
 stars: 15
 owner: FAIRmat-NFDI
@@ -365,3 +331,51 @@ owner_type: Organization
 created: '2023-09-06T10:00:22Z'
 last_updated: '2026-01-07T14:47:20Z'
 archived: false
+subject:
+- measurements
+- xrd
+- transport
+- magnetometry
+- spectroscopy
+maturity: stable
+repository_default_branch: main
+deployment:
+  on_central: false
+  on_example_oasis: true
+  on_pypi: true
+  pypi_package: nomad-measurements
+suggested_usages:
+- id: parse-xrd-raw-files
+  title: Parse XRD raw files
+  user_intent: Import powder XRD raw outputs into NOMAD
+  domain_category: measurements
+  technique: xrd
+  audience: intermediate
+  maturity: stable
+  tags:
+  - xrd
+  - diffraction
+  - parser
+- id: parse-quantumdesign-measurements
+  title: Parse Quantum Design measurements
+  user_intent: Import PPMS/MPMS transport and magnetometry outputs
+  domain_category: measurements
+  technique: quantum-design
+  audience: intermediate
+  maturity: stable
+  tags:
+  - ppms
+  - mpms
+  - transport
+  - magnetometry
+- id: parse-transmission-spectra
+  title: Parse transmission spectroscopy files
+  user_intent: Import UV-Vis transmission measurement outputs
+  domain_category: measurements
+  technique: transmission-spectroscopy
+  audience: intermediate
+  maturity: stable
+  tags:
+  - transmission
+  - uv-vis
+  - spectroscopy
