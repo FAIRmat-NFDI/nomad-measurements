@@ -1,0 +1,367 @@
+id: nomad-measurements
+metadata_schema_version: 1.0.0
+name: nomad-measurements
+description: A plugin for NOMAD containing base sections for measurements.
+license: LICENSE
+upstream_repository: https://github.com/FAIRmat-NFDI/nomad-measurements
+documentation: https://fairmat-nfdi.github.io/nomad-measurements/
+homepage: https://github.com/FAIRmat-NFDI/nomad-measurements
+issue_tracker: https://github.com/FAIRmat-NFDI/nomad-measurements/issues
+maintainers:
+- name: FAIRmat
+  email: fairmat@physik.hu-berlin.de
+authors:
+- name: Andrea Albino
+- name: "Sebastian Br\xFCckner"
+- name: Sarthak Kapoor
+- name: "Jos\xE9 A. M\xE1rquez"
+- name: Rubel Mozumder
+- name: "Hampus N\xE4sstr\xF6m"
+entry_points:
+- id: nomad.plugin:general_schema
+  entry_point_group: nomad.plugin
+  entry_point_name: general_schema
+  python_object: nomad_measurements:schema_entry_point
+  capability_type: schema
+- id: nomad.plugin:xrd_schema
+  entry_point_group: nomad.plugin
+  entry_point_name: xrd_schema
+  python_object: nomad_measurements.xrd:schema_entry_point
+  capability_type: schema
+- id: nomad.plugin:xrd_parser
+  entry_point_group: nomad.plugin
+  entry_point_name: xrd_parser
+  python_object: nomad_measurements.xrd:parser_entry_point
+  capability_type: parser
+- id: nomad.plugin:qd_eto_schema
+  entry_point_group: nomad.plugin
+  entry_point_name: qd_eto_schema
+  python_object: nomad_measurements.quantumdesign:eto_schema
+  capability_type: schema
+- id: nomad.plugin:qd_act_schema
+  entry_point_group: nomad.plugin
+  entry_point_name: qd_act_schema
+  python_object: nomad_measurements.quantumdesign:act_schema
+  capability_type: schema
+- id: nomad.plugin:qd_acms_schema
+  entry_point_group: nomad.plugin
+  entry_point_name: qd_acms_schema
+  python_object: nomad_measurements.quantumdesign:acms_schema
+  capability_type: schema
+- id: nomad.plugin:qd_mpms_schema
+  entry_point_group: nomad.plugin
+  entry_point_name: qd_mpms_schema
+  python_object: nomad_measurements.quantumdesign:mpms_schema
+  capability_type: schema
+- id: nomad.plugin:qd_resisitivity_schema
+  entry_point_group: nomad.plugin
+  entry_point_name: qd_resisitivity_schema
+  python_object: nomad_measurements.quantumdesign:resistivity_schema
+  capability_type: schema
+- id: nomad.plugin:qd_eto_parser
+  entry_point_group: nomad.plugin
+  entry_point_name: qd_eto_parser
+  python_object: nomad_measurements.quantumdesign:eto_parser
+  capability_type: parser
+- id: nomad.plugin:qd_act_parser
+  entry_point_group: nomad.plugin
+  entry_point_name: qd_act_parser
+  python_object: nomad_measurements.quantumdesign:act_parser
+  capability_type: parser
+- id: nomad.plugin:qd_acms_parser
+  entry_point_group: nomad.plugin
+  entry_point_name: qd_acms_parser
+  python_object: nomad_measurements.quantumdesign:acms_parser
+  capability_type: parser
+- id: nomad.plugin:qd_mpms_parser
+  entry_point_group: nomad.plugin
+  entry_point_name: qd_mpms_parser
+  python_object: nomad_measurements.quantumdesign:mpms_parser
+  capability_type: parser
+- id: nomad.plugin:qd_resistivity_parser
+  entry_point_group: nomad.plugin
+  entry_point_name: qd_resistivity_parser
+  python_object: nomad_measurements.quantumdesign:resistivity_parser
+  capability_type: parser
+- id: nomad.plugin:qd_sequence_parser
+  entry_point_group: nomad.plugin
+  entry_point_name: qd_sequence_parser
+  python_object: nomad_measurements.quantumdesign:sequence_parser
+  capability_type: parser
+- id: nomad.plugin:transmission_schema
+  entry_point_group: nomad.plugin
+  entry_point_name: transmission_schema
+  python_object: nomad_measurements.transmission:schema_entry_point
+  capability_type: schema
+- id: nomad.plugin:transmission_parser
+  entry_point_group: nomad.plugin
+  entry_point_name: transmission_parser
+  python_object: nomad_measurements.transmission:parser_entry_point
+  capability_type: parser
+- id: nomad.plugin:mapping_schema
+  entry_point_group: nomad.plugin
+  entry_point_name: mapping_schema
+  python_object: nomad_measurements.mapping:schema_entry_point
+  capability_type: schema
+capabilities:
+- id: general_schema
+  capability_type: schema
+  title: General Schema
+  summary: Schema package containing basic classes used around in the plugin.
+- id: xrd_schema
+  capability_type: schema
+  title: XRD Schema
+  summary: Schema for XRD FAIR data.
+- id: xrd_parser
+  capability_type: parser
+  title: XRD Parser
+  summary: Parser for several kinds of raw files from XRD measurements.
+  parser_details:
+    parser_name: XRD Parser
+    parser_level: 0
+    mainfile_name_re: ^.*\.xrdml$|^.*\.rasx$|^.*\.brml$|^.*\.raw$
+    mainfile_mime_re: text/.*|application/zip|application/octet-stream
+    mainfile_alternative: false
+- id: qd_eto_schema
+  capability_type: schema
+  title: PQD ETO Schema
+  summary: Schema for QD measurements done by the ETO option.
+- id: qd_act_schema
+  capability_type: schema
+  title: QD ACT Schema
+  summary: Schema for QD measurements done by the ACT option.
+- id: qd_acms_schema
+  capability_type: schema
+  title: QD ACMS Schema
+  summary: Schema for QD measurements done by the ACMS option.
+- id: qd_mpms_schema
+  capability_type: schema
+  title: QD MPMS Schema
+  summary: Schema for QD measurements done by the MPMS option.
+- id: qd_resisitivity_schema
+  capability_type: schema
+  title: QD Resistivity Schema
+  summary: Schema for QD measurements done by the Resistivity option.
+- id: qd_eto_parser
+  capability_type: parser
+  title: DataParser for QD ETO
+  summary: "Parser for QD data files created by the ETO option.\n        Parses files\
+    \ containing the 'BYAPP, Electrical Transport Option' line and\n        extracts\
+    \ resistivities, temperatures, fields, and other relevant data. "
+  parser_details:
+    parser_name: DataParser for QD ETO
+    parser_level: 0
+    mainfile_name_re: .+\.dat
+    mainfile_contents_re: BYAPP, Electrical Transport Option
+    mainfile_mime_re: text/plain|application/x-wine-extension-ini
+    mainfile_alternative: false
+- id: qd_act_parser
+  capability_type: parser
+  title: DataParser for QD ACT
+  summary: "Parser for QD data files created by the ACT option.\n        Parses files\
+    \ containing the 'BYAPP, ACTRANSPORT' (Alternating current\n        transport)\
+    \ line and extracts resistivities, temperatures, fields, and other\n        relevant\
+    \ data. "
+  parser_details:
+    parser_name: DataParser for QD ACT
+    parser_level: 0
+    mainfile_name_re: .+\.dat
+    mainfile_contents_re: BYAPP,\s*ACTRANSPORT
+    mainfile_mime_re: text/plain|application/x-wine-extension-ini
+    mainfile_alternative: false
+- id: qd_acms_parser
+  capability_type: parser
+  title: DataParser for QD ACMS
+  summary: 'Parser for QD data files created by the ACMS option.         Parses files
+    containing the ''BYAPP, ACMS'' (Alternating current magnetic        susceptibility)
+    line and extracts resistivities, temperatures, fields, and         other relevant
+    data. '
+  parser_details:
+    parser_name: DataParser for QD ACMS
+    parser_level: 0
+    mainfile_name_re: .+\.dat
+    mainfile_contents_re: BYAPP,\s*ACMS
+    mainfile_mime_re: text/plain|application/x-wine-extension-ini
+    mainfile_alternative: false
+- id: qd_mpms_parser
+  capability_type: parser
+  title: DataParser for QD MPMS
+  summary: "Parser for QD data files created by the MPMS option.\n        Parses files\
+    \ containing the 'BYAPP, MPMS' (Magnetic property measurement\n        system)\
+    \ line and extracts temperatures, fields, and other relevant data. "
+  parser_details:
+    parser_name: DataParser for QD MPMS
+    parser_level: 0
+    mainfile_name_re: .+\.dat
+    mainfile_contents_re: BYAPP,\s*MPMS
+    mainfile_mime_re: text/plain|application/x-wine-extension-ini
+    mainfile_alternative: false
+- id: qd_resistivity_parser
+  capability_type: parser
+  title: DataParser for QD Resistivity
+  summary: "Parser for QD data files created by the Resistivity option.\n        Parses\
+    \ files containing the 'BYAPP, Resistivity' line and extracts\n        resistivities,\
+    \ temperatures, fields, and other relevant data. "
+  parser_details:
+    parser_name: DataParser for QD Resistivity
+    parser_level: 0
+    mainfile_name_re: .+\.dat
+    mainfile_contents_re: BYAPP,\s*Resistivity
+    mainfile_mime_re: text/plain|application/x-wine-extension-ini
+    mainfile_alternative: false
+- id: qd_sequence_parser
+  capability_type: parser
+  title: QDSequenceParser
+  summary: Parser for QD sequence files.
+  parser_details:
+    parser_name: QDSequenceParser
+    parser_level: 0
+    mainfile_name_re: .+\.seq
+    mainfile_mime_re: text/plain
+    mainfile_alternative: false
+- id: transmission_schema
+  capability_type: schema
+  title: Transmission Schema
+  summary: Schema for data from Transmission Spectrophotometry.
+- id: transmission_parser
+  capability_type: parser
+  title: Transmission Parser
+  summary: "\n    Parser for data from Transmission Spectrophotometry measurements.\
+    \ Currently\n    supports `.asc` files generated by Perkin Elmer UV WinLab software.\n\
+    \    "
+  parser_details:
+    parser_name: Transmission Parser
+    parser_level: 0
+    mainfile_name_re: ^.*\.asc$
+    mainfile_contents_re: ^PE UV
+    mainfile_mime_re: text/.*|application/zip
+    mainfile_alternative: false
+- id: mapping_schema
+  capability_type: schema
+  title: Mapping Schema
+  summary: Schema package containing schemas for mapping measurements.
+supported_filetypes:
+- .xrdml
+- .rasx
+- .brml
+- .raw
+- .dat
+- .seq
+- .asc
+file_format_support:
+- id: xrdml
+  label: .xrdml
+  capability_id: xrd_parser
+  producer: xrd-parser
+  extensions:
+  - .xrdml
+  mime_types:
+  - text/.*|application/zip|application/octet-stream
+- id: rasx
+  label: .rasx
+  capability_id: xrd_parser
+  producer: xrd-parser
+  extensions:
+  - .rasx
+  mime_types:
+  - text/.*|application/zip|application/octet-stream
+- id: brml
+  label: .brml
+  capability_id: xrd_parser
+  producer: xrd-parser
+  extensions:
+  - .brml
+  mime_types:
+  - text/.*|application/zip|application/octet-stream
+- id: raw
+  label: .raw
+  capability_id: xrd_parser
+  producer: xrd-parser
+  extensions:
+  - .raw
+  mime_types:
+  - text/.*|application/zip|application/octet-stream
+- id: dat
+  label: .dat
+  capability_id: qd_eto_parser
+  producer: dataparser-for-qd-eto
+  extensions:
+  - .dat
+  mime_types:
+  - text/plain|application/x-wine-extension-ini
+- id: seq
+  label: .seq
+  capability_id: qd_sequence_parser
+  producer: qdsequenceparser
+  extensions:
+  - .seq
+  mime_types:
+  - text/plain
+- id: asc
+  label: .asc
+  capability_id: transmission_parser
+  producer: transmission-parser
+  extensions:
+  - .asc
+  mime_types:
+  - text/.*|application/zip
+schema_dependencies:
+- dependency_type: python_package
+  package_name: nomad-lab
+  version_range: '>=1.3.16'
+  optional: false
+  purpose: runtime
+- dependency_type: python_package
+  package_name: fairmat-readers-xrd
+  version_range: '>=0.0.8'
+  optional: false
+  purpose: runtime
+- dependency_type: python_package
+  package_name: fairmat-readers-transmission
+  version_range: '>=0.0.2'
+  optional: false
+  purpose: runtime
+- dependency_type: python_package
+  package_name: pynxtools
+  version_range: '>=0.10.0'
+  optional: true
+  purpose: optional
+- dependency_type: python_package
+  package_name: pytest
+  version_range: ''
+  optional: true
+  purpose: optional
+- dependency_type: python_package
+  package_name: ruff
+  version_range: ''
+  optional: true
+  purpose: optional
+- dependency_type: python_package
+  package_name: structlog
+  version_range: ''
+  optional: true
+  purpose: optional
+- dependency_type: python_package
+  package_name: python-logstash
+  version_range: '>=0.4.6'
+  optional: true
+  purpose: optional
+metadata_provenance:
+- source: pyproject
+  extraction_method: deterministic
+  generated_at: '2026-03-19T14:51:28.256431+00:00'
+  generator_version: 0.1.0
+- source: plugin_entry_points
+  extraction_method: deterministic
+  generated_at: '2026-03-19T14:51:28.256467+00:00'
+  generator_version: 0.1.0
+- source: citation_cff
+  extraction_method: deterministic
+  generated_at: '2026-03-19T14:51:28.256481+00:00'
+  generator_version: 0.1.0
+stars: 15
+owner: FAIRmat-NFDI
+owner_type: Organization
+created: '2023-09-06T10:00:22Z'
+last_updated: '2026-01-07T14:47:20Z'
+archived: false
