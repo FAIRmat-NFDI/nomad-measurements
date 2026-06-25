@@ -98,8 +98,8 @@ class QDParser(MatchingParser):
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         self.set_entrydata_definition()
-        data_file = mainfile.split('/')[-1]
-        data_file_with_path = mainfile.split('raw/')[-1]
+        data_file = mainfile.rsplit('/', maxsplit=1)[-1]
+        data_file_with_path = mainfile.rsplit('raw/', maxsplit=1)[-1]
         entry = self.entrydata_definition()
         entry.data_file = data_file_with_path
         file_name = f'{data_file[:-4]}.archive.json'
@@ -162,7 +162,7 @@ class QDSequenceParser(MatchingParser):
 
     def parse(self, mainfile: str, archive: EntryArchive, logger) -> None:
         self.set_entrydata_definition()
-        data_file = mainfile.split('/')[-1]
-        data_file_with_path = mainfile.split('raw/')[-1]
+        data_file = mainfile.rsplit('/', maxsplit=1)[-1]
+        data_file_with_path = mainfile.rsplit('raw/', maxsplit=1)[-1]
         archive.data = self.entrydata_definition(file_path=data_file_with_path)
         archive.metadata.entry_name = data_file + ' sequence file'
