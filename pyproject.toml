@@ -42,9 +42,6 @@ dependencies = [
 "Homepage" = "https://github.com/FAIRmat-NFDI/nomad-measurements"
 "Bug Tracker" = "https://github.com/FAIRmat-NFDI/nomad-measurements/issues"
 
-[tool.uv]
-index-url = "https://gitlab.mpcdf.mpg.de/api/v4/projects/2187/packages/pypi/simple"
-
 [project.optional-dependencies]
 nexus = ["pynxtools>=0.10.0"]
 dev = [
