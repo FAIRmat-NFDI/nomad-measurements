@@ -41,7 +41,7 @@ class TransmissionParser(MatchingParser):
     def parse(
         self, mainfile: str, archive: 'EntryArchive', logger=None, child_archives=None
     ) -> None:
-        data_file = mainfile.split('/')[-1]
+        data_file = mainfile.rsplit('/', maxsplit=1)[-1]
         if isinstance(archive.m_context, ServerContext):
             data_file = mainfile.split('/raw/', 1)[1]
         entry = ELNUVVisNirTransmission.m_from_dict(

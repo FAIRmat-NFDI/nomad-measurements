@@ -54,7 +54,7 @@ from nomad_measurements.quantumdesign.qdsteps import (
 
 def clean_channel_keys(input_key: str) -> str:
     return (
-        input_key.split('(')[0]
+        input_key.split('(', maxsplit=1)[0]
         .replace('M. Std. Err.', 'moment std err')
         .replace('M-Std.Err.', 'moment std err')
         .replace('M-DC', 'moment dc')
