@@ -526,16 +526,16 @@ class HDF5Handler:
             else:
                 data = arch_path  # default value
 
-            dataset = Dataset(data=data)
+            units = None
+            if isinstance(data, pint.Quantity):
+                dataset = Dataset(data=data.magnitude)
+                units = data.units
+            else:
+                dataset = Dataset(data=data)
 
-            if (
-                isinstance(data, pint.Quantity)
-                and str(data.units) != 'dimensionless'
-                and str(data.units)
-            ):
-                attr_tmp = {nx_path: dict(units=str(data.units))}
-                attr_dict |= attr_tmp
-                dataset.data = data.magnitude
+            if units:
+                # add units as attributes
+                attr_dict |= {nx_path: dict(units=str(units))}
 
             l_part, r_part = nx_path.rsplit('/', 1)
             if r_part.startswith('@'):
