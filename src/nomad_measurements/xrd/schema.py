@@ -33,7 +33,6 @@ from nomad.config import config
 from nomad.datamodel.context import ServerContext
 from nomad.datamodel.data import (
     ArchiveSection,
-    EntryData,
 )
 from nomad.datamodel.hdf5 import (
     HDF5Reference,
@@ -52,6 +51,7 @@ from nomad.datamodel.metainfo.basesections import (
     MeasurementResult,
     ReadableIdentifiers,
 )
+from nomad.datamodel.metainfo.eln import ElnParserSection
 from nomad.datamodel.metainfo.plot import PlotlyFigure, PlotSection
 from nomad.datamodel.results import (
     DiffractionPattern,
@@ -1656,7 +1656,7 @@ class XRayDiffraction(Measurement):
             )
 
 
-class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
+class ELNXRayDiffraction(XRayDiffraction, ElnParserSection, PlotSection):
     """
     Example section for how XRayDiffraction can be implemented with a general reader for
     common XRD file types.
@@ -1690,13 +1690,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
                 'results/0/intensity_plot',
                 'results/0/intensity_scattering_vector_plot',
             ]
-        ),
-    )
-    data_file = Quantity(
-        type=str,
-        description='Data file containing the diffractogram',
-        a_eln=ELNAnnotation(
-            component=ELNComponentEnum.FileEditQuantity,
         ),
     )
     measurement_identifiers = SubSection(
@@ -2039,19 +2032,6 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             self.trigger_update_nexus_file = False
 
         super().normalize(archive, logger)
-
-
-class RawFileXRDData(EntryData):
-    """
-    Section for an XRD data file.
-    """
-
-    measurement = Quantity(
-        type=ELNXRayDiffraction,
-        a_eln=ELNAnnotation(
-            component='ReferenceEditQuantity',
-        ),
-    )
 
 
 m_package.__init_metainfo__()
