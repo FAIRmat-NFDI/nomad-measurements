@@ -43,7 +43,7 @@ class XRDParser(MatchingParser):
         mime: str,
         buffer: bytes,
         decoded_buffer: str,
-        compression: str = None,
+        compression: str | None = None,
     ):
         """
         Override to add specific header check for .raw files.
@@ -69,8 +69,13 @@ class XRDParser(MatchingParser):
             data_file = mainfile.split('/raw/', 1)[1]
         entry = ELNXRayDiffraction.m_from_dict(ELNXRayDiffraction.m_def.a_template)
         entry.data_file = data_file
-        file_name = f'{"".join(data_file.split(".")[:-1])}.archive.json'
+        directory, separator, data_file_name = data_file.rpartition('/')
+        # Preserve the legacy filename mapping while keeping directory dots intact.
+        archive_file_name = (
+            data_file_name.rsplit('.', 1)[0].replace('.', '') + '.archive.json'
+        )
+        archive_file_path = f'{directory}{separator}{archive_file_name}'
         archive.data = RawFileXRDData(
-            measurement=create_archive(entry, archive, file_name)
+            measurement=create_archive(entry, archive, archive_file_path)
         )
         archive.metadata.entry_name = f'{data_file} data file'
