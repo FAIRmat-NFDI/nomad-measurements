@@ -509,7 +509,7 @@ def read_channel_data(data, block, data_class, channel_class):
         data.m_add_sub_section(data_class.channels, channel_2)
 
 
-def read_map_data(  # noqa: PLR0913
+def read_map_data(  # noqa: PLR0913, PLR0917
     data, block, data_class, map_class, maps_label='Map', maps_name='map'
 ):
     map_data = [key for key in block.keys() if maps_label in key]
