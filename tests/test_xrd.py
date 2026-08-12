@@ -20,7 +20,10 @@ import os
 import pytest
 from nomad.client import normalize_all
 from nomad.config import config
+from nomad.datamodel.context import ServerContext
+from nomad.datamodel.datamodel import EntryArchive, EntryMetadata
 
+from nomad_measurements.xrd.parser import XRDParser
 from nomad_measurements.xrd.schema import XRDResult1D, XRDResult1DHDF5
 
 try:
@@ -53,6 +56,31 @@ invalid_test_files = [
     },
     # Future: Add other invalid formats here (e.g., fake .xrdml, .brml, etc.)
 ]
+
+
+@pytest.mark.parametrize(
+    'data_file_path, expected_archive_file_path',
+    [
+        ('sample.v1.xrdml', 'samplev1.archive.json'),
+        ('folder/sample.v1.xrdml', 'folder/samplev1.archive.json'),
+        ('folder.v1/sample.xrdml', 'folder.v1/sample.archive.json'),
+        ('folder.v1/sample.v2.xrdml', 'folder.v1/samplev2.archive.json'),
+    ],
+)
+def test_archive_file_path(data_file_path, expected_archive_file_path, monkeypatch):
+    archive_file_paths = []
+
+    def mock_create_archive(entry, archive, archive_file_path):
+        archive_file_paths.append(archive_file_path)
+
+    monkeypatch.setattr(
+        'nomad_measurements.xrd.parser.create_archive', mock_create_archive
+    )
+    archive = EntryArchive(m_context=ServerContext(), metadata=EntryMetadata())
+
+    XRDParser().parse(f'/tmp/raw/{data_file_path}', archive)
+
+    assert archive_file_paths == [expected_archive_file_path]
 
 
 @pytest.mark.parametrize(
