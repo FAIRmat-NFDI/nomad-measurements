@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 from collections.abc import Callable
+from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -1805,12 +1806,23 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             instrument.normalize(archive, logger)
             instruments.append(instrument)
 
+        start_time = metadata_dict.get('start_time')
+        if start_time is not None and not isinstance(start_time, datetime):
+            try:
+                start_time = datetime.fromisoformat(start_time)
+            except (TypeError, ValueError):
+                logger.warning(
+                    f'Could not parse start_time "{start_time}" as a valid '
+                    'datetime. It will not be set.'
+                )
+                start_time = None
+
         xrd = ELNXRayDiffraction(
             results=[],
             xrd_settings=xrd_settings,
             samples=samples,
             instruments=instruments,
-            datetime=metadata_dict.get('start_time'),
+            datetime=start_time,
         )
 
         merge_sections(self, xrd, logger)

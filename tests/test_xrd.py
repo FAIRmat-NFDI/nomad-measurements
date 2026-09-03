@@ -16,15 +16,22 @@
 # limitations under the License.
 #
 import os
+from datetime import datetime, timezone
 
 import pytest
+import structlog
 from nomad.client import normalize_all
 from nomad.config import config
+from nomad.datamodel import User
 from nomad.datamodel.context import ServerContext
 from nomad.datamodel.datamodel import EntryArchive, EntryMetadata
 
 from nomad_measurements.xrd.parser import XRDParser
-from nomad_measurements.xrd.schema import XRDResult1D, XRDResult1DHDF5
+from nomad_measurements.xrd.schema import (
+    ELNXRayDiffraction,
+    XRDResult1D,
+    XRDResult1DHDF5,
+)
 
 try:
     import pynxtools  # noqa F401
@@ -37,6 +44,7 @@ test_files = [
     'tests/data/xrd/XRD-918-16_10.xrdml',
     'tests/data/xrd/m54313_om2th_10.xrdml',
     'tests/data/xrd/m82762_rc1mm_1_16dg_src_slit_phi-101_3dg_-420_mesh_long.xrdml',
+    'tests/data/xrd/10_m84325_C_XRR_fast_processed.xrdml',
     'tests/data/xrd/23-012-AG_2thomegascan_long.brml',
     'tests/data/xrd/EJZ060_13_004_RSM.brml',
     'tests/data/xrd/Omega-2Theta_scan_high_temperature.rasx',
@@ -81,6 +89,71 @@ def test_archive_file_path(data_file_path, expected_archive_file_path, monkeypat
     XRDParser().parse(f'/tmp/raw/{data_file_path}', archive)
 
     assert archive_file_paths == [expected_archive_file_path]
+
+
+@pytest.mark.parametrize(
+    'start_time_input, expected_datetime',
+    [
+        (
+            datetime(2020, 8, 4, 19, 53, 22, tzinfo=timezone.utc),
+            datetime(2020, 8, 4, 19, 53, 22, tzinfo=timezone.utc),
+        ),
+        (
+            '2020-08-04T19:53:22+02:00',
+            datetime.fromisoformat('2020-08-04T19:53:22+02:00'),
+        ),
+        ('not-a-valid-datetime', None),
+        (None, None),
+    ],
+    ids=['datetime-object', 'iso-string', 'invalid-string', 'missing'],
+)
+def test_write_xrd_data_links_instrument_and_datetime(
+    monkeypatch, start_time_input, expected_datetime
+):
+    """
+    Tests that `write_xrd_data` populates `instruments` and `datetime` from the
+    `instrument_id` and `start_time` keys of the reader's metadata dict, mirroring
+    the existing `sample_id` -> `samples` behavior. `instruments` is only populated
+    under a `ServerContext`. `start_time` is validated with the `datetime` library
+    before being used; an incompatible value is dropped rather than raising.
+    """
+
+    # `InstrumentReference.normalize` (like `CompositeSystemReference.normalize`)
+    # looks up a matching entry via `nomad.search.search`, which requires `fastapi`
+    # (only pulled in by nomad-lab's optional `infrastructure` extra, not installed
+    # in this project's test environment). `lab_id` is set directly by
+    # `write_xrd_data` regardless of what `normalize` does, so `normalize` is
+    # no-opped here rather than mocking `nomad.search` itself, which would require
+    # importing that module.
+    monkeypatch.setattr(
+        'nomad_measurements.xrd.schema.CompositeSystemReference.normalize',
+        lambda self, archive, logger: None,
+    )
+    monkeypatch.setattr(
+        'nomad_measurements.xrd.schema.InstrumentReference.normalize',
+        lambda self, archive, logger: None,
+    )
+
+    archive = EntryArchive(
+        m_context=ServerContext(),
+        metadata=EntryMetadata(main_author=User(user_id='test-user-id')),
+    )
+    xrd_dict = {
+        'metadata': {
+            'sample_id': 'test-sample-id',
+            'instrument_id': '0000000011073629',
+            'start_time': start_time_input,
+        }
+    }
+
+    entry = ELNXRayDiffraction()
+    entry.write_xrd_data(xrd_dict, archive, structlog.get_logger())
+
+    assert len(entry.samples) == 1
+    assert entry.samples[0].lab_id == 'test-sample-id'
+    assert len(entry.instruments) == 1
+    assert entry.instruments[0].lab_id == '0000000011073629'
+    assert entry.datetime == expected_datetime
 
 
 @pytest.mark.parametrize(
