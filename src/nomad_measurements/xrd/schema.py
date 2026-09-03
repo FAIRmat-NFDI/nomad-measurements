@@ -48,6 +48,7 @@ from nomad.datamodel.metainfo.annotations import (
 )
 from nomad.datamodel.metainfo.basesections import (
     CompositeSystemReference,
+    InstrumentReference,
     Measurement,
     MeasurementResult,
     ReadableIdentifiers,
@@ -1794,10 +1795,22 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             sample.normalize(archive, logger)
             samples.append(sample)
 
+        instruments = []
+        if metadata_dict.get('instrument_id') is not None and isinstance(
+            archive.m_context, ServerContext
+        ):
+            instrument = InstrumentReference(
+                lab_id=metadata_dict['instrument_id'],
+            )
+            instrument.normalize(archive, logger)
+            instruments.append(instrument)
+
         xrd = ELNXRayDiffraction(
             results=[],
             xrd_settings=xrd_settings,
             samples=samples,
+            instruments=instruments,
+            datetime=metadata_dict.get('start_time'),
         )
 
         merge_sections(self, xrd, logger)
