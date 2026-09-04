@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 from collections.abc import Callable
+from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -48,6 +49,7 @@ from nomad.datamodel.metainfo.annotations import (
 )
 from nomad.datamodel.metainfo.basesections import (
     CompositeSystemReference,
+    InstrumentReference,
     Measurement,
     MeasurementResult,
     ReadableIdentifiers,
@@ -1794,10 +1796,33 @@ class ELNXRayDiffraction(XRayDiffraction, EntryData, PlotSection):
             sample.normalize(archive, logger)
             samples.append(sample)
 
+        instruments = []
+        if metadata_dict.get('instrument_id') is not None and isinstance(
+            archive.m_context, ServerContext
+        ):
+            instrument = InstrumentReference(
+                lab_id=metadata_dict['instrument_id'],
+            )
+            instrument.normalize(archive, logger)
+            instruments.append(instrument)
+
+        start_time = metadata_dict.get('start_time')
+        if start_time is not None and not isinstance(start_time, datetime):
+            try:
+                start_time = datetime.fromisoformat(start_time)
+            except (TypeError, ValueError):
+                logger.warning(
+                    f'Could not parse start_time "{start_time}" as a valid '
+                    'datetime. It will not be set.'
+                )
+                start_time = None
+
         xrd = ELNXRayDiffraction(
             results=[],
             xrd_settings=xrd_settings,
             samples=samples,
+            instruments=instruments,
+            datetime=start_time,
         )
 
         merge_sections(self, xrd, logger)
