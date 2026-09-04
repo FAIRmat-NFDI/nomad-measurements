@@ -1,0 +1,120 @@
+# Maintainer-owned metadata overrides and manual additions.
+# This file is never machine-overwritten after creation.
+# Use null/empty values as placeholders; only non-empty values override auto output.
+# list[str] domain/topic tags (e.g. "simulations", "spectroscopy")
+subject:
+  - measurements
+  - xrd
+  - transport
+  - magnetometry
+  - spectroscopy
+# enum {alpha, beta, stable, archived}
+maturity: stable
+# str, e.g. "main"
+repository_default_branch: main
+
+# Deployment flags.
+deployment:
+  # boolean
+  on_central: false
+  # boolean
+  on_example_oasis: true
+  # boolean
+  on_pypi: true
+  # str (PyPI package name)
+  pypi_package: nomad-measurements
+
+# Suggested usages for registry filtering/discovery.
+suggested_usages:
+  -
+    # str (stable ID slug), e.g. "parse-xrd-patterns"
+    id: parse-xrd-raw-files
+    # str
+    title: Parse XRD raw files
+    # str (what user wants to do), e.g. "Import and parse raw files"
+    user_intent: Import powder XRD raw outputs into NOMAD
+    # enum {simulations, measurements, synthesis, cross-domain, workflow, infrastructure}
+    domain_category: measurements
+    # str, e.g. "XRD", "DFT"
+    technique: xrd
+    # str, e.g. "beginner", "expert"
+    audience: intermediate
+    # enum {alpha, beta, stable, archived}
+    maturity: stable
+    # list[str]
+    tags: [xrd, diffraction, parser]
+  -
+    # str (stable ID slug), e.g. "parse-xrd-patterns"
+    id: parse-quantumdesign-measurements
+    # str
+    title: Parse Quantum Design measurements
+    # str (what user wants to do), e.g. "Import and parse raw files"
+    user_intent: Import PPMS/MPMS transport and magnetometry outputs
+    # enum {simulations, measurements, synthesis, cross-domain, workflow, infrastructure}
+    domain_category: measurements
+    # str, e.g. "XRD", "DFT"
+    technique: quantum-design
+    # str, e.g. "beginner", "expert"
+    audience: intermediate
+    # enum {alpha, beta, stable, archived}
+    maturity: stable
+    # list[str]
+    tags: [ppms, mpms, transport, magnetometry]
+  -
+    # str (stable ID slug), e.g. "parse-xrd-patterns"
+    id: parse-transmission-spectra
+    # str
+    title: Parse transmission spectroscopy files
+    # str (what user wants to do), e.g. "Import and parse raw files"
+    user_intent: Import UV-Vis transmission measurement outputs
+    # enum {simulations, measurements, synthesis, cross-domain, workflow, infrastructure}
+    domain_category: measurements
+    # str, e.g. "XRD", "DFT"
+    technique: transmission-spectroscopy
+    # str, e.g. "beginner", "expert"
+    audience: intermediate
+    # enum {alpha, beta, stable, archived}
+    maturity: stable
+    # list[str]
+    tags: [transmission, uv-vis, spectroscopy]
+
+# Optional file format metadata enrichments.
+file_format_support:
+  -
+    # str (stable ID), e.g. "csv"
+    id: dat-qd-act
+    # str display label, e.g. ".csv"
+    label: .dat (QD ACT)
+    # str capability reference (links to capabilities[].id), e.g. "vasp_parser"
+    capability_id: qd_act_parser
+    # str producer/code family for ambiguous extensions, e.g. "vasp", "quantumespresso"
+    producer: quantum-design-act
+    # list[str] extensions including dot, e.g. [".csv", ".txt"]
+    extensions: [.dat]
+    # list[str], e.g. ["text/csv"]
+    mime_types: [text/plain, application/x-wine-extension-ini]
+    # str, e.g. "CIF", "NeXus"
+    standard: null
+    # str, instrument or context label
+    instrument_context: Quantum Design ACT
+    # str free text notes
+    notes: Disambiguated from other QD .dat formats.
+  -
+    # str (stable ID), e.g. "csv"
+    id: dat-qd-acms
+    # str display label, e.g. ".csv"
+    label: .dat (QD ACMS)
+    # str capability reference (links to capabilities[].id), e.g. "vasp_parser"
+    capability_id: qd_acms_parser
+    # str producer/code family for ambiguous extensions, e.g. "vasp", "quantumespresso"
+    producer: quantum-design-acms
+    # list[str] extensions including dot, e.g. [".csv", ".txt"]
+    extensions: [.dat]
+    # list[str], e.g. ["text/csv"]
+    mime_types: [text/plain, application/x-wine-extension-ini]
+    # str, e.g. "CIF", "NeXus"
+    standard: null
+    # str, instrument or context label
+    instrument_context: Quantum Design ACMS
+    # str free text notes
+    notes: Same extension as other QD parsers but different BYAPP signature.

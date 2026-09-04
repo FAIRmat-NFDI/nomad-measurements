@@ -1,0 +1,85 @@
+summary:
+  overridden_field_count: 1
+  manual_precedence: true
+overridden_fields:
+- field: file_format_support
+  generated_value:
+  - id: xrdml
+    label: .xrdml
+    capability_id: xrd_parser
+    producer: xrd-parser
+    extensions:
+    - .xrdml
+    mime_types:
+    - text/.*|application/zip|application/octet-stream
+  - id: rasx
+    label: .rasx
+    capability_id: xrd_parser
+    producer: xrd-parser
+    extensions:
+    - .rasx
+    mime_types:
+    - text/.*|application/zip|application/octet-stream
+  - id: brml
+    label: .brml
+    capability_id: xrd_parser
+    producer: xrd-parser
+    extensions:
+    - .brml
+    mime_types:
+    - text/.*|application/zip|application/octet-stream
+  - id: raw
+    label: .raw
+    capability_id: xrd_parser
+    producer: xrd-parser
+    extensions:
+    - .raw
+    mime_types:
+    - text/.*|application/zip|application/octet-stream
+  - id: dat
+    label: .dat
+    capability_id: qd_eto_parser
+    producer: dataparser-for-qd-eto
+    extensions:
+    - .dat
+    mime_types:
+    - text/plain|application/x-wine-extension-ini
+  - id: seq
+    label: .seq
+    capability_id: qd_sequence_parser
+    producer: qdsequenceparser
+    extensions:
+    - .seq
+    mime_types:
+    - text/plain
+  - id: asc
+    label: .asc
+    capability_id: transmission_parser
+    producer: transmission-parser
+    extensions:
+    - .asc
+    mime_types:
+    - text/.*|application/zip
+  manual_value:
+  - id: dat-qd-act
+    label: .dat (QD ACT)
+    capability_id: qd_act_parser
+    producer: quantum-design-act
+    extensions:
+    - .dat
+    mime_types:
+    - text/plain
+    - application/x-wine-extension-ini
+    instrument_context: Quantum Design ACT
+    notes: Disambiguated from other QD .dat formats.
+  - id: dat-qd-acms
+    label: .dat (QD ACMS)
+    capability_id: qd_acms_parser
+    producer: quantum-design-acms
+    extensions:
+    - .dat
+    mime_types:
+    - text/plain
+    - application/x-wine-extension-ini
+    instrument_context: Quantum Design ACMS
+    notes: Same extension as other QD parsers but different BYAPP signature.
