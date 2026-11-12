@@ -66,8 +66,8 @@ jobs:
           python-version: ${{ env.python-version }}
       - name: Install latest nomad release and nomad-measurements
         run: |
-          uv pip install --system nomad-lab[infrastructure]
-          uv pip install --system -e ".[dev]"
+          uv pip install nomad-lab[infrastructure]
+          uv pip install -e ".[dev]"
       - name: Test with pytest
         run: pytest tests/
 
@@ -122,7 +122,7 @@ jobs:
           path: dist/
       - name: Install sdist
         run: |
-          uv pip install --system dist/*.tar.gz
+          uv pip install dist/*.tar.gz
 
   deploy:
     name: Upload to PyPI
