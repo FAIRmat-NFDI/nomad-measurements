@@ -1,0 +1,36 @@
+name: Compatibility with nomad release
+
+# Installs nomad-measurements against the latest *released* nomad-lab from PyPI,
+# not an unreleased nomad-FAIR branch. A failure on `develop` during an active
+# migration that depends on an unreleased nomad-FAIR branch is expected and
+# does not block ongoing work — it gates the `develop` -> `release/*` cut,
+# where it must pass.
+on:
+  push:
+    branches: [main, develop, 'release/**']
+  pull_request:
+    branches: [main, develop, 'release/**']
+
+env:
+  python-version: "3.12"
+
+jobs:
+  nomad_release_compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Install uv and set the python version to ${{ env.python-version }}
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ env.python-version }}
+      - name: Install latest nomad release
+        run: |
+          uv pip install nomad-lab[infrastructure]
+      - name: Install nomad-measurements
+        run: |
+          uv pip install -e ".[dev]"
+      - name: Run tests
+        run: pytest tests/
